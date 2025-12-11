@@ -37,13 +37,13 @@ workflow_status:
         name: "Research"
         agent: "analyst"
         command: "*research"
-        status: "optional"
+        status: "docs/research-technical-2025-12-03.md"
 
       - id: "product-brief"
         name: "Product Brief"
         agent: "analyst"
         command: "*product-brief"
-        status: "optional"
+        status: "docs/product-brief-testdata-ai-2025-12-11.md"
 
   # Phase 1: Planning
   - phase: 1
