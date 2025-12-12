@@ -53,7 +53,7 @@ workflow_status:
         name: "Product Requirements Document"
         agent: "pm"
         command: "*prd"
-        status: "required"
+        status: "docs/prd.md"
         output: "Product Requirements Document with FRs and NFRs"
 
       - id: "validate-prd"
