@@ -78,7 +78,7 @@ workflow_status:
         name: "Create Architecture"
         agent: "architect"
         command: "*create-architecture"
-        status: "required"
+        status: "docs/architecture.md"
         output: "System architecture document"
         note: "Complete system design for greenfield projects"
 
