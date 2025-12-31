@@ -43,7 +43,7 @@ so that **I can develop the library and CLI tool independently with clear separa
   - [ ] Create root `tsconfig.json` with shared settings
   - [ ] Configure TypeScript strict mode
   - [ ] Configure ESM modules (`"module": "ESNext"`)
-  - [ ] Configure ES2022 target
+  - [ ] Configure ESNext target (per architecture)
 - [ ] Install dependencies and verify setup (AC: 6, 7)
   - [ ] Run `bun install` at project root
   - [ ] Verify workspace detection and linking
