@@ -1,0 +1,131 @@
+# generated: 2025-12-31
+# project: testdata-ai
+# project_key: testdata-ai
+# tracking_system: file-system
+# story_location: docs/sprint-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2025-12-31
+project: testdata-ai
+project_key: testdata-ai
+tracking_system: file-system
+story_location: docs/sprint-artifacts
+
+development_status:
+  epic-1: backlog
+  1-1-initialize-bun-monorepo-with-core-and-cli-packages: backlog
+  1-2-common-utilities-result-type-pattern: backlog
+  1-3-common-utilities-diagnostic-system: backlog
+  1-4-gherkin-bdd-testing-infrastructure: backlog
+  1-5-development-tooling-setup: backlog
+  epic-1-retrospective: optional
+
+  epic-2: backlog
+  2-1-scanner-token-types-and-lexical-analysis: backlog
+  2-2-parser-ast-node-types: backlog
+  2-3-parser-recursive-descent-implementation: backlog
+  2-4-semantic-analyzer-symbol-table: backlog
+  2-5-semantic-analyzer-type-checking-and-validation: backlog
+  2-6-end-to-end-schema-validation: backlog
+  epic-2-retrospective: optional
+
+  epic-3: backlog
+  3-1-custom-prng-xoshiro256-implementation: backlog
+  3-2-primitive-field-generators: backlog
+  3-3-generator-engine-record-creation: backlog
+  3-4-streaming-generation-with-asynciterable: backlog
+  3-5-json-output-adapter: backlog
+  3-6-end-to-end-generation-pipeline: backlog
+  epic-3-retrospective: optional
+
+  epic-4: backlog
+  4-1-cli-foundation-with-commander-js: backlog
+  4-2-generate-command-implementation: backlog
+  4-3-validate-command-implementation: backlog
+  4-4-init-command-implementation: backlog
+  4-5-rust-style-error-formatter: backlog
+  epic-4-retrospective: optional
+
+  epic-5: backlog
+  5-1-identity-generators-uuid-sequential-nanoid: backlog
+  5-2-personal-data-generators-names-emails: backlog
+  5-3-temporal-generators-dates-timestamps-ranges: backlog
+  5-4-text-generators-words-sentences-paragraphs: backlog
+  5-5-selection-generators-pick-weighted-pick: backlog
+  epic-5-retrospective: optional
+
+  epic-6: backlog
+  6-1-template-engine-for-cross-field-references: backlog
+  6-2-field-generation-order-resolver: backlog
+  6-3-schema-relationship-support: backlog
+  epic-6-retrospective: optional
+
+  epic-7: backlog
+  7-1-uniqueness-constraint-tracker: backlog
+  7-2-single-field-uniqueness-enforcement: backlog
+  7-3-composite-uniqueness-constraints: backlog
+  epic-7-retrospective: optional
+
+  epic-8: backlog
+  8-1-json-context-loader: backlog
+  8-2-csv-context-loader: backlog
+  8-3-context-reference-syntax-and-resolution: backlog
+  8-4-context-tagging-and-filtered-selection: backlog
+  8-5-save-generated-data-as-context: backlog
+  epic-8-retrospective: optional
+
+  epic-9: backlog
+  9-1-global-configuration-defaults: backlog
+  9-2-workspace-configuration: backlog
+  9-3-schema-level-defaults: backlog
+  9-4-configuration-priority-and-merging: backlog
+  epic-9-retrospective: optional
+
+  epic-10: backlog
+  10-1-csv-output-adapter: backlog
+  10-2-sql-output-adapter: backlog
+  10-3-cli-multi-format-support: backlog
+  10-4-programmatic-api-for-test-integration: backlog
+  epic-10-retrospective: optional
+
+  epic-11: backlog
+  11-1-dsl-import-statement-support: backlog
+  11-2-shared-generator-definitions: backlog
+  11-3-schema-composition-and-extension: backlog
+  11-4-reference-validation-and-type-safety: backlog
+  epic-11-retrospective: optional
+
+  epic-12: backlog
+  12-1-generation-metadata-tracking: backlog
+  12-2-generation-history-logging: backlog
+  12-3-pattern-version-tracking: backlog
+  12-4-platform-migration-preparation: backlog
+  epic-12-retrospective: optional
