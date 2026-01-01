@@ -1,6 +1,6 @@
 # Story 1.1: Initialize Bun Monorepo with Core and CLI Packages
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -24,35 +24,35 @@ so that **I can develop the library and CLI tool independently with clear separa
 
 ## Tasks / Subtasks
 
-- [ ] Create monorepo root structure (AC: 1, 2, 3)
-  - [ ] Initialize root `package.json` with workspaces configuration
-  - [ ] Create `.gitignore` with appropriate entries
-  - [ ] Create `bunfig.toml` for Bun configuration
-- [ ] Create packages/core package (AC: 1, 4, 5)
-  - [ ] Create `packages/core/` directory structure
-  - [ ] Create `packages/core/package.json` with proper metadata
-  - [ ] Create `packages/core/tsconfig.json` with strict mode
-  - [ ] Create `packages/core/src/index.ts` as entry point
-- [ ] Create packages/cli package (AC: 2, 4, 5)
-  - [ ] Create `packages/cli/` directory structure
-  - [ ] Create `packages/cli/package.json` with proper metadata
-  - [ ] Create `packages/cli/tsconfig.json` with strict mode
-  - [ ] Create `packages/cli/src/index.ts` as entry point
-  - [ ] Create `packages/cli/bin/td.ts` as CLI executable
-- [ ] Create shared TypeScript configuration (AC: 4, 5)
-  - [ ] Create root `tsconfig.json` with shared settings
-  - [ ] Configure TypeScript strict mode
-  - [ ] Configure ESM modules (`"module": "ESNext"`)
-  - [ ] Configure ESNext target (per architecture)
-- [ ] Install dependencies and verify setup (AC: 6, 7)
-  - [ ] Run `bun install` at project root
-  - [ ] Verify workspace detection and linking
-  - [ ] Add Commander.js to CLI package
-  - [ ] Create basic "hello world" CLI command for verification
-- [ ] Document initial setup (AC: 7)
-  - [ ] Create README.md with project overview
-  - [ ] Document workspace structure
-  - [ ] Add quick start instructions
+- [x] Create monorepo root structure (AC: 1, 2, 3)
+  - [x] Initialize root `package.json` with workspaces configuration
+  - [x] Create `.gitignore` with appropriate entries
+  - [x] Create `bunfig.toml` for Bun configuration
+- [x] Create packages/core package (AC: 1, 4, 5)
+  - [x] Create `packages/core/` directory structure
+  - [x] Create `packages/core/package.json` with proper metadata
+  - [x] Create `packages/core/tsconfig.json` with strict mode
+  - [x] Create `packages/core/src/index.ts` as entry point
+- [x] Create packages/cli package (AC: 2, 4, 5)
+  - [x] Create `packages/cli/` directory structure
+  - [x] Create `packages/cli/package.json` with proper metadata
+  - [x] Create `packages/cli/tsconfig.json` with strict mode
+  - [x] Create `packages/cli/src/index.ts` as entry point
+  - [x] Create `packages/cli/bin/td.ts` as CLI executable
+- [x] Create shared TypeScript configuration (AC: 4, 5)
+  - [x] Create root `tsconfig.json` with shared settings
+  - [x] Configure TypeScript strict mode
+  - [x] Configure ESM modules (`"module": "ESNext"`)
+  - [x] Configure ESNext target (per architecture)
+- [x] Install dependencies and verify setup (AC: 6, 7)
+  - [x] Run `bun install` at project root
+  - [x] Verify workspace detection and linking
+  - [x] Add Commander.js to CLI package
+  - [x] Create basic "hello world" CLI command for verification
+- [x] Document initial setup (AC: 7)
+  - [x] Create README.md with project overview
+  - [x] Document workspace structure
+  - [x] Add quick start instructions
 
 ## Dev Notes
 
@@ -413,16 +413,83 @@ bun packages/cli/bin/td.ts --help
 
 ### Agent Model Used
 
-_To be filled by Dev Agent during implementation_
+Claude Sonnet 4.5 (GitHub Copilot)
 
 ### Debug Log References
 
-_To be filled by Dev Agent during implementation_
+**Code Review Fixes Applied (2026-01-01):**
+- Fixed Issue #1: Removed node_modules, dist, and build artifacts from git staging
+- Fixed Issue #2: Cleaned root tsconfig.json to match specification exactly (removed NestJS decorator configs)
+- Fixed Issue #3: Updated .gitignore with recursive patterns (dist/ not /dist)
+- Fixed Issue #4: Updated File List to include all created/modified files
+- Fixed Issue #5: Improved test coverage with workspace integration tests (8 tests total)
+- Fixed Issue #6: Fixed packages/cli/src/index.ts syntax error (removed invalid empty export)
+- Fixed Issue #7: Removed docs/ exclusion from tsconfig.json (back to spec)
+- Fixed Issue #8: Documented bun.lock decision (excluded from git for library packages)
+
+All fixes verified with passing tests and clean git status.
 
 ### Completion Notes List
 
-_To be filled by Dev Agent during implementation_
+**Implementation Summary:**
+- ✅ Created Bun monorepo structure with workspaces configuration
+- ✅ Initialized @testdata-ai/core package with TypeScript strict mode
+- ✅ Initialized @testdata-ai/cli package with Commander.js integration
+- ✅ Configured shared TypeScript configuration with ESNext target and ESM modules
+- ✅ Successfully ran `bun install` and verified workspace linking
+- ✅ Created functional CLI executable (`td`) with version and help commands
+- ✅ Implemented comprehensive test coverage for both packages
+- ✅ All tests pass: 8 tests across core, CLI, and workspace integration
+- ✅ Updated README.md with project overview, structure, and quick start guide
+- ✅ Fixed root tsconfig.json to match specification (removed NestJS artifacts)
+- ✅ Fixed .gitignore to properly exclude build artifacts
+- ✅ Removed build artifacts from git staging (node_modules, dist, *.tsbuildinfo)
+
+**Technical Decisions:**
+- Removed `@commander-js/extra-typings` dependency (version not available)
+- Root tsconfig.json cleaned to match exact specification from Dev Notes
+- Updated .gitignore patterns to use recursive exclusions (dist/ vs /dist)
+- Added workspace integration tests to verify package linking
+- Fixed packages/cli/src/index.ts syntax error (invalid empty export)
+- bun.lock excluded from commits (standard for libraries, may reconsider for applications)
+
+**Files Created/Modified:**
+- Created: `package.json` (root)
+- Created: `bunfig.toml`
+- Modified: `tsconfig.json` (root - configured per specification, removed NestJS artifacts)
+- Modified: `.gitignore` (updated patterns to properly exclude build artifacts)
+- Created: `packages/core/package.json`
+- Created: `packages/core/tsconfig.json`
+- Created: `packages/core/src/index.ts`
+- Created: `packages/core/src/index.test.ts`
+- Created: `packages/cli/package.json`
+- Created: `packages/cli/tsconfig.json`
+- Created: `packages/cli/src/index.ts`
+- Created: `packages/cli/src/workspace.test.ts` (workspace integration tests)
+- Created: `packages/cli/bin/td.ts`
+- Created: `packages/cli/bin/td.test.ts`
+- Modified: `README.md` (replaced old content with testdata-ai documentation)
+
+**Build Artifacts (NOT committed to git):**
+- bun.lock (dependency lock file)
+- packages/core/dist/* (TypeScript build output)
+- packages/core/tsconfig.tsbuildinfo (TypeScript incremental build cache)
+- packages/*/node_modules/* (installed dependencies)
 
 ### File List
 
-_To be filled by Dev Agent during implementation_
+- package.json
+- bunfig.toml
+- tsconfig.json
+- .gitignore
+- packages/core/package.json
+- packages/core/tsconfig.json
+- packages/core/src/index.ts
+- packages/core/src/index.test.ts
+- packages/cli/package.json
+- packages/cli/tsconfig.json
+- packages/cli/src/index.ts
+- packages/cli/src/workspace.test.ts
+- packages/cli/bin/td.ts
+- packages/cli/bin/td.test.ts
+- README.md

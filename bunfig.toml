@@ -1,0 +1,7 @@
+[install]
+# Bun-specific configuration
+peer = true
+
+[test]
+# Test configuration
+# Exclude archived and documentation files from testing

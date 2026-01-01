@@ -1,0 +1,19 @@
+{
+  "name": "@testdata-ai/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "td": "./bin/td.ts"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@testdata-ai/core": "workspace:*",
+    "commander": "^14.0.2"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.0.0"
+  }
+}

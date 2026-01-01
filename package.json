@@ -1,0 +1,12 @@
+{
+  "name": "testdata-ai",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "bun run --cwd packages/core build && bun run --cwd packages/cli build",
+    "test": "bun test packages/"
+  }
+}

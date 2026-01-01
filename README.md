@@ -1,53 +1,131 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# testdata-ai
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Declarative test data generation using a custom DSL with deterministic, reproducible output.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Overview
 
-## Description
+testdata-ai is a TypeScript-based tool for generating realistic test data from declarative schema definitions. It uses a custom domain-specific language (DSL) to describe data structures and generation rules, producing deterministic output through a seeded PRNG implementation.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Workspace Structure
 
-## Project setup
+This is a Bun monorepo with two packages:
 
-```bash
-$ npm install
+```
+testdata-ai/
+├── packages/
+│   ├── core/                    # @testdata-ai/core (library)
+│   │   ├── src/
+│   │   │   ├── index.ts         # Public API exports
+│   │   │   └── index.test.ts    # Core tests
+│   │   ├── package.json
+│   │   └── tsconfig.json
+│   └── cli/                     # @testdata-ai/cli (CLI tool)
+│       ├── bin/
+│       │   ├── td.ts            # CLI executable
+│       │   └── td.test.ts       # CLI tests
+│       ├── src/
+│       │   └── index.ts
+│       ├── package.json
+│       └── tsconfig.json
+├── package.json                 # Bun workspaces root
+├── tsconfig.json                # Shared TypeScript config
+├── bunfig.toml                  # Bun configuration
+└── README.md
 ```
 
-## Compile and run the project
+### Packages
+
+- **`@testdata-ai/core`**: Core library containing the scanner, parser, semantic analyzer, and generator
+- **`@testdata-ai/cli`**: Command-line interface tool for working with .td schema files
+
+## Quick Start
+
+### Prerequisites
+
+- [Bun](https://bun.sh) 1.x or later
+
+### Installation
 
 ```bash
-# development
-$ npm run start
+# Clone the repository
+git clone <repository-url>
+cd testdata-ai
 
-# watch mode
-$ npm run start:dev
+# Install dependencies
+bun install
 
-# production mode
-$ npm run start:prod
+# Build packages
+bun run build
+
+# Run tests
+bun test
 ```
 
-## Run tests
+### Running the CLI
 
 ```bash
+# Show version
+bun packages/cli/bin/td.ts --version
+
+# Show help
+bun packages/cli/bin/td.ts --help
+```
+
+## Development
+
+### Building
+
+```bash
+# Build all packages
+bun run build
+
+# Build specific package
+bun run --cwd packages/core build
+bun run --cwd packages/cli build
+```
+
+### Testing
+
+```bash
+# Run all tests
+bun test
+
+# Run tests for specific package
+bun test packages/core
+bun test packages/cli
+```
+
+### Project Structure
+
+- All source files use **camelCase.ts** naming convention
+- TypeScript strict mode is enabled throughout
+- ESM modules only (no CommonJS)
+- Co-located tests (*.test.ts files next to implementation)
+- Each module exports through index.ts
+
+## Technology Stack
+
+- **Runtime**: Bun 1.x
+- **Language**: TypeScript 5.x with strict mode
+- **CLI Framework**: Commander.js 14.x
+- **Testing**: Bun's built-in test runner
+
+## Documentation
+
+See the [docs/](docs/) directory for detailed documentation:
+
+- [Architecture](docs/architecture.md) - System design and technical decisions
+- [Project Context](docs/project-context.md) - Implementation rules and conventions
+- [Epics](docs/epics.md) - Feature roadmap and sprint planning
+
+## License
+
+[License information to be added]
+
+## Contributing
+
+[Contributing guidelines to be added]
+
 # unit tests
 $ npm run test
 
