@@ -64,11 +64,11 @@ optimized_for_llm: true
   ```typescript
   type Result<T, E> =
     | { ok: true; value: T }
-    | { ok: false; error: E };
+    | { ok: false; errors: E };
 
   // ✅ Correct
   function parse(tokens: Token[]): Result<Program, Diagnostic[]> {
-    if (error) return { ok: false, error: diagnostics };
+    if (error) return { ok: false, errors: diagnostics };
     return { ok: true, value: program };
   }
 
