@@ -43,7 +43,7 @@ development_status:
   epic-1: in-progress
   1-1-initialize-bun-monorepo-with-core-and-cli-packages: done
   1-2-common-utilities-result-type-pattern: done
-  1-3-common-utilities-diagnostic-system: backlog
+  1-3-common-utilities-diagnostic-system: done
   1-4-gherkin-bdd-testing-infrastructure: backlog
   1-5-development-tooling-setup: backlog
   epic-1-retrospective: optional
