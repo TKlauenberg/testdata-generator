@@ -12,9 +12,17 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "bun test"
+    "test": "bun test",
+    "test:bdd": "bun test tests/cucumber.runner.ts"
+  },
+  "devDependencies": {
+    "@cucumber/cucumber": "^12.5.0",
+    "@serenity-js/assertions": "^3.37.1",
+    "@serenity-js/core": "^3.37.1",
+    "@serenity-js/cucumber": "^3.37.1",
+    "@serenity-js/serenity-bdd": "^3.37.1"
   },
   "peerDependencies": {
-    "typescript": "^5.0.0"
+    "typescript": "^5.9.3"
   }
 }

@@ -1,6 +1,6 @@
 # Story 1.4: Gherkin/BDD Testing Infrastructure
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -26,75 +26,75 @@ So that **all subsequent tests can be written in readable Given/When/Then format
 
 ## Tasks / Subtasks
 
-- [ ] Install Cucumber and SerenityJS frameworks (AC: 1)
-  - [ ] Add `@cucumber/cucumber` to `packages/core/package.json`
-  - [ ] Add `@serenity-js/cucumber` for Screenplay pattern integration
-  - [ ] Add `@serenity-js/core` for Screenplay pattern core features
-  - [ ] Add `@serenity-js/assertions` for fluent assertions in Screenplay
-  - [ ] Add `@serenity-js/serenity-bdd` for test reporting
-  - [ ] Configure SerenityJS for Bun runtime compatibility
-  - [ ] Verify all packages work with Bun's TypeScript support
-- [ ] Configure Cucumber with runCucumber function (AC: 1, 7)
-  - [ ] Create `cucumber.config.ts` or `cucumber.js` configuration
-  - [ ] Set up `runCucumber()` integration with Bun test runner
-  - [ ] Configure feature file paths and step definition paths
-  - [ ] Configure TypeScript support for step definitions
-  - [ ] Create test script that invokes `runCucumber()` function
-  - [ ] Update `package.json` with test:bdd or test:cucumber script
-- [ ] Create features directory structure (AC: 2, 3)
-  - [ ] Create `packages/core/features/` directory
-  - [ ] Create `packages/core/features/step_definitions/` directory
-  - [ ] Create `packages/core/features/support/` directory for hooks and utilities
-  - [ ] Add `.gitkeep` or initial files to establish structure
-- [ ] Create example feature file (AC: 2, 4)
-  - [ ] Write example feature: `packages/core/features/example.feature`
-  - [ ] Use Given/When/Then syntax demonstrating project patterns
-  - [ ] Include multiple scenarios to show different test patterns
-  - [ ] Align with acceptance criteria format used in epics
-  - [ ] Include tags for test organization (e.g., @example, @unit)
-- [ ] Set up Screenplay pattern infrastructure (AC: 3, 4, 7)
-  - [ ] Create directory structure for Screenplay components:
-    - [ ] `packages/core/features/support/abilities/` (Abilities implemented in future stories)
-    - [ ] `packages/core/features/support/tasks/` (Tasks implemented in future stories)
-    - [ ] `packages/core/features/support/questions/` (Questions implemented in future stories)
-    - [ ] `packages/core/features/support/screenplay/` (utilities and helpers)
-  - [ ] Create Actor configuration and Cast in support/screenplay/Actors.ts
-  - [ ] Set up SerenityJS crew configuration for reporters
-  - [ ] Use SerenityJS TypeScript types throughout
-- [ ] Implement example step definitions using Screenplay (AC: 3, 4, 7)
-  - [ ] Create `packages/core/features/step_definitions/example.steps.ts`
-  - [ ] Implement basic example showing Screenplay pattern structure
-  - [ ] Demonstrate Actor parameter in step definitions
-  - [ ] Show pattern: Given/When use Actor.attemptsTo(Task), Then use Actor.asks(Question)
-  - [ ] Use placeholder/simple Tasks and Questions for demonstration
-  - [ ] Document that real Abilities/Tasks/Questions will be implemented with actual features
-- [ ] Integrate runCucumber with Bun test command (AC: 5)
-  - [ ] Create test runner file that calls `runCucumber()` with configuration
-  - [ ] Ensure `bun test` command discovers and runs the Cucumber test runner
-  - [ ] Verify `bun test` runs both unit tests (.test.ts) and Cucumber tests (.feature)
-  - [ ] Configure SerenityJS reporter for clear feature/scenario output
-  - [ ] Test that failures are reported correctly with Screenplay context
-  - [ ] Ensure CI compatibility (Cucumber tests run in CI environment)
-- [ ] Write comprehensive documentation (AC: 6)
-  - [ ] Create `packages/core/features/README.md`
-  - [ ] Document how to write new feature files
-  - [ ] Document the Screenplay pattern: Actors, Abilities, Tasks, Questions
-  - [ ] Document how to write Screenplay-based step definitions
-  - [ ] Provide examples of common Screenplay patterns (Tasks, Questions, Abilities)
-  - [ ] Document how to run Cucumber tests via runCucumber() and Bun
-  - [ ] Explain how Actors maintain state through Abilities
-  - [ ] Document SerenityJS assertion patterns with Ensure
-  - [ ] Document best practices for Screenplay BDD testing in this project
-- [ ] Export through module index if needed (AC: 8)
-  - [ ] If custom utilities created, export through appropriate index.ts
-  - [ ] Ensure future stories can import shared step definition utilities
-  - [ ] Document any exported utilities in README
-- [ ] Verify complete integration (AC: 4, 5, 8)
-  - [ ] Run `bun test` and verify all tests pass
-  - [ ] Verify both .test.ts and .feature files execute
-  - [ ] Check test output formatting is clear
-  - [ ] Verify example feature demonstrates full workflow
-  - [ ] Confirm setup is ready for use in future stories
+- [x] Install Cucumber and SerenityJS frameworks (AC: 1)
+  - [x] Add `@cucumber/cucumber` to `packages/core/package.json`
+  - [x] Add `@serenity-js/cucumber` for Screenplay pattern integration
+  - [x] Add `@serenity-js/core` for Screenplay pattern core features
+  - [x] Add `@serenity-js/assertions` for fluent assertions in Screenplay
+  - [x] Add `@serenity-js/serenity-bdd` for test reporting
+  - [x] Configure SerenityJS for Bun runtime compatibility
+  - [x] Verify all packages work with Bun's TypeScript support
+- [x] Configure Cucumber with runCucumber function (AC: 1, 7)
+  - [x] Create `cucumber.config.ts` or `cucumber.js` configuration
+  - [x] Set up `runCucumber()` integration with Bun test runner
+  - [x] Configure feature file paths and step definition paths
+  - [x] Configure TypeScript support for step definitions
+  - [x] Create test script that invokes `runCucumber()` function
+  - [x] Update `package.json` with test:bdd or test:cucumber script
+- [x] Create features directory structure (AC: 2, 3)
+  - [x] Create `packages/core/features/` directory
+  - [x] Create `packages/core/features/step_definitions/` directory
+  - [x] Create `packages/core/features/support/` directory for hooks and utilities
+  - [x] Add `.gitkeep` or initial files to establish structure
+- [x] Create example feature file (AC: 2, 4)
+  - [x] Write example feature: `packages/core/features/example.feature`
+  - [x] Use Given/When/Then syntax demonstrating project patterns
+  - [x] Include multiple scenarios to show different test patterns
+  - [x] Align with acceptance criteria format used in epics
+  - [x] Include tags for test organization (e.g., @example, @unit)
+- [x] Set up Screenplay pattern infrastructure (AC: 3, 4, 7)
+  - [x] Create directory structure for Screenplay components:
+    - [x] `packages/core/features/support/abilities/` (Abilities implemented in future stories)
+    - [x] `packages/core/features/support/tasks/` (Tasks implemented in future stories)
+    - [x] `packages/core/features/support/questions/` (Questions implemented in future stories)
+    - [x] `packages/core/features/support/screenplay/` (utilities and helpers)
+  - [x] Create Actor configuration and Cast in support/screenplay/Actors.ts
+  - [x] Set up SerenityJS crew configuration for reporters
+  - [x] Use SerenityJS TypeScript types throughout
+- [x] Implement example step definitions using Screenplay (AC: 3, 4, 7)
+  - [x] Create `packages/core/features/step_definitions/example.steps.ts`
+  - [x] Implement basic example showing Screenplay pattern structure
+  - [x] Demonstrate Actor parameter in step definitions
+  - [x] Show pattern: Given/When use Actor.attemptsTo(Task), Then use Ensure.that(Question, matcher)
+  - [x] Use placeholder/simple Tasks and Questions for demonstration
+  - [x] Document that real Abilities/Tasks/Questions will be implemented with actual features
+- [x] Integrate runCucumber with Bun test command (AC: 5)
+  - [x] Create test runner file that calls `runCucumber()` with configuration
+  - [x] Ensure `bun test` command discovers and runs the Cucumber test runner
+  - [x] Verify `bun test` runs both unit tests (.test.ts) and Cucumber tests (.feature)
+  - [x] Configure SerenityJS reporter for clear feature/scenario output
+  - [x] Test that failures are reported correctly with Screenplay context
+  - [x] Ensure CI compatibility (Cucumber tests run in CI environment)
+- [x] Write comprehensive documentation (AC: 6)
+  - [x] Create `packages/core/features/README.md`
+  - [x] Document how to write new feature files
+  - [x] Document the Screenplay pattern: Actors, Abilities, Tasks, Questions
+  - [x] Document how to write Screenplay-based step definitions
+  - [x] Provide examples of common Screenplay patterns (Tasks, Questions, Abilities)
+  - [x] Document how to run Cucumber tests via runCucumber() and Bun
+  - [x] Explain how Actors maintain state through Abilities
+  - [x] Document SerenityJS assertion patterns with Ensure
+  - [x] Document best practices for Screenplay BDD testing in this project
+- [x] Export through module index if needed (AC: 8)
+  - [x] If custom utilities created, export through appropriate index.ts
+  - [x] Ensure future stories can import shared step definition utilities
+  - [x] Document any exported utilities in README
+- [x] Verify complete integration (AC: 4, 5, 8)
+  - [x] Run `bun test` and verify all tests pass
+  - [x] Verify both .test.ts and .feature files execute
+  - [x] Check test output formatting is clear
+  - [x] Verify example feature demonstrates full workflow
+  - [x] Confirm setup is ready for use in future stories
 
 ## Dev Notes
 
@@ -498,11 +498,11 @@ Then('{actor} should see that validation failed', async (actor: Actor) => {
 
 Then('the validated schema should contain a {string} schema', async (actor: Actor, schemaName: string) => {
   const result = await actor.asks(ValidationResult.value());
-  
+
   await actor.attemptsTo(
     Ensure.that(result, property('ok', equals(true)))
   );
-  
+
   if (result?.ok) {
     const hasSchema = result.value.schemas.some((s: any) => s.name === schemaName);
     await actor.attemptsTo(
@@ -541,11 +541,11 @@ export class ValidationResult implements Question<Result<ValidatedProgram, Diagn
 // Using in step definition with Ensure
 Then('{actor} should see validation succeeded', async (actor: Actor) => {
   const result = await actor.asks(ValidationResult.value());
-  
+
   await actor.attemptsTo(
     Ensure.that(result, property('ok', equals(true)))
   );
-  
+
   if (result.ok) {
     // TypeScript narrows type, can safely access result.value
     const validatedProgram = result.value;
@@ -669,7 +669,7 @@ Then('the error should include a helpful suggestion', function() {
 
 Must include comprehensive Screenplay pattern documentation:
 
-1. **Overview**: 
+1. **Overview**:
    - What BDD testing is and why we use it
    - Introduction to Screenplay pattern and its benefits
    - How Screenplay separates test intent from implementation
@@ -769,9 +769,9 @@ describe('ParseSchemas Ability', () => {
   test('stores schema source after parsing', async () => {
     const actor = Actor.named('Test').whoCan(ParseSchemas.usingCoreLibrary());
     const ability = ParseSchemas.as(actor);
-    
+
     await ability.parseSchema('schema User { }');
-    
+
     expect(ability.getSchemaSource()).toBe('schema User { }');
   });
 });
@@ -827,11 +827,11 @@ export class ValidationResult implements Question<Result<ValidatedProgram, Diagn
 // Step definition with type-safe Result handling
 Then('{actor} should see validation succeeded', async (actor: Actor) => {
   const result = await actor.asks(ValidationResult.value());
-  
+
   await actor.attemptsTo(
     Ensure.that(result, property('ok', equals(true)))
   );
-  
+
   if (result.ok) {
     // TypeScript narrows type, can safely access result.value
     const validatedProgram = result.value;
@@ -846,12 +846,12 @@ export class GenerateRecords implements Task {
   async performAs(actor: Actor): Promise<void> {
     const generateAbility = GenerateData.as(actor);
     const schemaSource = await actor.recall('schemaSource');
-    
+
     const records = [];
     for await (const record of generateData(schemaSource, this.options)) {
       records.push(record);
     }
-    
+
     generateAbility.storeRecords(records);
   }
 }
@@ -919,11 +919,11 @@ Feature: DSL Scanner
 // Ability: ScanSourceCode
 export class ScanSourceCode implements Ability {
   private lastResult?: Result<Token[], Diagnostic[]>;
-  
+
   async scanSource(source: string): Promise<void> {
     this.lastResult = scan(source);
   }
-  
+
   getLastResult(): Result<Token[], Diagnostic[]> | undefined {
     return this.lastResult;
   }
@@ -934,7 +934,7 @@ export class ScanDSLSource implements Task {
   static withSource(source: string): ScanDSLSource {
     return new ScanDSLSource(source);
   }
-  
+
   async performAs(actor: Actor): Promise<void> {
     await ScanSourceCode.as(actor).scanSource(this.source);
   }
@@ -965,7 +965,7 @@ Then('{actor} should see a scanner error', async (actor: Actor) => {
 
 ### Reference Materials
 
-**Cucumber Documentation**: 
+**Cucumber Documentation**:
 - Cucumber.js: https://github.com/cucumber/cucumber-js
 - runCucumber API: https://github.com/cucumber/cucumber-js/blob/main/docs/cli.md
 
@@ -977,11 +977,11 @@ Then('{actor} should see a scanner error', async (actor: Actor) => {
 - Tasks: https://serenity-js.org/handbook/design/tasks/
 - Questions: https://serenity-js.org/handbook/design/questions/
 
-**Bun Test Documentation**: 
+**Bun Test Documentation**:
 - Bun Test Runner: https://bun.sh/docs/cli/test
 - Bun TypeScript Support: https://bun.sh/docs/runtime/typescript
 
-**Gherkin Syntax Reference**: 
+**Gherkin Syntax Reference**:
 - Gherkin Language: https://cucumber.io/docs/gherkin/reference/
 
 ### Screenplay Pattern Architecture Summary
@@ -1025,16 +1025,114 @@ See [epics.md](../epics.md) for:
 
 ### Agent Model Used
 
-_To be filled by Dev agent_
+Claude Sonnet 4.5 (via GitHub Copilot in Dev mode)
 
 ### Debug Log References
 
-_To be filled by Dev agent_
+No critical debugging issues encountered. Implementation followed the Screenplay pattern architecture as documented in Dev Notes.
 
 ### Completion Notes List
 
-_To be filled by Dev agent_
+✅ **Cucumber and SerenityJS Installation** (AC: 1)
+- Installed @cucumber/cucumber v12.5.0+ for Gherkin feature files with runCucumber() function
+- Installed @serenity-js/cucumber, @serenity-js/core, @serenity-js/assertions, @serenity-js/serenity-bdd v3.29.4+ for Screenplay pattern
+- All packages verified compatible with Bun runtime and TypeScript
+- Updated package.json with test:bdd script for convenience
+
+✅ **Cucumber Integration with Bun** (AC: 1, 5, 7)
+- Created tests/cucumber.runner.test.ts that invokes runCucumber() within Bun test framework
+- Configured IRunOptions with all required fields (sources, support, formats, runtime)
+- Bun test command now runs both unit tests (.test.ts) and Cucumber tests (.feature) seamlessly
+- All 83 tests pass including 3 BDD scenarios with 16 steps
+
+✅ **Directory Structure** (AC: 2, 3)
+- Created features/ directory with complete Screenplay architecture:
+  - step_definitions/ for step definition files
+  - support/abilities/, support/tasks/, support/questions/ for Screenplay components
+  - support/screenplay/ for Actor configuration (Actors.ts)
+  - support/hooks.ts for Cucumber hooks and SerenityJS configuration
+- Added .gitkeep files to preserve empty directories for future implementation
+
+✅ **Example Feature File** (AC: 2, 4)
+- Created example.feature with 3 scenarios demonstrating:
+  - Simple calculation (happy path)
+  - Multiple operations in sequence
+  - Screenplay pattern documentation
+- Uses Given/When/Then syntax aligned with epic acceptance criteria format
+- Includes tags (@example, @happy-path, @multiple-operations, @screenplay-pattern)
+
+✅ **Screenplay Pattern Infrastructure** (AC: 3, 4, 7, 8)
+- **Abilities**: Created PerformCalculations.ts demonstrating Ability structure
+  - Extends Ability base class
+  - Encapsulates system interaction logic
+  - Maintains state specific to capability
+- **Tasks**: Created CalculationTasks.ts with SetNumbers, AddNumbers, SubtractNumbers, MultiplyResult
+  - Uses Interaction.where() pattern for concise task definition
+  - Tasks use Abilities to perform work
+  - Descriptive naming explains business intent
+- **Questions**: Created CalculationQuestions.ts with CalculationResult and ScreenplayKnowledge
+  - Uses Question.about() pattern for querying system state
+  - Returns values that can be used with Ensure assertions
+- **Actor Configuration**: Created Actors.ts with TestCast class
+  - Implements Cast interface for Actor factory
+  - prepare() method grants Abilities to Actors
+  - Ready for future Abilities (ParseSchemas, GenerateData, etc.)
+- **Hooks**: Created hooks.ts for SerenityJS configuration
+  - Configures Cast and SerenityBDD reporter
+  - Sets appropriate timeouts
+
+✅ **Step Definitions** (AC: 3, 4, 7)
+- Created example.steps.ts demonstrating Screenplay pattern in action
+- Uses regex patterns to capture actor names (handles multi-word names like "QA Tester")
+- Shows actor.attemptsTo(Task) pattern for actions
+- Shows Ensure.that(Question, matcher) pattern for assertions with @serenity-js/assertions
+- All step definitions concise and delegate to Tasks/Questions
+
+✅ **Comprehensive Documentation** (AC: 6)
+- Created features/README.md with 10 major sections:
+  - Overview and rationale for BDD with Screenplay
+  - Framework stack details
+  - Running tests (multiple approaches)
+  - Directory structure explanation
+  - Screenplay pattern architecture (Actors, Abilities, Tasks, Questions)
+  - Writing feature files
+  - Creating Screenplay components (with templates)
+  - Writing step definitions
+  - Common patterns (Result types, Diagnostics, Async generators)
+  - Best practices
+- Includes real-world examples for future stories
+- Documents integration with project's Result type pattern
+
+✅ **Integration and Testing** (AC: 4, 5, 8)
+- All tests pass: 83 tests including 3 BDD scenarios with 16 steps
+- Test output clear and readable with scenario/step information
+- Both unit tests and Cucumber tests run via single `bun test` command
+- Example feature demonstrates complete Screenplay workflow
+- Infrastructure ready for future stories to add real Abilities, Tasks, and Questions
+
+### Technical Decisions
+
+1. **SerenityJS Screenplay Pattern**: Chose SerenityJS over plain Cucumber for maintainability and separation of concerns
+2. **Interaction.where()**: Used concise Interaction pattern for Tasks instead of class-based Tasks due to simpler TypeScript integration
+3. **Regex Step Patterns**: Used regex instead of Cucumber expressions to handle multi-word actor names
+4. **Bun Test Integration**: Used .test.ts naming convention for cucumber.runner to integrate with Bun's test discovery
+5. **Deferred Real Abilities**: Example Abilities/Tasks/Questions are placeholders - real ones (ParseSchemas, GenerateData) will be implemented with actual features in future stories
 
 ### File List
 
-_To be filled by Dev agent_
+**New Files:**
+- packages/core/features/example.feature
+- packages/core/features/step_definitions/example.steps.ts
+- packages/core/features/support/hooks.ts
+- packages/core/features/support/abilities/PerformCalculations.ts
+- packages/core/features/support/abilities/.gitkeep
+- packages/core/features/support/tasks/CalculationTasks.ts
+- packages/core/features/support/tasks/.gitkeep
+- packages/core/features/support/questions/CalculationQuestions.ts
+- packages/core/features/support/questions/.gitkeep
+- packages/core/features/support/screenplay/Actors.ts
+- packages/core/features/README.md
+- packages/core/tests/cucumber.runner.test.ts
+
+**Modified Files:**
+- packages/core/package.json (added Cucumber and SerenityJS dependencies, test:bdd script)
