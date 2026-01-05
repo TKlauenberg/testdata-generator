@@ -188,7 +188,26 @@ optimized_for_llm: true
 
 ## Testing Rules
 
+### Test Strategy Overview
+
+This project uses a **dual testing approach** combining unit tests and BDD tests:
+
+1. **Unit Tests** (`*.test.ts`): Fast, focused tests for individual functions and edge cases
+2. **BDD Tests** (`features/*.feature`): Behavior-driven tests using Cucumber with SerenityJS Screenplay pattern
+
+**Framework Stack:**
+- **Bun Test Runner**: Native test runner for unit tests
+- **Cucumber**: Standard Gherkin feature files with `runCucumber()` integration
+- **SerenityJS**: Screenplay pattern implementation (Actors, Abilities, Tasks, Questions)
+- **Packages**: `@cucumber/cucumber`, `@serenity-js/cucumber`, `@serenity-js/core`, `@serenity-js/assertions`, `@serenity-js/serenity-bdd`
+
+**When to Use Each:**
+- **Unit tests**: Test individual functions, edge cases, error handling, type safety
+- **BDD tests**: Test end-to-end behavior, user workflows, integration between components
+
 ### Test Organization
+
+#### Unit Tests
 - **Co-located tests** - `*.test.ts` files next to implementation
   ```
   ✅ packages/core/src/scanner/scanner.ts
@@ -198,7 +217,25 @@ optimized_for_llm: true
   ❌ packages/core/tests/scanner.test.ts
   ```
 
+#### BDD Tests
+- **Separate features directory** - Cucumber tests with Screenplay pattern
+  ```
+  ✅ packages/core/features/scanner.feature
+  ✅ packages/core/features/step_definitions/scanner.steps.ts
+  ✅ packages/core/features/support/abilities/ScanSourceCode.ts
+  ✅ packages/core/features/support/tasks/ScanDSLSource.ts
+  ✅ packages/core/features/support/questions/ScanResult.ts
+  ```
+
+#### Screenplay Pattern Structure
+- **Abilities** (`features/support/abilities/`): What Actors can do (e.g., ParseSchemas, GenerateData)
+- **Tasks** (`features/support/tasks/`): High-level business actions (e.g., ValidateSchema)
+- **Questions** (`features/support/questions/`): Query system state (e.g., ValidationResult)
+- **Step Definitions** (`features/step_definitions/`): Thin layer using `actor.attemptsTo(Task)` and `actor.asks(Question)`
+
 ### Test Structure
+
+#### Unit Tests with Bun
 - **Use Bun's built-in test runner**
   ```typescript
   import { describe, test, expect } from 'bun:test';
@@ -216,16 +253,44 @@ optimized_for_llm: true
 - **Test Result types properly** - check `.ok` before accessing `.value`
 - **Use descriptive test names** - what behavior is being tested
 
+#### BDD Tests with Screenplay Pattern
+- **Feature files** use Gherkin syntax with Actor parameters
+  ```gherkin
+  Scenario: Scanner detects unterminated string
+    Given QA Tester has DSL source code with an unterminated string
+    When QA Tester scans the source code
+    Then QA Tester should see a scanner error
+  ```
+  
+- **Step definitions** use Screenplay pattern
+  ```typescript
+  When('{actor} scans the source code', async (actor: Actor) => {
+    const source = await actor.recall('sourceCode');
+    await actor.attemptsTo(
+      ScanDSLSource.withSource(source)
+    );
+  });
+  
+  Then('{actor} should see a scanner error', async (actor: Actor) => {
+    const result = await actor.asks(ScanResult.value());
+    await actor.attemptsTo(
+      Ensure.that(result, property('ok', equals(false)))
+    );
+  });
+  ```
+
 ### Test Coverage
-- **Every public function needs tests**
+- **Every public function needs unit tests**
+- **Every user-facing behavior needs BDD tests**
 - **Test error cases** - verify Result returns `{ ok: false }`
 - **Test edge cases** - empty input, boundary conditions, etc.
 
 ### Running Tests
 - **Use Bun commands:**
   ```bash
-  bun test                    # Run all tests
-  bun test scanner           # Test specific module
+  bun test                    # Run all tests (unit + BDD)
+  bun test scanner           # Test specific module (unit tests)
+  bun test cucumber.runner   # Run only Cucumber/BDD tests
   bun test --coverage        # With coverage report
   ```
 
@@ -350,7 +415,8 @@ Before submitting code, verify:
 - [ ] All private members use `private _name`
 - [ ] Errors use Result<T,E>, not exceptions
 - [ ] AST nodes are immutable (readonly)
-- [ ] Tests are co-located (*.test.ts)
+- [ ] Unit tests are co-located (*.test.ts)
+- [ ] BDD tests use Screenplay pattern (Abilities, Tasks, Questions)
 - [ ] Exports go through index.ts
 - [ ] Using Bun commands, not npm/node
 - [ ] TypeScript strict mode enabled
@@ -365,6 +431,7 @@ Before submitting code, verify:
 - Follow ALL rules exactly as documented
 - When in doubt, prefer the more restrictive option
 - Refer to the architecture document (docs/architecture.md) for detailed design decisions
+- Use dual testing approach: unit tests (.test.ts) + BDD tests (features/*.feature with Screenplay)
 
 **For Humans:**
 - Keep this file lean and focused on agent needs
@@ -372,9 +439,4 @@ Before submitting code, verify:
 - Review quarterly for outdated rules
 - Remove rules that become obvious over time
 
-**Last Updated:** 2025-12-21
-- [ ] Tests are co-located (*.test.ts)
-- [ ] Exports go through index.ts
-- [ ] Using Bun commands, not npm/node
-- [ ] TypeScript strict mode enabled
-- [ ] No Faker.js dependency
+**Last Updated:** 2026-01-05
