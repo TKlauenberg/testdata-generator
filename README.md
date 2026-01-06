@@ -119,11 +119,22 @@ bun run format
 bun run format:check
 ```
 
+#### File Naming Convention
+
+All TypeScript files must follow **camelCase** naming convention (e.g., `scanner.ts`, not `Scanner.ts`). To validate:
+
+```bash
+# Validate all file names follow camelCase convention
+bun run validate:file-naming
+```
+
+**Note:** Screenplay pattern files (Abilities, Tasks, Questions) in `features/support` directories are allowed to use PascalCase as per SerenityJS conventions.
+
 #### Running All Checks
 
 ```bash
-# Run linting, formatting, and tests
-bun run lint && bun run format:check && bun test
+# Run linting, formatting, file naming validation, and tests
+bun run lint && bun run format:check && bun run validate:file-naming && bun test
 ```
 
 #### Editor Setup
@@ -153,6 +164,8 @@ To ensure your changes pass CI, run all checks locally before pushing:
 ```bash
 bun run lint && bun run format:check && bun test
 ```
+
+**Note:** File naming validation (`validate:file-naming`) is not run in CI but is recommended during development.
 
 ### Project Structure
 

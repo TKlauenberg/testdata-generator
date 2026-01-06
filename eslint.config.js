@@ -15,6 +15,9 @@ export default tseslint.config(
       'eslint.config.js',
       '*.config.js',
       '*.config.ts',
+      'scripts/**', // Allow scripts to use console.log
+      '**/*.js', // Ignore all compiled JS files
+      '**/*.d.ts', // Ignore all type declaration files
     ],
   },
   // Base JavaScript recommended rules

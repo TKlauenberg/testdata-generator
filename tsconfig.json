@@ -10,7 +10,11 @@
     "declarationMap": true,
     "sourceMap": true,
     "outDir": "./dist",
-    "rootDir": "./src"
+    "rootDir": "./src",
+    "paths": {
+      "@testdata-ai/core": ["./packages/core/src/index.ts"]
+    },
+    "baseUrl": "."
   },
   "exclude": ["node_modules", "dist"]
 }
