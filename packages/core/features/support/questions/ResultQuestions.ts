@@ -1,8 +1,4 @@
-import {
-  Question,
-  type AnswersQuestions,
-  type UsesAbilities,
-} from '@serenity-js/core';
+import { Question, type AnswersQuestions, type UsesAbilities } from '@serenity-js/core';
 import { WorkWithResults } from '../abilities/WorkWithResults';
 import type { Result } from '../../../src/common/result';
 import type { Diagnostic } from '../../../src/common/diagnostic';
@@ -31,27 +27,21 @@ export const OperationResult = {
    * Check if operation succeeded
    */
   succeeded: () =>
-    Question.about<boolean>(
-      'operation succeeded',
-      (actor: AnswersQuestions & UsesAbilities) => {
-        const results = WorkWithResults.as(actor);
-        const result = results.getLastResult();
-        return result?.ok === true;
-      },
-    ),
+    Question.about<boolean>('operation succeeded', (actor: AnswersQuestions & UsesAbilities) => {
+      const results = WorkWithResults.as(actor);
+      const result = results.getLastResult();
+      return result?.ok === true;
+    }),
 
   /**
    * Check if operation failed
    */
   failed: () =>
-    Question.about<boolean>(
-      'operation failed',
-      (actor: AnswersQuestions & UsesAbilities) => {
-        const results = WorkWithResults.as(actor);
-        const result = results.getLastResult();
-        return result?.ok === false;
-      },
-    ),
+    Question.about<boolean>('operation failed', (actor: AnswersQuestions & UsesAbilities) => {
+      const results = WorkWithResults.as(actor);
+      const result = results.getLastResult();
+      return result?.ok === false;
+    }),
 
   /**
    * Get the success value (only valid if succeeded)
@@ -83,15 +73,12 @@ export const OperationResult = {
    * Get the first error message (common pattern for assertions)
    */
   firstErrorMessage: () =>
-    Question.about<string>(
-      'the first error message',
-      (actor: AnswersQuestions & UsesAbilities) => {
-        const results = WorkWithResults.as(actor);
-        const result = results.getLastResult();
-        if (result && !result.ok && result.errors.length > 0) {
-          return result.errors[0].message;
-        }
-        return '';
-      },
-    ),
+    Question.about<string>('the first error message', (actor: AnswersQuestions & UsesAbilities) => {
+      const results = WorkWithResults.as(actor);
+      const result = results.getLastResult();
+      if (result && !result.ok && result.errors.length > 0) {
+        return result.errors[0].message;
+      }
+      return '';
+    }),
 };

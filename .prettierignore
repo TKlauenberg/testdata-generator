@@ -1,0 +1,24 @@
+# Dependencies
+node_modules
+
+# Build outputs
+dist
+build
+coverage
+
+# Minified files
+*.min.js
+*.min.css
+
+# Package lock files
+package-lock.json
+yarn.lock
+bun.lockb
+
+# Environment files
+.env
+.env.local
+
+# IDE
+.vscode
+.idea

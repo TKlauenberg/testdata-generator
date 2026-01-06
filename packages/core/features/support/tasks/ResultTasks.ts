@@ -15,24 +15,18 @@ export const PerformOperation = {
    * Usage: actor.attemptsTo(PerformOperation.thatSucceeds('parsed data'))
    */
   thatSucceeds: (value: string) =>
-    Interaction.where(
-      `#actor performs an operation that succeeds`,
-      (actor: UsesAbilities) => {
-        const results = WorkWithResults.as(actor);
-        results.performSuccessfulOperation(value);
-      },
-    ),
+    Interaction.where(`#actor performs an operation that succeeds`, (actor: UsesAbilities) => {
+      const results = WorkWithResults.as(actor);
+      results.performSuccessfulOperation(value);
+    }),
 
   /**
    * Perform an operation that fails with diagnostics
    * Usage: actor.attemptsTo(PerformOperation.thatFails(diagnostics))
    */
   thatFails: (diagnostics: Diagnostic[]) =>
-    Interaction.where(
-      `#actor performs an operation that fails`,
-      (actor: UsesAbilities) => {
-        const results = WorkWithResults.as(actor);
-        results.performFailedOperation(diagnostics);
-      },
-    ),
+    Interaction.where(`#actor performs an operation that fails`, (actor: UsesAbilities) => {
+      const results = WorkWithResults.as(actor);
+      results.performFailedOperation(diagnostics);
+    }),
 };

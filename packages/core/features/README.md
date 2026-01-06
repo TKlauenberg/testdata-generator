@@ -125,6 +125,7 @@ prepare(actor: Actor): Actor {
 ```
 
 **Real examples** (for future stories):
+
 - `ParseSchemas.usingCoreLibrary()` - Parse DSL schemas
 - `GenerateData.usingCoreLibrary()` - Generate test data
 - `ValidateSchemas.usingCoreLibrary()` - Validate schema correctness
@@ -137,23 +138,23 @@ prepare(actor: Actor): Actor {
 // Example: SetNumbers Task
 export const SetNumbers = {
   to: (first: number, second: number) =>
-    Interaction.where(`#actor sets numbers to ${first} and ${second}`,
-      (actor: UsesAbilities) => {
-        const calculations = PerformCalculations.as(actor);
-        calculations.setNumbers(first, second);
-      }
-    ),
+    Interaction.where(`#actor sets numbers to ${first} and ${second}`, (actor: UsesAbilities) => {
+      const calculations = PerformCalculations.as(actor);
+      calculations.setNumbers(first, second);
+    }),
 };
 
 // Usage in step definition
-When('{word} sets numbers to {int} and {int}', async (actorName: string, first: number, second: number) => {
-  await actorCalled(actorName).attemptsTo(
-    SetNumbers.to(first, second)
-  );
-});
+When(
+  '{word} sets numbers to {int} and {int}',
+  async (actorName: string, first: number, second: number) => {
+    await actorCalled(actorName).attemptsTo(SetNumbers.to(first, second));
+  },
+);
 ```
 
 **Real examples** (for future stories):
+
 - `ValidateSchema.withSource(source)` - Validate a schema
 - `GenerateRecords.fromSchema(schema).withCount(100)` - Generate 100 records
 - `SaveContext.toFile(filename)` - Save context to file
@@ -174,13 +175,12 @@ export const CalculationResult = {
 
 // Usage in step definition with Ensure
 Then('{word} should see the result is {int}', async (actorName: string, expected: number) => {
-  await actorCalled(actorName).attemptsTo(
-    Ensure.that(CalculationResult.value(), equals(expected))
-  );
+  await actorCalled(actorName).attemptsTo(Ensure.that(CalculationResult.value(), equals(expected)));
 });
 ```
 
 **Real examples** (for future stories):
+
 - `ValidationResult.value()` → `Result<ValidatedProgram, Diagnostic[]>`
 - `GeneratedRecords.count()` → `number`
 - `ErrorMessage.text()` → `string`
@@ -290,7 +290,12 @@ Tags help organize and filter scenarios:
 
 ```typescript
 import { Ability, type AnswersQuestions, type UsesAbilities } from '@serenity-js/core';
-import { validateSchema, type Result, type ValidatedProgram, type Diagnostic } from '../../../src/index';
+import {
+  validateSchema,
+  type Result,
+  type ValidatedProgram,
+  type Diagnostic,
+} from '../../../src/index';
 
 export class ParseSchemas extends Ability {
   private _lastResult?: Result<ValidatedProgram, Diagnostic[]>;
@@ -336,12 +341,10 @@ import { ParseSchemas } from '../abilities/ParseSchemas';
 
 export const ValidateSchema = {
   withSource: (source: string) =>
-    Interaction.where(`#actor validates a DSL schema`,
-      async (actor: UsesAbilities) => {
-        const parseAbility = ParseSchemas.as(actor);
-        await parseAbility.parseSchema(source);
-      }
-    ),
+    Interaction.where(`#actor validates a DSL schema`, async (actor: UsesAbilities) => {
+      const parseAbility = ParseSchemas.as(actor);
+      await parseAbility.parseSchema(source);
+    }),
 };
 ```
 
@@ -361,7 +364,7 @@ export const ValidationResult = {
       (actor: AnswersQuestions & UsesAbilities) => {
         const parseAbility = ParseSchemas.as(actor);
         return parseAbility.getLastResult();
-      }
+      },
     ),
 };
 
@@ -391,9 +394,7 @@ import { ValidationResult } from '../support/questions/ValidationQuestions';
 // Given - Set up context
 Given('{word} has a valid DSL schema:', async (actorName: string, schemaSource: string) => {
   // Store schema for later use
-  await actorCalled(actorName).attemptsTo(
-    Note.that('schemaSource', schemaSource)
-  );
+  await actorCalled(actorName).attemptsTo(Note.that('schemaSource', schemaSource));
 });
 
 // When - Perform action
@@ -401,15 +402,13 @@ When('{word} validates the schema', async (actorName: string) => {
   const actor = actorCalled(actorName);
   const schemaSource = await actor.recall('schemaSource');
 
-  await actor.attemptsTo(
-    ValidateSchema.withSource(schemaSource)
-  );
+  await actor.attemptsTo(ValidateSchema.withSource(schemaSource));
 });
 
 // Then - Assert outcome
 Then('{word} should see validation succeeded', async (actorName: string) => {
   await actorCalled(actorName).attemptsTo(
-    Ensure.that(ValidationResult.value(), property('ok', equals(true)))
+    Ensure.that(ValidationResult.value(), property('ok', equals(true))),
   );
 });
 ```
@@ -439,9 +438,7 @@ Use `Note` to store information for later use:
 import { Note } from '@serenity-js/core';
 
 // Store
-await actor.attemptsTo(
-  Note.that('schemaSource', 'schema User { ... }')
-);
+await actor.attemptsTo(Note.that('schemaSource', 'schema User { ... }'));
 
 // Recall
 const schemaSource = await actor.recall('schemaSource');
@@ -507,12 +504,10 @@ export class ParseSchemas extends Ability {
 ```typescript
 export const ValidationResult = {
   succeeded: () =>
-    Question.about<boolean>('validation succeeded',
-      (actor: AnswersQuestions & UsesAbilities) => {
-        const result = ParseSchemas.as(actor).getLastResult();
-        return result?.ok === true;
-      }
-    ),
+    Question.about<boolean>('validation succeeded', (actor: AnswersQuestions & UsesAbilities) => {
+      const result = ParseSchemas.as(actor).getLastResult();
+      return result?.ok === true;
+    }),
 };
 ```
 
@@ -540,25 +535,24 @@ When operations fail, they return `Diagnostic[]` with location information:
 ```typescript
 export const DiagnosticErrors = {
   firstMessage: () =>
-    Question.about<string>('the first error message',
-      (actor: AnswersQuestions & UsesAbilities) => {
-        const result = ParseSchemas.as(actor).getLastResult();
-        if (result && !result.ok && result.errors.length > 0) {
-          return result.errors[0].message;
-        }
-        return '';
+    Question.about<string>('the first error message', (actor: AnswersQuestions & UsesAbilities) => {
+      const result = ParseSchemas.as(actor).getLastResult();
+      if (result && !result.ok && result.errors.length > 0) {
+        return result.errors[0].message;
       }
-    ),
+      return '';
+    }),
 
   lineNumber: () =>
-    Question.about<number | undefined>('the error line number',
+    Question.about<number | undefined>(
+      'the error line number',
       (actor: AnswersQuestions & UsesAbilities) => {
         const result = ParseSchemas.as(actor).getLastResult();
         if (result && !result.ok && result.errors.length > 0) {
           return result.errors[0].location?.line;
         }
         return undefined;
-      }
+      },
     ),
 };
 ```
@@ -573,28 +567,22 @@ export const ValidationResult = {
       'the validation result',
       (actor: AnswersQuestions & UsesAbilities) => {
         return ParseSchemas.as(actor).getLastResult();
-      }
+      },
     ),
 };
 
 // Assert success
-await actor.attemptsTo(
-  Ensure.that(ValidationResult.value(), property('ok', equals(true)))
-);
+await actor.attemptsTo(Ensure.that(ValidationResult.value(), property('ok', equals(true))));
 
 // Assert failure
-await actor.attemptsTo(
-  Ensure.that(ValidationResult.value(), property('ok', equals(false)))
-);
+await actor.attemptsTo(Ensure.that(ValidationResult.value(), property('ok', equals(false))));
 
 // Access value when ok
 Then('{word} should see a valid schema', async (actorName: string) => {
   const actor = actorCalled(actorName);
   const result = await ValidationResult.value().answeredBy(actor);
 
-  await actor.attemptsTo(
-    Ensure.that(result, property('ok', equals(true)))
-  );
+  await actor.attemptsTo(Ensure.that(result, property('ok', equals(true))));
 
   if (result.ok) {
     // TypeScript narrows type, can safely access result.value
@@ -618,18 +606,24 @@ export const DiagnosticErrors = {
 
 export const FirstErrorMessage = {
   text: () =>
-    Question.about<string>('first error message', async (actor: AnswersQuestions & UsesAbilities) => {
-      const errors = await DiagnosticErrors.list().answeredBy(actor);
-      return errors[0]?.message || '';
-    }),
+    Question.about<string>(
+      'first error message',
+      async (actor: AnswersQuestions & UsesAbilities) => {
+        const errors = await DiagnosticErrors.list().answeredBy(actor);
+        return errors[0]?.message || '';
+      },
+    ),
 };
 
 // Usage
-Then('the error message should mention {string}', async (actorName: string, expectedText: string) => {
-  await actorCalled(actorName).attemptsTo(
-    Ensure.that(FirstErrorMessage.text(), contains(expectedText))
-  );
-});
+Then(
+  'the error message should mention {string}',
+  async (actorName: string, expectedText: string) => {
+    await actorCalled(actorName).attemptsTo(
+      Ensure.that(FirstErrorMessage.text(), contains(expectedText)),
+    );
+  },
+);
 ```
 
 ### Testing Async Generators
@@ -638,19 +632,17 @@ Then('the error message should mention {string}', async (actorName: string, expe
 // Task that consumes AsyncIterable
 export const GenerateRecords = {
   fromSource: (source: string, count: number) =>
-    Interaction.where(`#actor generates ${count} records`,
-      async (actor: UsesAbilities) => {
-        const generateAbility = GenerateData.as(actor);
-        const records = [];
+    Interaction.where(`#actor generates ${count} records`, async (actor: UsesAbilities) => {
+      const generateAbility = GenerateData.as(actor);
+      const records = [];
 
-        for await (const record of generateData(source)) {
-          records.push(record);
-          if (records.length >= count) break;
-        }
-
-        generateAbility.storeRecords(records);
+      for await (const record of generateData(source)) {
+        records.push(record);
+        if (records.length >= count) break;
       }
-    ),
+
+      generateAbility.storeRecords(records);
+    }),
 };
 ```
 
@@ -691,10 +683,11 @@ setDefaultTimeout(Duration.ofSeconds(10).inMilliseconds());
 
 Before({ tags: 'not @ignore' }, function () {
   configure({
-    actors: new TestCast(),  // Actor factory with Abilities
+    actors: new TestCast(), // Actor factory with Abilities
     crew: [
-      ConsoleReporter.forDarkTerminals(),    // Terminal output
-      SerenityBDDReporter.fromJSON({         // HTML reports
+      ConsoleReporter.forDarkTerminals(), // Terminal output
+      SerenityBDDReporter.fromJSON({
+        // HTML reports
         specDirectory: './features',
       }),
     ],
@@ -732,9 +725,9 @@ In cucumber.runner.test.ts:
 ```typescript
 const options: IRunOptions = {
   runtime: {
-    retry: 1,  // Retry failed scenarios once
-    retryTagFilter: '@flaky',  // Only retry scenarios tagged @flaky
-    failFast: false,  // Continue after first failure
+    retry: 1, // Retry failed scenarios once
+    retryTagFilter: '@flaky', // Only retry scenarios tagged @flaky
+    failFast: false, // Continue after first failure
   },
   // ...
 };
@@ -748,9 +741,10 @@ Before(function () {
 
   configure({
     actors: new TestCast(),
-    crew: env === 'ci'
-      ? [SerenityBDDReporter.fromJSON({})]  // CI: Only HTML reports
-      : [ConsoleReporter.forDarkTerminals(), SerenityBDDReporter.fromJSON({})],  // Local: Both
+    crew:
+      env === 'ci'
+        ? [SerenityBDDReporter.fromJSON({})] // CI: Only HTML reports
+        : [ConsoleReporter.forDarkTerminals(), SerenityBDDReporter.fromJSON({})], // Local: Both
   });
 });
 ```
@@ -787,24 +781,16 @@ SerenityJS provides fluent assertions via `Ensure`:
 import { Ensure, equals, contains, property, isGreaterThan } from '@serenity-js/assertions';
 
 // Basic equality
-await actor.attemptsTo(
-  Ensure.that(CalculationResult.value(), equals(5))
-);
+await actor.attemptsTo(Ensure.that(CalculationResult.value(), equals(5)));
 
 // Property check
-await actor.attemptsTo(
-  Ensure.that(ValidationResult.value(), property('ok', equals(true)))
-);
+await actor.attemptsTo(Ensure.that(ValidationResult.value(), property('ok', equals(true))));
 
 // String contains
-await actor.attemptsTo(
-  Ensure.that(ErrorMessage.text(), contains('expected'))
-);
+await actor.attemptsTo(Ensure.that(ErrorMessage.text(), contains('expected')));
 
 // Number comparison
-await actor.attemptsTo(
-  Ensure.that(RecordCount.value(), isGreaterThan(0))
-);
+await actor.attemptsTo(Ensure.that(RecordCount.value(), isGreaterThan(0)));
 ```
 
 ## Examples
@@ -832,23 +818,19 @@ Scenario: Valid schema validation
 
 ```typescript
 Given('{word} has a DSL schema:', async (actorName: string, schemaSource: string) => {
-  await actorCalled(actorName).attemptsTo(
-    Note.that('schemaSource', schemaSource)
-  );
+  await actorCalled(actorName).attemptsTo(Note.that('schemaSource', schemaSource));
 });
 
 When('{word} validates the schema', async (actorName: string) => {
   const actor = actorCalled(actorName);
   const source = await actor.recall('schemaSource');
 
-  await actor.attemptsTo(
-    ValidateSchema.withSource(source)
-  );
+  await actor.attemptsTo(ValidateSchema.withSource(source));
 });
 
 Then('{word} should see validation succeeded', async (actorName: string) => {
   await actorCalled(actorName).attemptsTo(
-    Ensure.that(ValidationResult.value(), property('ok', equals(true)))
+    Ensure.that(ValidationResult.value(), property('ok', equals(true))),
   );
 });
 
@@ -856,15 +838,11 @@ Then('the schema should contain a {string} type', async (actorName: string, type
   const actor = actorCalled(actorName);
   const result = await ValidationResult.value().answeredBy(actor);
 
-  await actor.attemptsTo(
-    Ensure.that(result, property('ok', equals(true)))
-  );
+  await actor.attemptsTo(Ensure.that(result, property('ok', equals(true))));
 
   if (result.ok) {
     const hasType = result.value.schemas.some((s: any) => s.name === typeName);
-    await actor.attemptsTo(
-      Ensure.that(hasType, equals(true))
-    );
+    await actor.attemptsTo(Ensure.that(hasType, equals(true)));
   }
 });
 ```

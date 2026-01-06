@@ -7,7 +7,7 @@ const program = new Command();
 program
   .name('td')
   .description('testdata-ai - Declarative test data generation')
-  .version(version);
+  .version(version as string);
 
 // Future commands will be added here in subsequent stories
 

@@ -20,13 +20,10 @@ export const SetNumbers = {
    * Usage: actor.attemptsTo(SetNumbers.to(2, 3))
    */
   to: (first: number, second: number) =>
-    Interaction.where(
-      `#actor sets numbers to ${first} and ${second}`,
-      (actor: UsesAbilities) => {
-        const calculations = PerformCalculations.as(actor);
-        calculations.setNumbers(first, second);
-      },
-    ),
+    Interaction.where(`#actor sets numbers to ${first} and ${second}`, (actor: UsesAbilities) => {
+      const calculations = PerformCalculations.as(actor);
+      calculations.setNumbers(first, second);
+    }),
 };
 
 /**
@@ -34,13 +31,10 @@ export const SetNumbers = {
  */
 export const AddNumbers = {
   together: () =>
-    Interaction.where(
-      '#actor adds the numbers together',
-      (actor: UsesAbilities) => {
-        const calculations = PerformCalculations.as(actor);
-        calculations.add();
-      },
-    ),
+    Interaction.where('#actor adds the numbers together', (actor: UsesAbilities) => {
+      const calculations = PerformCalculations.as(actor);
+      calculations.add();
+    }),
 };
 
 /**
@@ -62,11 +56,8 @@ export const SubtractNumbers = {
  */
 export const MultiplyResult = {
   by: (multiplier: number) =>
-    Interaction.where(
-      `#actor multiplies the result by ${multiplier}`,
-      (actor: UsesAbilities) => {
-        const calculations = PerformCalculations.as(actor);
-        calculations.multiplyBy(multiplier);
-      },
-    ),
+    Interaction.where(`#actor multiplies the result by ${multiplier}`, (actor: UsesAbilities) => {
+      const calculations = PerformCalculations.as(actor);
+      calculations.multiplyBy(multiplier);
+    }),
 };

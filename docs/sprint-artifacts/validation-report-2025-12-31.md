@@ -1,16 +1,18 @@
 # Validation Report
 
 **Document:** docs/sprint-artifacts/1-1-initialize-bun-monorepo-with-core-and-cli-packages.md
-**Checklist:** _bmad/bmm/workflows/4-implementation/create-story/checklist.md
+**Checklist:** \_bmad/bmm/workflows/4-implementation/create-story/checklist.md
 **Date:** 2025-12-31
 
 ## Summary
+
 - Overall: 9/9 passed (100%)
 - Critical Issues: 0
 
 ## Section Results
 
 ### Story Content & Guidance
+
 Pass Rate: 9/9 (100%)
 
 ✓ Story metadata present (title, status, role/need/outcome) with clear intent and status ready-for-dev [docs/sprint-artifacts/1-1-initialize-bun-monorepo-with-core-and-cli-packages.md#L1-L23]
@@ -25,12 +27,15 @@ Pass Rate: 9/9 (100%)
 ➖ Previous-story intelligence: N/A for first story in epic (no prior story context to mine)
 
 ## Failed Items
+
 - None
 
 ## Partial Items
+
 - None
 
 ## Recommendations
+
 1. Must Fix: (Resolved) TS target aligned to ESNext per architecture.
 2. Should Improve: Add a note on using a root tsconfig suited for a workspace (no rootDir/src assumption) to prevent build-output misplacement in a package-first layout.
 3. Consider: Re-run tests after initialization to confirm CLI/core build with ESNext target.

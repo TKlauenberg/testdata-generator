@@ -1,8 +1,8 @@
 ---
 stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
 inputDocuments:
-  - "docs/prd.md"
-  - "docs/research-technical-2025-12-03.md"
+  - 'docs/prd.md'
+  - 'docs/research-technical-2025-12-03.md'
 workflowType: 'architecture'
 lastStep: 8
 status: 'complete'
@@ -70,64 +70,75 @@ Critical NFRs that will drive architectural decisions:
 ### Technical Constraints & Dependencies
 
 **Language & Ecosystem:**
+
 - TypeScript/Node.js implementation (Node.js 18+ requirement)
 - Zero external parser dependencies (hand-written parser)
 - Cross-platform: Windows, macOS, Linux
 - npm distribution: `@testdata-ai/core` (library) + `@testdata-ai/cli` (global tool)
 
 **Research-Validated Decisions:**
+
 - **External DSL approach** (not internal DSL) - QA-friendly syntax priority over implementation speed
 - **Hand-written parser** (not ANTLR) - maximum error message control, zero dependencies
 - **Declarative syntax** (not imperative) - describe "what" not "how" (SQL/HCL/Gherkin pattern)
 - **Multi-pass compilation** - lexing → parsing → semantic analysis → generation
 
 **API Surface:**
+
 - Core: `parseSchema()`, `generateData()`, `loadContext()`, `validateSchema()`
 - CLI: `td generate`, `td validate`, `td init`, `td version`
 
 ### Cross-Cutting Concerns Identified
 
 **1. Error Handling & User Experience (CRITICAL)**
+
 - Target audience: QA testers with minimal coding experience
 - Rust-inspired error format: file location, visual pointer, helpful suggestions, fuzzy matching for typos
 - Collect errors during parsing (show all at once), fail-fast before generation
 - Non-programmer friendly language in all error messages
 
 **2. Type System & Inference**
+
 - Schema-based types (similar to SQL schema definitions)
 - Type inference by default, explicit specification when needed
 - Multi-pass semantic analysis for comprehensive type checking
 - Symbol table for tracking schemas, profiles, contexts
 
 **3. Reference Resolution**
+
 - Three-layer model: Context → Schema → Profile
 - Reference syntax: `@schema:`, `@profile:`, `@context.`
 - Symbol table for definition tracking and reference resolution
 - Circular dependency detection
 
 **4. Context Management**
+
 - Load from files (JSON, CSV, database exports) or programmatic data
 - Tag-based context selection: `@context.users@staging.random`
 - Context transformations: filter, sample, aggregate
 - Metadata tracking for generated-to-context pipeline
 
 **5. Deterministic Generation**
+
 - Seed-based reproducibility (same seed → same output)
 - Critical for debugging failing tests with exact data
 - Affects generator design (all randomness must be seeded)
 
 **6. Output Adapter Architecture**
+
 - Core generates internal data representation
 - Adapters transform to target formats (JSON/CSV/SQL)
 - Plugin architecture for custom formats (future)
 - SQL injection prevention in SQL adapter
 
 **7. Platform-Ready Metadata**
+
 - Generation timestamp, source pattern reference, pattern version/hash
 - Enables future "lift to platform" capability
 - Generation history logging for audit trail
 
 **8. Extensibility Points**
+
 - Custom field generators (plugin system)
 - Custom output adapters
 - Future: profile composition, temporal patterns, advanced context operations
@@ -139,6 +150,7 @@ Critical NFRs that will drive architectural decisions:
 **CLI Tool + Developer Library** (TypeScript/Bun)
 
 This project is library-first with CLI as the primary interface:
+
 - Core library: `@testdata-ai/core` (DSL parser + generator)
 - CLI tool: `@testdata-ai/cli` (command-line interface)
 
@@ -146,10 +158,11 @@ This project is library-first with CLI as the primary interface:
 
 | Runtime     | Version  | Decision | Rationale                                        |
 | ----------- | -------- | -------- | ------------------------------------------------ |
-| **Node.js** | 22.x LTS | ❌        | Traditional choice, slower startup               |
-| **Bun**     | 1.x      | ✅        | Faster execution, built-in TypeScript, modern DX |
+| **Node.js** | 22.x LTS | ❌       | Traditional choice, slower startup               |
+| **Bun**     | 1.x      | ✅       | Faster execution, built-in TypeScript, modern DX |
 
 **Why Bun:**
+
 - **Performance**: Significantly faster startup and execution (critical for CLI tools)
 - **Built-in TypeScript**: No separate compilation step during development
 - **Built-in test runner**: `bun test` replaces need for Vitest/Jest
@@ -161,8 +174,8 @@ This project is library-first with CLI as the primary interface:
 
 ### CLI Framework Selection
 
-| Framework        | Version  | Stars | Decision                                                                      |
-| ---------------- | -------- | ----- | ----------------------------------------------------------------------------- |
+| Framework        | Version  | Stars | Decision                                                                       |
+| ---------------- | -------- | ----- | ------------------------------------------------------------------------------ |
 | **oclif**        | v4.22.57 | 9.4k  | ❌ Too opinionated, CLI-first design conflicts with library-first architecture |
 | **Yargs**        | v18.0.0  | 11.4k | ❌ Good parsing but less integrated with TypeScript                            |
 | **Commander.js** | v14.0.2  | 27.8k | ✅ Lightweight, library-first friendly, excellent TypeScript support           |
@@ -170,12 +183,14 @@ This project is library-first with CLI as the primary interface:
 ### Selected Approach: Custom Minimal Setup with Bun
 
 **Rationale for Not Using Framework Generator:**
+
 - Project is **library-first** (DSL parser is the core, CLI wraps it)
 - Custom error handling required (QA-friendly Rust-style errors)
 - Hand-written parser needs clean architecture without framework constraints
 - Framework starters impose unnecessary structure and dependencies
 
 **Rationale for Commander.js as CLI layer:**
+
 - Lightweight and unobtrusive (doesn't dictate project structure)
 - 27.8k stars, mature and battle-tested
 - TypeScript support via `@commander-js/extra-typings`
@@ -248,27 +263,32 @@ bun add -d @commander-js/extra-typings @types/bun
 ### Architectural Decisions Established
 
 **Runtime & Build:**
+
 - Bun 1.x as primary runtime (Node.js 18+ compatible for users)
 - TypeScript 5.x with strict mode
 - ES2022 target, ESM modules
 - Bun's built-in bundler for CLI distribution
 
 **Project Organization:**
+
 - Monorepo with Bun workspaces
 - Clear separation: core library vs CLI tool
 - Shared TypeScript configuration
 
 **CLI Architecture:**
+
 - Commander.js for argument parsing only
 - Custom error formatter for QA-friendly messages
 - Exit codes: 0 (success), 1 (validation error), 2 (generation error), 3 (file error)
 
 **Testing Strategy:**
+
 - Bun's built-in test runner (`bun test`)
 - Test DSL parser phases independently
 - Snapshot testing for generated output
 
 **Distribution:**
+
 - Publish to npm registry
 - Users can run with `bun` (recommended) or `node`
 - Global install: `bun add -g @testdata-ai/cli` or `npm install -g @testdata-ai/cli`
@@ -280,6 +300,7 @@ bun add -d @commander-js/extra-typings @types/bun
 ### Decision Priority Analysis
 
 **Critical Decisions (Block Implementation):**
+
 - Token representation strategy
 - AST node design pattern
 - Error handling approach
@@ -287,9 +308,11 @@ bun add -d @commander-js/extra-typings @types/bun
 - Output streaming approach
 
 **Important Decisions (Shape Architecture):**
+
 - Context storage format
 
 **Deferred Decisions (Post-MVP):**
+
 - Plugin/extension API design - DSL should stabilize first before defining extension points
 
 ### DSL Parser Architecture
@@ -309,6 +332,7 @@ type Token =
 ```
 
 **Rationale:**
+
 - Type-safe discriminated unions with exhaustive `switch` checking
 - Excellent TypeScript autocomplete during parser development
 - Pattern matching becomes compile-time verified
@@ -328,11 +352,12 @@ interface SchemaNode {
 }
 
 // Pure transformation functions
-function analyze(ast: Program): Result<ValidatedProgram, Diagnostic[]>
-function generate(validated: ValidatedProgram, options: GenerateOptions): AsyncIterable<Record>
+function analyze(ast: Program): Result<ValidatedProgram, Diagnostic[]>;
+function generate(validated: ValidatedProgram, options: GenerateOptions): AsyncIterable<Record>;
 ```
 
 **Rationale:**
+
 - Clear separation between data and behavior
 - Each compilation phase is independently testable
 - Easier to reason about transformations
@@ -346,17 +371,16 @@ function generate(validated: ValidatedProgram, options: GenerateOptions): AsyncI
 **Decision:** Use `Result<T, Diagnostic[]>` for explicit success/failure with error accumulation
 
 ```typescript
-type Result<T, E = Diagnostic[]> =
-  | { ok: true; value: T }
-  | { ok: false; errors: E };
+type Result<T, E = Diagnostic[]> = { ok: true; value: T } | { ok: false; errors: E };
 
 // Each phase returns Result
-function scan(source: string): Result<Token[]>
-function parse(tokens: Token[]): Result<Program>
-function analyze(ast: Program): Result<ValidatedProgram>
+function scan(source: string): Result<Token[]>;
+function parse(tokens: Token[]): Result<Program>;
+function analyze(ast: Program): Result<ValidatedProgram>;
 ```
 
 **Rationale:**
+
 - Rust-inspired explicit error handling without exceptions
 - Errors naturally accumulate (show all syntax errors at once)
 - No hidden control flow from thrown exceptions
@@ -367,9 +391,10 @@ function analyze(ast: Program): Result<ValidatedProgram>
 
 #### Random Number Generation: Custom PRNG Implementation
 
-**Decision:** Implement custom seeded PRNG (e.g., Xoshiro256**) rather than using Faker.js
+**Decision:** Implement custom seeded PRNG (e.g., Xoshiro256\*\*) rather than using Faker.js
 
 **Rationale:**
+
 - **Independence**: No external dependencies for core generation logic
 - **Portability**: Enables future migration to other languages (Rust, Go) with identical output
 - **Backwards Compatibility**: Same seed produces identical data across versions and runtimes
@@ -377,12 +402,14 @@ function analyze(ast: Program): Result<ValidatedProgram>
 - **Performance**: Can optimize for specific use cases
 
 **Implementation Approach:**
-- Implement Xoshiro256** or similar well-documented PRNG algorithm
+
+- Implement Xoshiro256\*\* or similar well-documented PRNG algorithm
 - Build data generators on top: `randomInt()`, `randomFloat()`, `randomElement()`, `randomString()`
 - Create higher-level generators: `email()`, `name()`, `date()`, `uuid()` using primitive generators
 - All generators accept seed parameter for reproducibility
 
 **Generator Categories (Built-in):**
+
 - **Primitives**: integers, floats, booleans, strings
 - **Identity**: UUIDs, sequential IDs
 - **Personal**: names, emails (templated), phone numbers
@@ -397,7 +424,7 @@ function analyze(ast: Program): Result<ValidatedProgram>
 ```typescript
 async function* generateRecords(
   schema: ValidatedSchema,
-  options: GenerateOptions
+  options: GenerateOptions,
 ): AsyncIterable<Record> {
   const rng = createRNG(options.seed);
   for (let i = 0; i < options.count; i++) {
@@ -407,6 +434,7 @@ async function* generateRecords(
 ```
 
 **Rationale:**
+
 - Memory-efficient for large datasets (1M+ records)
 - Records streamed as generated, not buffered
 - Adapters can consume incrementally (write to file as records arrive)
@@ -431,6 +459,7 @@ interface ContextFile {
 ```
 
 **Rationale:**
+
 - Simple, human-readable format
 - Can be version controlled alongside DSL patterns
 - Easy to inspect and debug
@@ -444,12 +473,14 @@ interface ContextFile {
 **Decision:** Plugin architecture deferred until DSL stabilizes
 
 **Rationale:**
+
 - Core DSL syntax and semantics should stabilize first
 - Built-in generators cover MVP use cases
 - Extension API design depends on real-world usage patterns
 - Avoids premature abstraction
 
 **Future Considerations (when implemented):**
+
 - Function registration mechanism
 - Plugin discovery and loading
 - Sandboxed execution for security
@@ -458,6 +489,7 @@ interface ContextFile {
 ### Decision Impact Analysis
 
 **Implementation Sequence:**
+
 1. **Token types** → Define discriminated unions first (foundation for scanner)
 2. **AST nodes** → Define immutable node types (foundation for parser)
 3. **Result type** → Implement error handling utilities
@@ -468,6 +500,7 @@ interface ContextFile {
 8. **Context loading** → JSON file loading/saving
 
 **Cross-Component Dependencies:**
+
 ```
 Scanner ──→ Token (union types)
 Parser ──→ AST (immutable nodes) + Result type
@@ -478,6 +511,7 @@ Context ──→ JSON files + Generator output
 ```
 
 **Key Architectural Principles Established:**
+
 1. **Functional core**: Pure functions, immutable data, explicit error handling
 2. **Independence**: No heavy external dependencies in core logic
 3. **Portability**: Design choices that enable future language migration
@@ -531,6 +565,7 @@ All AI agents working on this project MUST follow these patterns to ensure code 
 #### Module Organization
 
 Each module follows this structure:
+
 ```
 moduleName/
 ├── index.ts           # Public exports only
@@ -597,9 +632,7 @@ packages/core/src/
 
 ```typescript
 // Always use this exact shape
-type Result<T, E = Diagnostic[]> =
-  | { ok: true; value: T }
-  | { ok: false; errors: E };
+type Result<T, E = Diagnostic[]> = { ok: true; value: T } | { ok: false; errors: E };
 
 // Helper factories
 const ok = <T>(value: T): Result<T> => ({ ok: true, value });
@@ -610,25 +643,26 @@ const err = <E>(errors: E): Result<never, E> => ({ ok: false, errors });
 
 ```typescript
 interface Diagnostic {
-  code: string;                    // 'phase.errorType' format
-  message: string;                 // Human-readable, QA-friendly
+  code: string; // 'phase.errorType' format
+  message: string; // Human-readable, QA-friendly
   severity: 'error' | 'warning' | 'info';
   location: SourceLocation;
-  suggestion?: string;             // "Did you mean...?"
-  related?: Diagnostic[];          // Related context
+  suggestion?: string; // "Did you mean...?"
+  related?: Diagnostic[]; // Related context
 }
 
 interface SourceLocation {
   file: string;
-  line: number;                    // 1-indexed
-  column: number;                  // 1-indexed
-  length: number;                  // For underline rendering
+  line: number; // 1-indexed
+  column: number; // 1-indexed
+  length: number; // For underline rendering
 }
 ```
 
 #### Error Code Format
 
 Error codes follow `phase.errorType` pattern:
+
 - `scanner.unterminatedString`
 - `scanner.invalidCharacter`
 - `parser.unexpectedToken`
@@ -926,6 +960,7 @@ Context ────────────► generate()
 ### Requirements to Structure Mapping
 
 #### FR1-FR5: Pattern-Based Generation
+
 - **DSL Parsing**: `scanner/`, `parser/`, `analyzer/`
 - **Schema definitions**: `parser/ast.ts` (SchemaNode, FieldNode)
 - **Field generators**: `generator/generators/`
@@ -934,33 +969,39 @@ Context ────────────► generate()
 - **Relationships**: `analyzer/referenceResolver.ts`
 
 #### FR6-FR9: Context Management
+
 - **Context loading**: `context/loaders/`
 - **Tag-based selection**: `context/selector.ts`
 - **Context references**: `analyzer/referenceResolver.ts`
 - **Save generated as context**: `context/contextManager.ts`
 
 #### FR10-FR13: Cascading Rules
+
 - **Global defaults**: `cli/config/defaults.ts`
 - **Workspace defaults**: `cli/config/configLoader.ts`
 - **Schema/field overrides**: `analyzer/typeChecker.ts`
 
 #### FR14-FR17: CLI Operations
+
 - **Generate command**: `cli/commands/generate.ts`
 - **Validate command**: `cli/commands/validate.ts`
 - **Init command**: `cli/commands/init.ts`
 - **Error messages**: `cli/formatters/errorFormatter.ts`
 
 #### FR18-FR21: Pattern Sharing
+
 - **Text-based DSL**: `parser/` (produces human-readable AST from `.td` files)
 - **Examples**: `examples/` directory
 
 #### FR22-FR25: Data Output
+
 - **JSON output**: `adapters/jsonAdapter.ts`
 - **CSV output**: `adapters/csvAdapter.ts`
 - **SQL output**: `adapters/sqlAdapter.ts`
 - **Metadata**: `common/version.ts`, generation options
 
 #### FR26-FR29: Validation
+
 - **Syntax validation**: `scanner/`, `parser/`
 - **Semantic validation**: `analyzer/`
 - **Error collection**: `common/result.ts`, `common/diagnostic.ts`
@@ -1071,7 +1112,7 @@ bun run publish               # Publish to npm
 ### Coherence Validation ✅
 
 **Decision Compatibility:**
-All architectural decisions are fully compatible and work together seamlessly. Bun 1.x runtime provides native TypeScript support and fast execution, Commander.js v14.0.2 integrates well with Bun for CLI operations, custom Xoshiro256** PRNG has no external dependencies, Result<T,E> error handling is type-safe with strict mode, and AsyncIterable generators are native ES2022 features. No compatibility conflicts detected.
+All architectural decisions are fully compatible and work together seamlessly. Bun 1.x runtime provides native TypeScript support and fast execution, Commander.js v14.0.2 integrates well with Bun for CLI operations, custom Xoshiro256\*\* PRNG has no external dependencies, Result<T,E> error handling is type-safe with strict mode, and AsyncIterable generators are native ES2022 features. No compatibility conflicts detected.
 
 **Pattern Consistency:**
 All implementation patterns support the architectural decisions consistently. camelCase.ts naming is applied uniformly across all files and directories, `private _memberName` convention enforces privacy with both keyword and underscore, Result type pattern ensures consistent error handling, pure functions with immutable AST nodes align with functional architecture, co-located tests support the testing strategy, and index.ts exports provide clean module boundaries. All patterns are coherent and mutually reinforcing.
@@ -1083,6 +1124,7 @@ The project structure fully supports all architectural decisions. The 2-package 
 
 **Functional Requirements Coverage:**
 All 31 functional requirements are fully architecturally supported:
+
 - FR1-FR5 (Pattern-Based Generation): scanner/, parser/, analyzer/, generator/ modules with comprehensive generator registry, uniqueness tracking, and template engine
 - FR6-FR9 (Context Management): context/ module with JSON/CSV loaders, tag-based selection, and save functionality
 - FR10-FR13 (Cascading Rules): cli/config/ with global defaults, workspace .tdconfig.json, and schema/field override capability
@@ -1093,6 +1135,7 @@ All 31 functional requirements are fully architecturally supported:
 
 **Non-Functional Requirements Coverage:**
 All 12 non-functional requirements are architecturally addressed:
+
 - Performance (NFR1-3): Bun runtime for fast execution, AsyncIterable streaming for memory efficiency, custom PRNG for speed
 - Usability (NFR4-6): Commander.js for intuitive CLI, Rust-style error formatting for clarity, comprehensive documentation structure
 - Maintainability (NFR7-9): TypeScript strict mode for type safety, co-located tests with Bun runner, clear module boundaries with index.ts exports
@@ -1100,10 +1143,11 @@ All 12 non-functional requirements are architecturally addressed:
 
 **Cross-Cutting Concerns:**
 All 8 cross-cutting concerns are properly handled:
+
 - Error Handling: Result<T,E> pattern with comprehensive Diagnostic types
 - Data Consistency: Uniqueness constraints tracker and reproducible generation with seeds
 - Extensibility: Generator registry for plugins, clear module interfaces, adapter pattern for outputs
-- Testing: Bun test runner, co-located *.test.ts files, testing patterns defined
+- Testing: Bun test runner, co-located \*.test.ts files, testing patterns defined
 - Documentation: Complete structure with DSL reference, API docs, examples, getting-started guide
 - Version Compatibility: Explicit versions for all dependencies (Bun 1.x, TypeScript 5.x, Commander.js 14.0.2)
 - Developer Experience: Fast Bun build times, clear error messages, camelCase naming consistency
@@ -1113,6 +1157,7 @@ All 8 cross-cutting concerns are properly handled:
 
 **Decision Completeness:**
 All critical architectural decisions are fully documented with versions and rationale:
+
 - Runtime: Bun 1.x specified with performance and DX benefits
 - Language: TypeScript 5.x with strict mode and ES2022 target
 - CLI Framework: Commander.js v14.0.2 chosen for lightweight argument parsing
@@ -1120,33 +1165,35 @@ All critical architectural decisions are fully documented with versions and rati
 - Token Representation: Discriminated union types for type safety
 - AST Design: Immutable data structures with pure functions
 - Error Handling: Result<T,E> pattern for expected errors, no exceptions
-- PRNG Implementation: Custom Xoshiro256** for portability and independence
-- Streaming Strategy: AsyncIterable with function* generators for memory efficiency
+- PRNG Implementation: Custom Xoshiro256\*\* for portability and independence
+- Streaming Strategy: AsyncIterable with function\* generators for memory efficiency
 - Context Storage: JSON files for MVP with extensible loader architecture
-All decisions include implementation guidance and AI agent instructions.
+  All decisions include implementation guidance and AI agent instructions.
 
 **Structure Completeness:**
 The project structure is completely and specifically defined:
+
 - Complete directory tree from root (testdata-ai/) to leaf files (scanner.ts, parser.ts, etc.)
 - All packages explicitly defined: @testdata-ai/core (library) and @testdata-ai/cli (CLI tool)
 - Every module specified with file lists: scanner/, parser/, analyzer/, generator/, context/, adapters/, common/
 - All source files documented with clear responsibilities and relationships
-- Test files co-located with implementation (*.test.ts pattern)
+- Test files co-located with implementation (\*.test.ts pattern)
 - Configuration files defined: package.json, tsconfig.json, bunfig.toml, .tdconfig.json, eslint.config.js
 - Documentation structure complete: getting-started.md, dsl-reference.md, generators.md, api.md, examples/
 - Integration files specified: CI/CD workflows, npm publish, deployment scripts
 
 **Pattern Completeness:**
 All implementation patterns are comprehensive and enforceable:
+
 - Naming Conventions: camelCase.ts for all files and directories with specific examples
 - Privacy Patterns: `private _memberName` with both keyword and underscore required
 - Export Patterns: All modules must use index.ts exports, no direct exports bypassing boundaries
-- Testing Patterns: Co-located *.test.ts files using Bun test runner with describe/test/expect
+- Testing Patterns: Co-located \*.test.ts files using Bun test runner with describe/test/expect
 - Error Handling Patterns: Result<T,E> type for expected errors, Diagnostic structure for reporting
 - Immutability Patterns: Immutable AST nodes, pure functions, no in-place mutations
 - Formatting Patterns: Prettier configuration, ESLint flat config for enforcement
-- Anti-Patterns Documented: kebab-case, exceptions for expected errors, mutable AST, __tests__/ directories
-All potential conflict points are addressed with clear, enforceable rules.
+- Anti-Patterns Documented: kebab-case, exceptions for expected errors, mutable AST, **tests**/ directories
+  All potential conflict points are addressed with clear, enforceable rules.
 
 ### Gap Analysis Results
 
@@ -1155,6 +1202,7 @@ No blocking architectural decisions are missing. All required patterns are defin
 
 **Important Gaps:** ✅ Minimal
 All important areas are covered:
+
 - Generator implementation patterns (templates, uniqueness, PRNG) are well-defined
 - Context loading strategies are documented with extensible loader architecture
 - Error formatting patterns (Rust-style CLI output) are specified
@@ -1162,9 +1210,10 @@ All important areas are covered:
 
 **Nice-to-Have Gaps (Future Enhancements):**
 Opportunities for future improvement beyond MVP scope:
+
 - VS Code extension for .td file syntax highlighting and IntelliSense (mentioned as future work)
 - Database context loaders (PostgreSQL, MySQL) beyond JSON/CSV (extensible architecture supports plugins)
-- Additional PRNG algorithms beyond Xoshiro256** (generator registry allows new implementations)
+- Additional PRNG algorithms beyond Xoshiro256\*\* (generator registry allows new implementations)
 - Advanced CLI features: watch mode for live regeneration, interactive mode, progress bars
 - Performance optimizations: parallel generation, incremental updates, caching strategies
 
@@ -1177,6 +1226,7 @@ No critical blocking issues were detected during validation. No compatibility co
 
 **Architecture Quality Assessment:** ⭐⭐⭐⭐⭐ Excellent
 The architecture demonstrates:
+
 - High coherence with no contradictions between decisions
 - Complete coverage of all functional and non-functional requirements
 - Implementation-ready structure with clear guidance for AI agents
@@ -1187,24 +1237,28 @@ The architecture demonstrates:
 ### Architecture Completeness Checklist
 
 **✅ Requirements Analysis**
+
 - [x] Project context thoroughly analyzed (31 FRs, 12 NFRs, 8 cross-cutting concerns)
 - [x] Scale and complexity assessed (MVP scope, small-to-medium CLI tool + library)
 - [x] Technical constraints identified (portability, no heavy dependencies, reproducibility)
 - [x] Cross-cutting concerns mapped (error handling, extensibility, testing, documentation)
 
 **✅ Architectural Decisions**
+
 - [x] Critical decisions documented with versions (Bun 1.x, TypeScript 5.x, Commander.js 14.0.2)
 - [x] Technology stack fully specified (runtime, language, frameworks, tools)
 - [x] Integration patterns defined (CLI → Core, Module → Module, data flow)
 - [x] Performance considerations addressed (streaming, custom PRNG, Bun speed)
 
 **✅ Implementation Patterns**
+
 - [x] Naming conventions established (camelCase.ts for files and directories)
 - [x] Structure patterns defined (monorepo, module boundaries, index.ts exports)
 - [x] Communication patterns specified (Result types, AsyncIterable, data flow)
 - [x] Process patterns documented (error handling, testing, immutability, privacy)
 
 **✅ Project Structure**
+
 - [x] Complete directory structure defined (root to leaf with all files)
 - [x] Component boundaries established (scanner, parser, analyzer, generator, context, adapters)
 - [x] Integration points mapped (CLI commands, module interfaces, adapters)
@@ -1217,6 +1271,7 @@ The architecture demonstrates:
 **Confidence Level:** HIGH - All validation checks passed with excellent results
 
 **Key Strengths:**
+
 1. **Technology Coherence**: Bun + TypeScript + custom PRNG + Result types work seamlessly together
 2. **Complete Requirements Coverage**: All 31 FRs and 12 NFRs architecturally supported with clear mapping
 3. **Strong Consistency Patterns**: camelCase naming, `private _memberName`, Result error handling, immutable AST
@@ -1227,6 +1282,7 @@ The architecture demonstrates:
 8. **Production Deployment**: npm packages, CLI global install, CI/CD workflows defined
 
 **Areas for Future Enhancement:**
+
 1. VS Code extension for .td file syntax highlighting and language support
 2. Database context loaders (PostgreSQL, MySQL) for enterprise use cases
 3. Advanced CLI features (watch mode, interactive prompts, progress indicators)
@@ -1238,14 +1294,16 @@ These enhancements are not blockers and can be addressed in future iterations ba
 ### Implementation Handoff
 
 **AI Agent Guidelines:**
-1. **Follow Architectural Decisions**: Implement exactly as documented - Bun runtime, TypeScript strict mode, Commander.js CLI, custom Xoshiro256** PRNG, Result<T,E> error handling, AsyncIterable streaming
-2. **Use Implementation Patterns Consistently**: Apply camelCase.ts naming to all files/directories, use `private _memberName` for all private members, create index.ts exports for all modules, co-locate tests (*.test.ts), enforce immutable AST with pure functions
+
+1. **Follow Architectural Decisions**: Implement exactly as documented - Bun runtime, TypeScript strict mode, Commander.js CLI, custom Xoshiro256\*\* PRNG, Result<T,E> error handling, AsyncIterable streaming
+2. **Use Implementation Patterns Consistently**: Apply camelCase.ts naming to all files/directories, use `private _memberName` for all private members, create index.ts exports for all modules, co-locate tests (\*.test.ts), enforce immutable AST with pure functions
 3. **Respect Project Structure**: Create 2-package monorepo (core + cli), implement multi-pass pipeline (scanner → parser → analyzer → generator), maintain clear module boundaries, follow integration patterns (CLI → Core)
 4. **Refer to This Document**: For all architectural questions, technology choices, pattern clarifications, and implementation conflicts, return to this architecture document as the source of truth
-5. **Enforce Anti-Patterns**: Never use kebab-case/snake_case file names, never throw exceptions for expected errors, never mutate AST nodes, never bypass index.ts exports, never create __tests__/ directories, never use private members without both keyword and underscore
+5. **Enforce Anti-Patterns**: Never use kebab-case/snake_case file names, never throw exceptions for expected errors, never mutate AST nodes, never bypass index.ts exports, never create **tests**/ directories, never use private members without both keyword and underscore
 
 **First Implementation Priority:**
 Begin with the foundational structure and core compilation pipeline:
+
 1. **Project Setup**: Create monorepo with Bun workspaces, configure TypeScript strict mode, set up packages/core and packages/cli
 2. **Common Utilities**: Implement Result<T,E> type, Diagnostic structure, SourceLocation type in packages/core/src/common/
 3. **Scanner Module**: Implement Token types, Scanner class, keyword map in packages/core/src/scanner/
@@ -1266,6 +1324,7 @@ This bottom-up approach establishes the architectural foundation before building
 ### Final Architecture Deliverables
 
 **📋 Complete Architecture Document**
+
 - All architectural decisions documented with specific versions (Bun 1.x, TypeScript 5.x, Commander.js 14.0.2)
 - Implementation patterns ensuring AI agent consistency (camelCase.ts, `private _memberName`, Result<T,E>)
 - Complete project structure with all files and directories (2-package monorepo, scanner → parser → analyzer → generator)
@@ -1273,12 +1332,14 @@ This bottom-up approach establishes the architectural foundation before building
 - Validation confirming coherence and completeness (excellent rating, zero critical gaps)
 
 **🏗️ Implementation Ready Foundation**
+
 - 10 architectural decisions made (runtime, language, CLI, parser, tokens, AST, errors, PRNG, streaming, context)
 - 15+ implementation patterns defined (naming, privacy, exports, testing, error handling, immutability, formatting)
 - 7 architectural components specified (scanner, parser, analyzer, generator, context, adapters, common)
 - 43 requirements fully supported (31 FRs + 12 NFRs + all cross-cutting concerns)
 
 **📚 AI Agent Implementation Guide**
+
 - Technology stack with verified versions and compatibility confirmation
 - Consistency rules that prevent implementation conflicts (anti-patterns documented)
 - Project structure with clear boundaries (package and module boundaries defined)
@@ -1291,6 +1352,7 @@ This architecture document is your complete guide for implementing testdata-ai. 
 
 **First Implementation Priority:**
 Begin with the foundational structure and core compilation pipeline:
+
 1. **Project Setup**: Create monorepo with Bun workspaces, configure TypeScript strict mode, set up packages/core and packages/cli
 2. **Common Utilities**: Implement Result<T,E> type, Diagnostic structure, SourceLocation type in packages/core/src/common/
 3. **Scanner Module**: Implement Token types, Scanner class, keyword map in packages/core/src/scanner/
@@ -1298,6 +1360,7 @@ Begin with the foundational structure and core compilation pipeline:
 5. **Test Foundation**: Write scanner and parser tests to validate the compilation pipeline works end-to-end
 
 **Development Sequence:**
+
 1. Initialize project using Bun workspaces with packages/core and packages/cli
 2. Set up development environment per architecture (TypeScript strict mode, Prettier, ESLint flat config)
 3. Implement core architectural foundations (Result type, Token types, AST nodes)
@@ -1307,18 +1370,21 @@ Begin with the foundational structure and core compilation pipeline:
 ### Quality Assurance Checklist
 
 **✅ Architecture Coherence**
+
 - [x] All decisions work together without conflicts (Bun + TypeScript + custom PRNG validated)
 - [x] Technology choices are compatible (no version conflicts detected)
 - [x] Patterns support the architectural decisions (camelCase, Result types, immutability align)
 - [x] Structure aligns with all choices (monorepo + multi-pass pipeline + clear boundaries)
 
 **✅ Requirements Coverage**
+
 - [x] All functional requirements are supported (31 FRs mapped to specific modules and files)
 - [x] All non-functional requirements are addressed (12 NFRs architecturally handled)
 - [x] Cross-cutting concerns are handled (8 concerns with clear patterns documented)
 - [x] Integration points are defined (CLI → Core, Module → Module, data flow specified)
 
 **✅ Implementation Readiness**
+
 - [x] Decisions are specific and actionable (versions, rationale, and guidance provided)
 - [x] Patterns prevent agent conflicts (comprehensive rules with anti-patterns documented)
 - [x] Structure is complete and unambiguous (every file and directory specified)

@@ -79,7 +79,7 @@ export function err<E>(errors: E): Result<never, E> {
  * ```
  */
 export function isOk<T, E>(
-  result: Result<T, E>
+  result: Result<T, E>,
 ): result is { readonly ok: true; readonly value: T } {
   return result.ok;
 }
@@ -98,7 +98,7 @@ export function isOk<T, E>(
  * ```
  */
 export function isErr<T, E>(
-  result: Result<T, E>
+  result: Result<T, E>,
 ): result is { readonly ok: false; readonly errors: E } {
   return !result.ok;
 }
@@ -125,9 +125,7 @@ export function unwrap<T, E>(result: Result<T, E>): T {
   if (result.ok) {
     return result.value;
   }
-  throw new Error(
-    `Called unwrap on error Result: ${JSON.stringify(result.errors)}`
-  );
+  throw new Error(`Called unwrap on error Result: ${JSON.stringify(result.errors)}`);
 }
 
 /**
@@ -172,10 +170,7 @@ export function unwrapOr<T, E>(result: Result<T, E>, defaultValue: T): T {
  * // { ok: false, errors: ['failed'] }
  * ```
  */
-export function map<T, U, E>(
-  result: Result<T, E>,
-  fn: (value: T) => U
-): Result<U, E> {
+export function map<T, U, E>(result: Result<T, E>, fn: (value: T) => U): Result<U, E> {
   return result.ok ? ok(fn(result.value)) : result;
 }
 
@@ -199,9 +194,6 @@ export function map<T, U, E>(
  * // { ok: true, value: 42 }
  * ```
  */
-export function mapErr<T, E, F>(
-  result: Result<T, E>,
-  fn: (errors: E) => F
-): Result<T, F> {
+export function mapErr<T, E, F>(result: Result<T, E>, fn: (errors: E) => F): Result<T, F> {
   return result.ok ? result : err(fn(result.errors));
 }

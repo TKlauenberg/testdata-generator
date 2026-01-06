@@ -1,16 +1,21 @@
-import { Ability, type Actor, type AnswersQuestions, type UsesAbilities } from '@serenity-js/core';
+import {
+  Ability,
+  type Actor as _Actor,
+  type AnswersQuestions as _AnswersQuestions,
+  type UsesAbilities as _UsesAbilities,
+} from '@serenity-js/core';
 
 /**
  * PerformCalculations is an example Ability that demonstrates the Screenplay pattern.
- * 
+ *
  * Abilities represent what an Actor can do. They encapsulate the system interaction
  * logic and maintain state specific to that capability.
- * 
+ *
  * In real features, Abilities would interact with actual system components:
  * - ParseSchemas would call the scanner/parser/analyzer
  * - GenerateData would call the generator
  * - ValidateSchemas would validate DSL source code
- * 
+ *
  * This example uses simple math operations to demonstrate the pattern structure.
  */
 export class PerformCalculations extends Ability {

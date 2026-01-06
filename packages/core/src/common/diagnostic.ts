@@ -156,10 +156,7 @@ export function createDiagnostic(options: CreateDiagnosticOptions): Diagnostic {
  * );
  * ```
  */
-export function unterminatedString(
-  location: SourceLocation,
-  suggestion?: string,
-): Diagnostic {
+export function unterminatedString(location: SourceLocation, suggestion?: string): Diagnostic {
   return createDiagnostic({
     code: 'scanner.unterminatedString',
     message: 'Unterminated string literal',
@@ -215,10 +212,7 @@ export function invalidCharacter(
  * );
  * ```
  */
-export function unexpectedEOF(
-  location: SourceLocation,
-  suggestion?: string,
-): Diagnostic {
+export function unexpectedEOF(location: SourceLocation, suggestion?: string): Diagnostic {
   return createDiagnostic({
     code: 'scanner.unexpectedEOF',
     message: 'Unexpected end of file',
@@ -288,9 +282,7 @@ export function expectedToken(
   found?: string,
   suggestion?: string,
 ): Diagnostic {
-  const message = found
-    ? `Expected '${expected}' but found '${found}'`
-    : `Expected '${expected}'`;
+  const message = found ? `Expected '${expected}' but found '${found}'` : `Expected '${expected}'`;
 
   return createDiagnostic({
     code: 'parser.expectedToken',
@@ -316,10 +308,7 @@ export function expectedToken(
  * );
  * ```
  */
-export function missingSemicolon(
-  location: SourceLocation,
-  suggestion?: string,
-): Diagnostic {
+export function missingSemicolon(location: SourceLocation, suggestion?: string): Diagnostic {
   return createDiagnostic({
     code: 'parser.missingSemicolon',
     message: 'Missing semicolon',

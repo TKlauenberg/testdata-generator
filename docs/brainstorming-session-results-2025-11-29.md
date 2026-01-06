@@ -15,6 +15,7 @@
 **Chosen Approach:** AI-Recommended Techniques - Selected techniques optimized for DSL design exploration
 
 **Techniques Selected:**
+
 1. Analogical Thinking (Creative) - 15 min
 2. First Principles Thinking (Creative) - 20 min
 3. SCAMPER Method (Structured) - 20 min
@@ -27,6 +28,7 @@
 **Session Goals:** Explore multiple DSL design paradigms, syntax approaches, and architectural patterns to determine the most effective way for users to express test data generation requirements
 
 **Techniques Used:**
+
 1. Analogical Thinking (Creative) - 15 min
 2. First Principles Thinking (Creative) - 20 min
 3. SCAMPER Method (Structured) - 20 min
@@ -78,6 +80,7 @@
 **Goal:** Draw inspiration from existing DSLs to identify proven patterns and anti-patterns
 
 **DSLs Identified:**
+
 - SQL (query and table definitions)
 - faker-js (programmatic test data generation)
 - CSV (simple data format)
@@ -148,6 +151,7 @@ Users need test data to validate complex scenarios, test system behavior under d
 **The Core Requirements (Irreducible Truths):**
 
 **TRUTH #0: Human-Readable, Machine-Parseable**
+
 - PRIMARY AUDIENCE: QA Testers (minimal coding experience)
 - SECONDARY AUDIENCE: Business Analysts (must read/reason, ideally write)
 - REQUIREMENT: Self-explanatory without documentation
@@ -157,12 +161,14 @@ Users need test data to validate complex scenarios, test system behavior under d
 - LEARNING: Examples-driven (provide starter templates for common scenarios like ordering systems)
 
 **TRUTH #1: Pattern-Focused Generation (Not Test Case Enumeration)**
+
 - DSL generates realistic/normal data based on patterns
 - Testers manually modify generated data for edge case testing
 - NON-GOAL: The DSL is NOT a test case generator
 - GOAL: The DSL produces realistic baseline data that can be tweaked
 
 **TRUTH #2: Constraints = Uniqueness Only**
+
 - Single field uniqueness: `user_id` must be unique
 - Combined field uniqueness: `(tenant_id, email)` pair must be unique
 - Validity comes from patterns, NOT constraints
@@ -170,18 +176,21 @@ Users need test data to validate complex scenarios, test system behavior under d
 - DESIGN CHOICE: Allow invalid data generation for negative testing
 
 **TRUTH #3: Relationships = Generated On-Demand (Not Strict Foreign Keys)**
+
 - If data requires related record (e.g., `order.user_id`), generate new related record if needed
 - NOT required: Pre-existing records or strict referential integrity
 - PHILOSOPHY: Self-contained generation without mandatory external dependencies
 - FLEXIBILITY: Can reference context OR generate fresh data
 
 **TRUTH #4: Volume = Quantity, Not Strategy**
+
 - 1 record uses identical generation logic as 1,000,000 records
 - Performance optimization is implementation detail, not DSL concern
 - PRINCIPLE: Scale doesn't change the generation rules
 - NOTE: Constraint optimization may be needed at scale (implementation, not design)
 
 **TRUTH #5: Fail Fast, No Magic**
+
 - Errors (typos, impossible constraints, circular dependencies) → fail immediately with clear messages
 - NO automatic error correction or silent fixes
 - NO assumption about user intent
@@ -203,6 +212,7 @@ Users need test data to validate complex scenarios, test system behavior under d
 #### S - SUBSTITUTE (Replace Core Elements)
 
 **Format Substitutions Explored:**
+
 - Visual/graphical DSL → **TOOLING feature** (visual relationship graph for navigation/understanding)
 - Example → Pattern extraction → **TOOLING feature** (aids DSL creation)
 - Code-as-DSL → **FUTURE feature** (advanced syntax for developers, complex for v1)
@@ -212,6 +222,7 @@ Users need test data to validate complex scenarios, test system behavior under d
 #### C - COMBINE (Merge Concepts)
 
 **Valuable Combinations Identified:**
+
 1. **Text DSL + Visual Relationship Graph**
    - Write patterns in text (fast, version-controllable)
    - Auto-generate graph showing relationships/data flow
@@ -231,11 +242,13 @@ Users need test data to validate complex scenarios, test system behavior under d
 #### A - ADAPT (Borrow from Other Domains)
 
 **Patterns Adopted:**
+
 - **From CSS:** Cascading rules, specificity hierarchy → **CORE feature**
 - **From SQL:** Mental model resonates but syntax may not fit
 - **From Infrastructure-as-Code:** Modules/reusability concepts align well
 
 **Context Selection Design:**
+
 - **Approach:** Tagged selection with logical operators
 - **Syntax:** `@staging AND (@region-us OR @region-eu)`
 - **Rationale:** Most natural for testers, flexible for complex scenarios
@@ -243,6 +256,7 @@ Users need test data to validate complex scenarios, test system behavior under d
 #### M - MODIFY (Change Scale/Scope/Attributes)
 
 **Granularity Decisions:**
+
 - **Field-level:** Define individual field patterns → **CORE**
 - **Record-level:** Define whole object patterns → **CORE**
 - **Dataset-level:** Define multi-entity relationships → **CORE**
@@ -250,11 +264,13 @@ Users need test data to validate complex scenarios, test system behavior under d
 - Scenario-level (complete user journeys) → Test logic concern, not DSL
 
 **Time Dimension:**
+
 - **Temporal patterns:** YES - generate time-series data (30 days of transactions)
 - **Stateful evolution:** NO - no Day 1 → Day 2 mutations
 - **Static temporal:** Data can have "state" but evolution is defined upfront
 
 **Type System:**
+
 - **Inferred by default** (reduce syntax noise)
 - **Explicit when needed** (for clarity/validation)
 - Pattern: `id: 1..9999` infers integer
@@ -264,10 +280,12 @@ Users need test data to validate complex scenarios, test system behavior under d
 **Architecture Pattern Emerged: DSL Core + Adapters + Tooling**
 
 **DSL Core:**
+
 - Pure schema + generation patterns (format-agnostic)
 - Focus: WHAT data looks like and HOW to generate it
 
 **Adapters (output transformers):**
+
 - Database adapter
 - JSON/API adapter
 - API Mocking adapter
@@ -275,6 +293,7 @@ Users need test data to validate complex scenarios, test system behavior under d
 - Pattern: `Context + Generation Rules + Adapter → Output Format`
 
 **Tooling Features:**
+
 - Visual relationship graph
 - Example → schema extraction
 - Version control (Git-friendly DSL files)
@@ -286,12 +305,14 @@ Users need test data to validate complex scenarios, test system behavior under d
 **Minimal Viable DSL Principles:**
 
 **Eliminated/Simplified:**
+
 - ❌ Explicit types everywhere → Inferred by default, explicit when needed
 - ❌ Complex relationship syntax → Simple two-mode (generate new OR reference context)
 - ❌ Volume in DSL → External parameter (tooling concern: `--count=1000`)
 - ❌ Overgeneration approach → Generate constrained data directly
 
 **Kept Essential:**
+
 - ✅ Minimal schema (enables multiple profiles)
 - ✅ Relationships (core use case)
 - ✅ Pattern focus (DSL describes WHAT, tooling handles HOW MUCH)
@@ -299,6 +320,7 @@ Users need test data to validate complex scenarios, test system behavior under d
 #### R - REVERSE (Flip Assumptions)
 
 **Explorations:**
+
 - **Output → Input:** Example-driven schema creation → **TOOLING feature**
 - **Bottom-up composition:** Field patterns → record patterns → datasets → **CORE principle** (composable generation)
 - **Declarative vs Imperative:** TBD - needs syntax exploration
@@ -319,6 +341,7 @@ Users need test data to validate complex scenarios, test system behavior under d
 #### 🤍 White Hat - Facts & Information
 
 **What We Know:**
+
 - 5 fundamental truths defined (human-readable, pattern-focused, uniqueness-only, on-demand relationships, fail-fast)
 - 3-layer architecture established (Context + Schema + Generation Profile)
 - Clear distinction: DSL Core vs Adapters vs Tooling
@@ -326,6 +349,7 @@ Users need test data to validate complex scenarios, test system behavior under d
 - Core feature set prioritized (field/record/dataset granularity, temporal patterns, cascading rules)
 
 **Critical Gap Identified:**
+
 - **Syntax is undefined** - This is THE key missing piece
 - No concrete examples of how patterns are expressed
 - Schema definition format not determined
@@ -334,11 +358,13 @@ Users need test data to validate complex scenarios, test system behavior under d
 #### 🔴 Red Hat - Emotions & Intuition
 
 **What Feels Right:**
+
 - Separation of concerns (DSL/adapters/tooling) feels clean
 - Three-layer architecture has potential
 - Tagged context selection feels natural
 
 **What Creates Unease:**
+
 - Test data generation is inherently complex - "you cannot do it all"
 - Context management uncertainty - how will it look? How easy to manage?
 - Not feeling elegant yet due to desired complex features
@@ -351,16 +377,19 @@ Users need test data to validate complex scenarios, test system behavior under d
 **Value Proposition - Progressive Sophistication:**
 
 **Evolution Path:**
+
 1. Start: Small & custom for specific test needs
 2. Grow: Organizational standards and shared patterns
 3. Specialize: Team-specific versions built on company standards
 
 **Differentiation from Existing Tools:**
+
 - Current tools: Either completely custom OR general-purpose requiring customization
 - This approach: Custom with scalability built-in
 - Context + generation rules enable reuse with specialization
 
 **Best Case Scenario:**
+
 - Testers can start simple, grow sophisticated
 - Companies build shared test data libraries
 - Teams specialize without starting from scratch
@@ -391,6 +420,7 @@ Users need test data to validate complex scenarios, test system behavior under d
    - Implementation concern, not design blocker
 
 **Failure Modes:**
+
 - Too complicated for target audience (QA testers)
 - Elegant architecture, unusable syntax
 - Context management overhead exceeds benefits
@@ -400,6 +430,7 @@ Users need test data to validate complex scenarios, test system behavior under d
 **Addressing Over-Engineering Risk:**
 
 **MVP Approach Options:**
+
 - v1: Schema + Patterns only (no context initially)
 - v2: Add context referencing
 - v3: Add generation profiles
@@ -408,17 +439,19 @@ Users need test data to validate complex scenarios, test system behavior under d
 **Syntax Exploration - Three Options Presented:**
 
 **Option A - YAML-ish (Verbose/Explicit):**
+
 ```yaml
 User:
   fields:
     firstName: faker.name.firstName
     lastName: faker.name.lastName
     email:
-      template: "{{firstName}}.{{lastName}}@test.com"
+      template: '{{firstName}}.{{lastName}}@test.com'
       unique: true
 ```
 
 **Option B - Compact Notation (PREFERRED):**
+
 ```
 User {
   firstName: @faker(firstName)
@@ -426,11 +459,13 @@ User {
   email: "{{firstName}}.{{lastName}}@test.com" @unique
 }
 ```
+
 - Concise but clear
 - `@` notation for external references (context, faker, etc.)
 - Visual distinction between data and directives
 
 **Option C - Declarative with Inference:**
+
 ```
 User:
   firstName, lastName  // inferred from defaults
@@ -444,6 +479,7 @@ User:
 #### 🔵 Blue Hat - Process & Organization
 
 **Session Accomplishments:**
+
 1. ✅ Architectural pattern defined (Context + Schema + Profile + Adapters)
 2. ✅ 5 fundamental principles established
 3. ✅ 15+ design variations explored via SCAMPER
@@ -452,11 +488,13 @@ User:
 6. ✅ Value proposition clarified (progressive sophistication)
 
 **Next Steps Required:**
+
 - Concrete syntax examples for diverse scenarios
 - MVP scope definition (v1 vs future)
 - Context management design (structure, selection, relationships)
 
 **TOP 3 PRIORITIES for Next Phase:**
+
 1. **Define the syntax** - Concrete examples for patterns, schemas, relationships
 2. **Context-Rules relationship** - How generation rules reference and use context
 3. **Simplicity validation** - Ensure all features maintain QA-tester-friendly principle

@@ -33,7 +33,12 @@ The `auth-session` utility provides:
 
 ```typescript
 // Step 1: Configure in global-setup.ts
-import { authStorageInit, setAuthProvider, configureAuthSession, authGlobalInit } from '@seontechnologies/playwright-utils/auth-session';
+import {
+  authStorageInit,
+  setAuthProvider,
+  configureAuthSession,
+  authGlobalInit,
+} from '@seontechnologies/playwright-utils/auth-session';
 import myCustomProvider from './auth/custom-auth-provider';
 
 async function globalSetup() {
@@ -57,7 +62,10 @@ export default globalSetup;
 
 // Step 2: Create auth fixture
 import { test as base } from '@playwright/test';
-import { createAuthFixtures, setAuthProvider } from '@seontechnologies/playwright-utils/auth-session';
+import {
+  createAuthFixtures,
+  setAuthProvider,
+} from '@seontechnologies/playwright-utils/auth-session';
 import myCustomProvider from './custom-auth-provider';
 
 // Register provider early

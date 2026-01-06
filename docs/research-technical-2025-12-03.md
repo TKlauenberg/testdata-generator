@@ -9,29 +9,34 @@
 ## Executive Summary
 
 ### Research Question
+
 What are the best practices and design patterns for creating a test data generation DSL that targets QA testers with minimal coding experience?
 
 ### Key Findings
 
 **1. External DSL is Optimal for QA Audience**
+
 - Gherkin proves QA-friendly external DSLs can succeed (15+ years, widespread adoption)
 - Internal DSLs suffer from "syntactic noise" that reduces readability for non-programmers (Martin Fowler)
 - External DSL enables clean syntax like Option B (`@schema:`, `@profile:`) which is unachievable with internal approaches
 - Full control over error messages is critical for non-technical users
 
 **2. Hand-written Parser Recommended Over Generators**
+
 - Moderate syntax complexity (three layers, references, templates) doesn't justify parser generator overhead
 - Hand-written provides maximum error message control (critical for QA audience)
 - Zero external dependencies aids adoption
 - Successful precedents: HCL (Terraform), TypeScript compiler, CoffeeScript
 
 **3. Declarative Syntax Superior to Imperative**
+
 - SQL, HCL, Gherkin demonstrate declarative DSL success over decades
 - Lower cognitive load for non-programmers (describe "what" not "how")
 - Aligns with three-layer architecture (Context + Schema + Profile)
 - Enables future optimization by generator
 
 **4. Multi-pass Compilation Architecture**
+
 - Industry standard: Lexing → Parsing → Semantic Analysis → Generation
 - Enables comprehensive error reporting (show all errors at once)
 - Supports fail-fast principle (validate completely before generation)
@@ -42,11 +47,13 @@ What are the best practices and design patterns for creating a test data generat
 **External DSL with Hand-written Parser in TypeScript**
 
 **Architecture:**
+
 ```
 DSL File (.td) → Scanner → Parser → Semantic Analyzer → Generator
 ```
 
 **Syntax (Option B Enhanced):**
+
 ```
 context UserAccounts
   @schema: UserProfile
@@ -62,17 +69,20 @@ profile StandardUsers
 ```
 
 **Implementation Timeline:** 10-12 weeks MVP
+
 - Weeks 1-3: Core parser (scanner + parser + AST)
 - Weeks 4-5: Semantic analysis (symbol table + validation)
 - Weeks 6-8: Test data generator
 - Weeks 9-10: CLI + error formatting + VS Code syntax highlighting
 
 ### Validation Against Requirements
+
 - ✅ All 10 Functional Requirements satisfied
 - ✅ All 10 Non-Functional Requirements achievable
 - ✅ All 5 Technical Constraints met
 
 ### Next Steps
+
 1. Validate recommendations with team
 2. Create proof-of-concept parser (1-2 days)
 3. Design complete BNF grammar
@@ -86,6 +96,7 @@ profile StandardUsers
 ### Technical Question
 
 What are the best practices, design patterns, and architectural approaches for designing a Domain-Specific Language (DSL) for test data generation that balances:
+
 - Human readability (QA tester-friendly)
 - Expressive power (field/record/dataset patterns)
 - Implementation feasibility (parseable, maintainable)
@@ -96,6 +107,7 @@ What are the best practices, design patterns, and architectural approaches for d
 Greenfield Test Data Management Platform with DSL-based generation. Target users are QA testers with minimal coding experience. The DSL needs to support progressive sophistication from simple custom patterns to organizational standards.
 
 Key architectural decisions already identified:
+
 - Three-layer model: Context + Schema + Generation Profile
 - Syntax preference: Compact notation with @ references (Option B style)
 - DSL Core + Adapters + Tooling separation
@@ -151,26 +163,31 @@ The DSL must support:
 Based on research into DSL design approaches for test data generation, the following architectural and implementation patterns have been identified:
 
 ### Option 1: External DSL with Custom Parser
+
 **Description:** Build a standalone DSL with custom syntax, lexer, and parser
 **Approach:** ANTLR, Tree-sitter, or hand-written recursive descent parser
 **Examples:** Gherkin (BDD testing), SQL, CSS
 
 ### Option 2: Internal DSL (Embedded)
+
 **Description:** Leverage host language features to create DSL-like syntax
 **Approach:** Ruby blocks, Kotlin DSL builders, Scala parser combinators
 **Examples:** RSpec (Ruby), Gradle build scripts (Kotlin)
 
 ### Option 3: Hybrid Approach
+
 **Description:** External syntax with internal implementation flexibility
 **Approach:** Parser combinators + AST transformation
 **Examples:** Parser generators like Xtext with code generation
 
 ### Option 4: Declarative Configuration Language
+
 **Description:** Data-driven approach using structured formats
 **Approach:** YAML/JSON schema with validation engine
 **Examples:** Docker Compose, Kubernetes manifests
 
 ### Option 5: Projectional Editor Approach
+
 **Description:** Direct AST manipulation without text parsing
 **Approach:** JetBrains MPS, Intentional Software
 **Examples:** Language workbenches for domain-specific tooling
@@ -185,18 +202,21 @@ Based on research into DSL design approaches for test data generation, the follo
 ANTLR (ANother Tool for Language Recognition) and Tree-sitter are powerful parser generators that enable creation of external DSLs with custom syntax. ANTLR is widely used in production systems (18.5k GitHub stars), while Tree-sitter focuses on incremental parsing for editor integration.
 
 **Current Status (December 2025):**
+
 - ANTLR 4.13.2 (latest stable, August 2024)
 - Tree-sitter actively maintained with bindings for 11+ languages
 - Both have mature ecosystems and extensive documentation
 
 **Technical Characteristics:**
+
 - **Architecture:** Grammar-based parser generation with visitor/listener patterns
 - **Syntax Definition:** BNF-like grammar specifications
-- **Performance:** ANTLR uses ALL(*) parsing algorithm; Tree-sitter optimized for incremental updates
+- **Performance:** ANTLR uses ALL(\*) parsing algorithm; Tree-sitter optimized for incremental updates
 - **Error Recovery:** Both support sophisticated error recovery mechanisms
 - **Integration:** ANTLR generates parsers in 10 target languages; Tree-sitter focuses on editor integration
 
 **Strengths:**
+
 - Professional-grade parsing capabilities
 - Excellent error reporting and recovery
 - Grammar serves as documentation
@@ -205,6 +225,7 @@ ANTLR (ANother Tool for Language Recognition) and Tree-sitter are powerful parse
 - Tree-sitter provides incremental parsing for real-time feedback
 
 **Weaknesses:**
+
 - Learning curve for grammar specification
 - Generated parser code can be large
 - ANTLR adds runtime dependency
@@ -215,6 +236,7 @@ ANTLR (ANother Tool for Language Recognition) and Tree-sitter are powerful parse
 Complex DSLs with sophisticated syntax requirements, when professional error messages and IDE integration are priorities.
 
 **Sources:**
+
 - https://github.com/antlr/antlr4 (ANTLR official repository)
 - https://tree-sitter.github.io/tree-sitter/ (Tree-sitter documentation)
 - Martin Fowler DSL patterns (martinfowler.com/dsl.html)
@@ -227,11 +249,13 @@ Complex DSLs with sophisticated syntax requirements, when professional error mes
 Manually implemented parser using recursive functions corresponding to grammar rules. This approach is used by TypeScript, CoffeeScript, and many production compilers when full control is needed.
 
 **Current Status (December 2025):**
+
 - Industry standard for production compilers (Rust, Go, TypeScript all use this approach)
 - No external dependencies required
 - Full control over error messages and recovery
 
 **Technical Characteristics:**
+
 - **Architecture:** Top-down parsing with one function per grammar rule
 - **Lexer:** Often hand-written with character-by-character scanning
 - **Type System:** Can integrate type checking during parsing
@@ -239,6 +263,7 @@ Manually implemented parser using recursive functions corresponding to grammar r
 - **Performance:** Can be optimized for specific patterns
 
 **Strengths:**
+
 - No external dependencies
 - Complete control over parsing logic
 - Can optimize for specific use cases
@@ -247,6 +272,7 @@ Manually implemented parser using recursive functions corresponding to grammar r
 - Flexible error recovery strategies
 
 **Weaknesses:**
+
 - More code to write and maintain
 - Grammar changes require code changes
 - No automatic grammar validation
@@ -257,6 +283,7 @@ Manually implemented parser using recursive functions corresponding to grammar r
 DSLs where you need maximum control, have specific performance requirements, or want to avoid dependencies.
 
 **Example Implementation:**
+
 ```javascript
 // TypeScript scanner pattern
 function scan() {
@@ -265,10 +292,10 @@ function scan() {
     switch (char) {
       case CharacterCodes.plus:
         pos++;
-        return token = SyntaxKind.PlusToken;
+        return (token = SyntaxKind.PlusToken);
       case CharacterCodes.asterisk:
         pos++;
-        return token = SyntaxKind.AsteriskToken;
+        return (token = SyntaxKind.AsteriskToken);
       // ... more cases
     }
   }
@@ -276,6 +303,7 @@ function scan() {
 ```
 
 **Sources:**
+
 - https://github.com/Microsoft/TypeScript/blob/master/src/compiler/scanner.ts
 - "Writing an Interpreter From Scratch" (toptal.com/scala/writing-an-interpreter)
 - "Crafting Interpreters" by Bob Nystrom
@@ -288,11 +316,13 @@ function scan() {
 Leverage host language capabilities (like Kotlin's DSL builders, Ruby's blocks, or Scala's implicit conversions) to create expressive, type-safe DSLs without parsing.
 
 **Current Status (December 2025):**
+
 - Kotlin DSL builders widely adopted in Android development
 - Ruby DSLs remain popular in testing (RSpec) and build tools (Rake)
 - Modern languages increasingly support DSL-friendly features
 
 **Technical Characteristics:**
+
 - **Architecture:** Uses host language's parser and type system
 - **Syntax:** Limited by host language syntax
 - **Type Safety:** Full host language type checking
@@ -300,6 +330,7 @@ Leverage host language capabilities (like Kotlin's DSL builders, Ruby's blocks, 
 - **Integration:** Seamless with host language code
 
 **Strengths:**
+
 - No parser to write or maintain
 - Leverages host language tooling (IDE, debugger, profiler)
 - Type safety from host language
@@ -308,6 +339,7 @@ Leverage host language capabilities (like Kotlin's DSL builders, Ruby's blocks, 
 - Lower barrier to entry for users familiar with host language
 
 **Weaknesses:**
+
 - Syntax constrained by host language
 - Can't achieve optimal syntax for domain
 - May feel "geeky" to non-programmers
@@ -319,6 +351,7 @@ Leverage host language capabilities (like Kotlin's DSL builders, Ruby's blocks, 
 DSLs targeting developers who already know the host language, when type safety and IDE integration are priorities over optimal syntax.
 
 **Example (Kotlin DSL):**
+
 ```kotlin
 html {
     head {
@@ -332,6 +365,7 @@ html {
 ```
 
 **Sources:**
+
 - JetBrains Kotlin DSL documentation
 - Martin Fowler: "DSL Boundary" and "Internal DSL patterns"
 - Type-safe builders pattern in modern languages
@@ -344,11 +378,13 @@ html {
 Functional programming approach where parsers are functions that can be combined using higher-order functions. Popular in Haskell (Parsec), Scala (FastParse), and Python (pyparsing).
 
 **Current Status (December 2025):**
+
 - FastParse for Scala actively maintained
 - Parsec remains standard in Haskell ecosystem
 - Growing adoption in functional programming communities
 
 **Technical Characteristics:**
+
 - **Architecture:** Composable parser functions
 - **Syntax Definition:** Parsers written as host language code
 - **Error Messages:** Can be sophisticated but require effort
@@ -356,6 +392,7 @@ Functional programming approach where parsers are functions that can be combined
 - **Type Safety:** Strong typing in functional languages
 
 **Strengths:**
+
 - Very composable and modular
 - Parsers are first-class values
 - Easy to prototype and iterate
@@ -364,6 +401,7 @@ Functional programming approach where parsers are functions that can be combined
 - Integrated with host language
 
 **Weaknesses:**
+
 - Performance can be an issue for large inputs
 - Error messages require careful design
 - Left-recursion handling needed
@@ -374,6 +412,7 @@ Functional programming approach where parsers are functions that can be combined
 Prototyping DSLs, functional programming environments, when composability and modularity are important.
 
 **Sources:**
+
 - FastParse documentation (com-lihaoyi.github.io/fastparse/)
 - Parsec Haskell library
 - "Parser Combinators" pattern in functional programming
@@ -386,11 +425,13 @@ Prototyping DSLs, functional programming environments, when composability and mo
 Projectional editors that manipulate AST directly rather than text. JetBrains MPS is the most mature example, allowing creation of DSLs with custom notations including graphical elements.
 
 **Current Status (December 2025):**
+
 - JetBrains MPS actively developed and used in production
 - Supports multiple notations (textual, tabular, graphical)
 - Over a decade of development and refinement
 
 **Technical Characteristics:**
+
 - **Architecture:** Direct AST manipulation with projections
 - **Syntax:** Any notation possible (not limited to text)
 - **Type System:** Integrated type checking
@@ -398,6 +439,7 @@ Projectional editors that manipulate AST directly rather than text. JetBrains MP
 - **Composition:** Language composition and extension
 
 **Strengths:**
+
 - Can mix textual, tabular, and graphical notations
 - No parsing ambiguities
 - Powerful language composition
@@ -406,6 +448,7 @@ Projectional editors that manipulate AST directly rather than text. JetBrains MP
 - Version control friendly
 
 **Weaknesses:**
+
 - Steep learning curve
 - Requires dedicated tool (can't use standard text editors)
 - Users must use MPS environment
@@ -416,6 +459,7 @@ Projectional editors that manipulate AST directly rather than text. JetBrains MP
 Complex domain-specific tooling, when graphical elements are needed, enterprise environments with dedicated language engineering teams.
 
 **Sources:**
+
 - https://www.jetbrains.com/mps/
 - "Language Workbenches: The Killer-App for Domain Specific Languages" (Martin Fowler)
 - JetBrains MPS documentation
@@ -426,20 +470,20 @@ Complex domain-specific tooling, when graphical elements are needed, enterprise 
 
 ### Comparison Matrix
 
-| Criteria | External DSL (ANTLR) | Hand-written Parser | Internal DSL | Parser Combinators | Language Workbench |
-|----------|---------------------|---------------------|--------------|-------------------|--------------------|
-| **Human Readability** | ★★★★★ | ★★★★★ | ★★★☆☆ | ★★★★☆ | ★★★★★ |
-| **QA Tester Friendly** | ★★★★★ | ★★★★★ | ★★☆☆☆ | ★★★☆☆ | ★★★★☆ |
-| **Implementation Effort** | ★★★☆☆ | ★★☆☆☆ | ★★★★☆ | ★★★☆☆ | ★☆☆☆☆ |
-| **Maintenance Burden** | ★★★★☆ | ★★★☆☆ | ★★★★★ | ★★★★☆ | ★★★☆☆ |
-| **Error Messages** | ★★★★★ | ★★★★★ | ★★★☆☆ | ★★★☆☆ | ★★★★★ |
-| **IDE Support** | ★★★★☆ | ★★★☆☆ | ★★★★★ | ★★★★☆ | ★★★★★ |
-| **Type Safety** | ★★★★☆ | ★★★★★ | ★★★★★ | ★★★★★ | ★★★★★ |
-| **Syntax Flexibility** | ★★★★★ | ★★★★★ | ★★☆☆☆ | ★★★★☆ | ★★★★★ |
-| **Learning Curve (Users)** | ★★★★☆ | ★★★★☆ | ★★☆☆☆ | ★★★☆☆ | ★★★☆☆ |
-| **No External Dependencies** | ★☆☆☆☆ | ★★★★★ | ★★★☆☆ | ★★★☆☆ | ☆☆☆☆☆ |
-| **Composability** | ★★★★☆ | ★★★★☆ | ★★★★★ | ★★★★★ | ★★★★☆ |
-| **Performance** | ★★★★☆ | ★★★★★ | ★★★★★ | ★★★☆☆ | ★★★★☆ |
+| Criteria                     | External DSL (ANTLR) | Hand-written Parser | Internal DSL | Parser Combinators | Language Workbench |
+| ---------------------------- | -------------------- | ------------------- | ------------ | ------------------ | ------------------ |
+| **Human Readability**        | ★★★★★                | ★★★★★               | ★★★☆☆        | ★★★★☆              | ★★★★★              |
+| **QA Tester Friendly**       | ★★★★★                | ★★★★★               | ★★☆☆☆        | ★★★☆☆              | ★★★★☆              |
+| **Implementation Effort**    | ★★★☆☆                | ★★☆☆☆               | ★★★★☆        | ★★★☆☆              | ★☆☆☆☆              |
+| **Maintenance Burden**       | ★★★★☆                | ★★★☆☆               | ★★★★★        | ★★★★☆              | ★★★☆☆              |
+| **Error Messages**           | ★★★★★                | ★★★★★               | ★★★☆☆        | ★★★☆☆              | ★★★★★              |
+| **IDE Support**              | ★★★★☆                | ★★★☆☆               | ★★★★★        | ★★★★☆              | ★★★★★              |
+| **Type Safety**              | ★★★★☆                | ★★★★★               | ★★★★★        | ★★★★★              | ★★★★★              |
+| **Syntax Flexibility**       | ★★★★★                | ★★★★★               | ★★☆☆☆        | ★★★★☆              | ★★★★★              |
+| **Learning Curve (Users)**   | ★★★★☆                | ★★★★☆               | ★★☆☆☆        | ★★★☆☆              | ★★★☆☆              |
+| **No External Dependencies** | ★☆☆☆☆                | ★★★★★               | ★★★☆☆        | ★★★☆☆              | ☆☆☆☆☆              |
+| **Composability**            | ★★★★☆                | ★★★★☆               | ★★★★★        | ★★★★★              | ★★★★☆              |
+| **Performance**              | ★★★★☆                | ★★★★★               | ★★★★★        | ★★★☆☆              | ★★★★☆              |
 
 ### Key Insights from Comparison
 
@@ -482,6 +526,7 @@ Internal DSLs require least maintenance since grammar changes are just code chan
 ### Real-World Precedents
 
 **Gherkin (Cucumber BDD):** External DSL targeting QA testers
+
 - Simple, readable syntax: `Given`, `When`, `Then`
 - Hand-written parser in Ruby, later ported to other languages
 - Proves QA-friendly DSLs can be successful
@@ -490,6 +535,7 @@ Internal DSLs require least maintenance since grammar changes are just code chan
 **Source:** https://cucumber.io/docs/gherkin/reference/
 
 **HCL (HashiCorp Configuration Language):** External DSL for infrastructure
+
 - Declarative, human-readable syntax
 - Hand-written parser in Go
 - Balances simplicity with power
@@ -498,6 +544,7 @@ Internal DSLs require least maintenance since grammar changes are just code chan
 **Source:** HCL documentation, used in Terraform
 
 **Gradle (Kotlin DSL):** Internal DSL for build automation
+
 - Transitioned from Groovy to Kotlin DSL
 - Excellent IDE support and type safety
 - **Trade-off:** More verbose than external DSL, but better tooling
@@ -506,6 +553,7 @@ Internal DSLs require least maintenance since grammar changes are just code chan
 **Source:** Gradle Kotlin DSL documentation
 
 **SQL:** The archetypal external DSL
+
 - 50+ years of success
 - Multiple parser implementations (each database has own)
 - Proves external DSLs can be maintained long-term
@@ -524,6 +572,7 @@ External DSLs offer complete syntax freedom but require building a full parser. 
 
 **Analysis:**
 Your brainstorming results show strong preference for "Option B" syntax with `@` notation for references:
+
 ```
 context UserAccounts
   @schema: UserProfile
@@ -531,14 +580,16 @@ context UserAccounts
 ```
 
 This clean, readable syntax is **not achievable** with an internal DSL. TypeScript/JavaScript syntax would require something like:
+
 ```typescript
-context("UserAccounts", {
-  schema: ref("UserProfile"),
-  profile: ref("StandardUsers")
-})
+context('UserAccounts', {
+  schema: ref('UserProfile'),
+  profile: ref('StandardUsers'),
+});
 ```
 
 **Impact on Requirements:**
+
 - REQ-F03 (QA-friendly): External DSL syntax is significantly more readable for non-programmers
 - REQ-NF08 (Avoid over-engineering): Internal DSL might seem simpler initially but compromises core goal
 
@@ -546,6 +597,7 @@ context("UserAccounts", {
 If your primary audience is QA testers with minimal coding experience, the syntax advantage of external DSL outweighs implementation effort.
 
 **Sources:**
+
 - Martin Fowler's "Syntactic Noise" discussion in DSL book
 - Your brainstorming session preference for Option B syntax
 
@@ -559,6 +611,7 @@ ANTLR provides professional-grade parsing with less code, but adds dependency an
 **Analysis:**
 
 **ANTLR Advantages:**
+
 - Grammar file serves as documentation
 - Excellent error recovery out-of-box
 - Multiple target languages (future-proofing)
@@ -566,6 +619,7 @@ ANTLR provides professional-grade parsing with less code, but adds dependency an
 - Visitor/listener patterns for AST traversal
 
 **Hand-written Advantages:**
+
 - No external dependencies
 - Complete control over error messages
 - Can optimize for specific patterns
@@ -574,6 +628,7 @@ ANTLR provides professional-grade parsing with less code, but adds dependency an
 
 **For Your DSL:**
 Your requirements show moderate syntax complexity:
+
 - Three-layer structure (context/schema/profile)
 - Reference syntax (`@schema`, `@profile`)
 - Template patterns
@@ -582,10 +637,12 @@ Your requirements show moderate syntax complexity:
 This is **not extremely complex** - similar to configuration languages like HCL or YAML with extensions.
 
 **Decision Factor:**
+
 - Choose ANTLR if: You value grammar-as-documentation, want professional error recovery, or might target multiple platforms later
 - Choose hand-written if: You want zero dependencies, need maximum control over error messages, or prefer debugging TypeScript over grammar files
 
 **Sources:**
+
 - ANTLR documentation on error recovery strategies
 - TypeScript compiler source (example of production hand-written parser)
 - "Crash Course in Compilers" (increment.com) on parser trade-offs
@@ -619,6 +676,7 @@ Type checking can happen during parsing, in a separate pass, or at runtime durin
 Multi-pass approach aligns with REQ-NF01 (clear error messages) and REQ-NF05 (fail-fast validation). Industry standard for good reason.
 
 **Implementation Pattern:**
+
 ```
 1. Lexing/Scanning → Tokens
 2. Parsing → AST
@@ -631,6 +689,7 @@ Multi-pass approach aligns with REQ-NF01 (clear error messages) and REQ-NF05 (fa
 ```
 
 **Sources:**
+
 - "Crash Course in Compilers" multi-phase architecture
 - "Writing an Interpreter From Scratch" semantic analysis discussion
 - Your REQ-NF05 requiring fail-fast validation
@@ -645,17 +704,20 @@ Should the DSL try to recover from errors and continue parsing (reporting multip
 **Analysis:**
 
 **Error Recovery Advantages:**
+
 - Users see all errors at once
 - Better developer experience
 - Standard in modern compilers (TypeScript, Rust)
 
 **Fail-Fast Advantages:**
+
 - Simpler parser implementation
 - Clearer error messages (no cascading errors)
 - Aligns with your "fail-fast" principle from brainstorming
 
 **Hybrid Approach:**
 Parse the entire file (collecting syntax errors), but stop before generation phase if any errors found. This gives best of both:
+
 - Users see all syntax errors
 - No attempt to generate invalid data (fail-fast on validation)
 - Clear separation between syntax and semantic errors
@@ -664,6 +726,7 @@ Parse the entire file (collecting syntax errors), but stop before generation pha
 Your brainstorming identified "fail-fast with clear validation" as a core principle. Implement this at the semantic level (don't generate if validation fails), but allow syntax error collection for better UX.
 
 **Sources:**
+
 - Your brainstorming session: "fail-fast validation with clear, actionable error messages"
 - Modern compiler error recovery strategies (Rust compiler, TypeScript)
 
@@ -677,6 +740,7 @@ Should the DSL be invokable from TypeScript code (embedded), or only through CLI
 **Analysis:**
 
 **Embedded Approach:**
+
 ```typescript
 import { generateTestData } from 'testdata-dsl';
 
@@ -688,12 +752,14 @@ const data = generateTestData(`
 ```
 
 **Standalone Approach:**
+
 ```bash
 testdata generate users.td --output users.json
 ```
 
 **Recommendation:**
 Support **both** - this is not an either/or decision:
+
 1. Core DSL processor library (can be imported)
 2. CLI wrapper for standalone use
 3. Optional VS Code extension for syntax highlighting
@@ -701,6 +767,7 @@ Support **both** - this is not an either/or decision:
 This aligns with REQ-TC04 (CLI support) while maximizing flexibility.
 
 **Sources:**
+
 - ANTLR supports both embedded and standalone usage patterns
 - Industry practice: ESLint, Prettier, TypeScript all support both modes
 
@@ -714,6 +781,7 @@ This aligns with REQ-TC04 (CLI support) while maximizing flexibility.
 Gherkin is a business-readable DSL for behavior-driven development (BDD), specifically designed for QA testers and non-technical stakeholders.
 
 **Syntax Example:**
+
 ```gherkin
 Feature: User login
   Scenario: Successful login
@@ -723,11 +791,13 @@ Feature: User login
 ```
 
 **Technical Implementation:**
+
 - External DSL with hand-written parser
 - Originally implemented in Ruby, later ported to Java, JavaScript, etc.
 - Simple keyword-based syntax: `Feature`, `Scenario`, `Given`, `When`, `Then`, `And`, `But`
 
 **Key Success Factors:**
+
 1. **Natural language syntax** - Reads like English specifications
 2. **Limited keywords** - Only ~10 keywords to learn
 3. **Flexible parameters** - Tables and doc strings for data
@@ -735,18 +805,21 @@ Feature: User login
 5. **Clear errors** - Reports which step failed and why
 
 **Relevance to Your DSL:**
+
 - Proves QA testers can successfully write DSL specifications
 - Validates external DSL approach for non-programmer audiences
 - Shows importance of minimal, memorable keywords
 - Demonstrates value of good error messages at step execution time
 
 **Lessons Learned:**
+
 - Keep keyword count low (Gherkin has ~10, your DSL could have similar)
 - Natural language > programming syntax for QA audience
 - Indentation for structure works well (like your Option B)
 - Clear, domain-specific error messages are essential
 
 **Sources:**
+
 - https://cucumber.io/docs/gherkin/reference/
 - Federico Tomassetti's DSL examples including Gherkin
 - 15+ years of successful use in testing community
@@ -759,6 +832,7 @@ Feature: User login
 HCL is used by Terraform for infrastructure-as-code. It targets operations teams (similar skill level to QA) and has processed billions of configurations.
 
 **Syntax Example:**
+
 ```hcl
 resource "aws_instance" "web" {
   ami           = "ami-a1b2c3d4"
@@ -771,12 +845,14 @@ resource "aws_instance" "web" {
 ```
 
 **Technical Implementation:**
+
 - External DSL with hand-written parser in Go
 - Declarative approach (describe desired state, not procedures)
 - First-class support for references and interpolation
 - JSON compatibility for machine generation
 
 **Key Success Factors:**
+
 1. **Declarative > Imperative** - Users describe "what" not "how"
 2. **Human-writable, machine-readable** - Can be generated programmatically
 3. **Strong typing** - Type errors caught before execution
@@ -784,18 +860,21 @@ resource "aws_instance" "web" {
 5. **Version control friendly** - Text-based, meaningful diffs
 
 **Relevance to Your DSL:**
+
 - Declarative approach matches your context/schema/profile separation
 - Shows hand-written parser can scale to production (millions of users)
 - Reference syntax similar to your `@schema`, `@profile` concept
 - Proves declarative DSLs work for technical-but-not-programmer audiences
 
 **Lessons Learned:**
+
 - Declarative syntax reduces cognitive load
 - Clear separation between definition and execution
 - Type system should be visible in syntax
 - Good diff-friendliness matters for collaboration
 
 **Sources:**
+
 - https://github.com/hashicorp/hcl (official repository)
 - HCL specification documentation
 - Real-world usage: 50M+ Terraform downloads
@@ -808,6 +887,7 @@ resource "aws_instance" "web" {
 Gradle build tool transitioned from Groovy DSL (dynamic) to Kotlin DSL (statically typed) to improve IDE support and type safety.
 
 **Syntax Example:**
+
 ```kotlin
 plugins {
     kotlin("jvm") version "1.9.20"
@@ -821,12 +901,14 @@ dependencies {
 ```
 
 **Technical Implementation:**
+
 - Internal DSL using Kotlin's type-safe builders
 - Leverages Kotlin's lambda-with-receiver feature
 - Full IDE support (IntelliJ IDEA)
 - Compiles to JVM bytecode
 
 **Key Success Factors:**
+
 1. **IDE autocomplete** - Users discover APIs through suggestions
 2. **Type safety** - Errors caught at compile time
 3. **Refactoring support** - Rename, extract, etc. work automatically
@@ -834,12 +916,14 @@ dependencies {
 5. **Gradual adoption** - Coexisted with Groovy DSL during transition
 
 **Relevance to Your DSL:**
+
 - Shows internal DSL trade-offs clearly
 - Excellent for developer audiences
 - **Not ideal** for QA testers (requires understanding Kotlin)
 - Demonstrates importance of IDE integration (which external DSLs need to build separately)
 
 **Lessons Learned:**
+
 - Internal DSLs work best for audiences already familiar with host language
 - Type safety is valuable but can be achieved with external DSLs too
 - IDE support is make-or-break for adoption
@@ -849,6 +933,7 @@ dependencies {
 Gradle users are developers. Your users are QA testers. This case study actually **validates choosing external DSL** for your audience.
 
 **Sources:**
+
 - https://docs.gradle.org/current/userguide/kotlin_dsl.html
 - Gradle's migration documentation
 - Industry feedback on Kotlin DSL adoption
@@ -861,6 +946,7 @@ Gradle users are developers. Your users are QA testers. This case study actually
 SQL is arguably the most successful DSL ever created. Over 50 years old, used by millions, multiple competing implementations.
 
 **Syntax Example:**
+
 ```sql
 SELECT users.name, orders.total
 FROM users
@@ -870,12 +956,14 @@ ORDER BY orders.total DESC;
 ```
 
 **Technical Implementation:**
+
 - External DSL with many parser implementations (each database vendor has own)
 - Declarative query language
 - Strong type system (schema-based)
 - Optimizable (query planners)
 
 **Key Success Factors:**
+
 1. **Declarative** - Users specify what data they want, not how to get it
 2. **Natural language-ish** - `SELECT`, `FROM`, `WHERE` are readable
 3. **Type system based on schema** - Table definitions provide types
@@ -883,18 +971,21 @@ ORDER BY orders.total DESC;
 5. **Interoperable** - SQL can be embedded in any language
 
 **Relevance to Your DSL:**
+
 - Proves external DSLs can be maintained for decades
 - Validates schema-based type systems (like your schema layer)
 - Shows declarative > imperative for data operations
 - Demonstrates value of optimization layer (you could optimize test data generation)
 
 **Lessons Learned:**
+
 - Declarative DSLs age better than imperative ones
 - Schema as source of truth for types
 - Embedding DSL in strings within programs is acceptable (prepared statements)
 - Optimization layer can be added later
 
 **Sources:**
+
 - Federico Tomassetti's DSL examples
 - 50+ years of SQL evolution
 - Multiple parser implementations prove syntax transcends implementation
@@ -907,23 +998,26 @@ ORDER BY orders.total DESC;
 YAML is widely used for configuration (Kubernetes, CI/CD, etc.) but has well-documented pitfalls.
 
 **Syntax Example:**
+
 ```yaml
 services:
   web:
     image: nginx:latest
     ports:
-      - "80:80"
+      - '80:80'
     environment:
       - NODE_ENV=production
 ```
 
 **Technical Implementation:**
+
 - Data serialization format, not a DSL
 - Multiple parser implementations (PyYAML, SnakeYAML, js-yaml)
 - Indentation-based syntax
 - Type inference from values
 
 **Problems Encountered:**
+
 1. **The Norway Problem** - `NO` parsed as boolean false
 2. **Type ambiguity** - Is `123` a string or number?
 3. **Indentation errors** - Hard to spot, cause silent failures
@@ -931,12 +1025,14 @@ services:
 5. **Complex features** - Anchors, aliases, merges rarely understood
 
 **Relevance to Your DSL:**
+
 - Shows limitations of pure data formats
 - Demonstrates why custom DSL > repurposing existing format
 - Validates need for explicit type declarations
 - Warns against invisible syntax (indentation-only)
 
 **Lessons Learned:**
+
 - **Don't** use YAML/JSON as your DSL syntax
 - Make types explicit in syntax
 - Provide better error messages than data parsers
@@ -944,11 +1040,13 @@ services:
 
 **Counter-example:**
 Your Option B syntax is **better** than YAML because:
+
 - Explicit layer markers (`context`, `schema`, `profile`)
 - Clear reference syntax (`@schema:`)
 - Domain-specific keywords, not generic data structure
 
 **Sources:**
+
 - "Norway Problem" and YAML gotchas widely documented
 - Kubernetes community feedback on YAML complexity
 - Your brainstorming session correctly avoiding YAML
@@ -1059,6 +1157,7 @@ Based on comprehensive research and analysis against your requirements, here are
 ### RECOMMENDED IMPLEMENTATION APPROACH
 
 **Phase 1 - Core Parser (Weeks 1-3):**
+
 ```typescript
 // 1. Lexer/Scanner
 class Scanner {
@@ -1085,6 +1184,7 @@ interface ASTNode {
 ```
 
 **Phase 2 - Semantic Analysis (Weeks 4-5):**
+
 ```typescript
 class SemanticAnalyzer {
   analyze(ast: Program): ValidationResult {
@@ -1097,6 +1197,7 @@ class SemanticAnalyzer {
 ```
 
 **Phase 3 - Generator (Weeks 6-8):**
+
 ```typescript
 class TestDataGenerator {
   generate(validatedAst: Program): TestData {
@@ -1108,6 +1209,7 @@ class TestDataGenerator {
 ```
 
 **Phase 4 - Tooling (Weeks 9-10):**
+
 - CLI wrapper
 - Error formatter (readable, actionable messages)
 - VS Code extension skeleton (syntax highlighting)
@@ -1115,6 +1217,7 @@ class TestDataGenerator {
 ### SYNTAX DESIGN RECOMMENDATIONS
 
 **1. Use Option B from your brainstorming:**
+
 ```
 context UserAccounts
   @schema: UserProfile
@@ -1122,12 +1225,14 @@ context UserAccounts
 ```
 
 **Rationale:**
+
 - Clean and readable (no excessive punctuation)
 - `@` notation clearly marks references
 - Indentation shows structure (proven by Python, YAML, Gherkin)
 - Minimal keywords (context, schema, profile, etc.)
 
 **2. Add explicit markers for layers:**
+
 ```
 # Context layer
 context UserAccounts
@@ -1148,12 +1253,14 @@ profile StandardUsers
 ```
 
 **Rationale:**
+
 - Makes three-layer architecture explicit
 - Users can see structure clearly
 - Easy to navigate in files
 - Similar to Gherkin's `Feature`/`Scenario` structure
 
 **3. Error Message Format:**
+
 ```
 Error: Unknown schema 'UserProfiles'
   --> users.td:3:12
@@ -1166,6 +1273,7 @@ Error: Unknown schema 'UserProfiles'
 ```
 
 **Rationale:**
+
 - Shows exact location (file, line, column)
 - Visual pointer to problem
 - Helpful suggestions (fuzzy matching for typos)
@@ -1173,23 +1281,27 @@ Error: Unknown schema 'UserProfiles'
 - Pattern proven by Rust compiler (best-in-class error messages)
 
 **Sources:**
+
 - Rust compiler error message format
 - Your REQ-NF01 requirement for clear, actionable errors
 
 ### ALTERNATIVE RECOMMENDATION: ANTLR-based External DSL
 
 **Use ANTLR if:**
+
 - You expect the grammar to change frequently (grammar file easier to modify than parser code)
 - You might want to target multiple platforms later (Python, Java, C++ parsers from same grammar)
 - Team is comfortable learning ANTLR grammar syntax
 - You value grammar-as-documentation
 
 **Implementation would change:**
+
 - Phase 1: ANTLR grammar file (.g4) instead of hand-written scanner/parser
 - Phase 2-4: Same semantic analysis and generation
 - Trade-off: Add ANTLR dependency, gain grammar tooling
 
 **Not recommended because:**
+
 - Your syntax is moderate complexity (hand-written is sufficient)
 - TypeScript-only target (multi-platform not needed)
 - Zero dependencies is valuable for adoption
@@ -1198,24 +1310,28 @@ Error: Unknown schema 'UserProfiles'
 ### EXPLICITLY NOT RECOMMENDED
 
 **1. Internal DSL (TypeScript/Kotlin/Ruby):**
+
 - **Reason:** Cannot achieve readable syntax for QA testers
 - Syntactic noise from host language reduces clarity
 - Requires programming knowledge (braces, semicolons, method calls)
 - Conflicts with REQ-F03 (minimal coding experience)
 
 **2. YAML/JSON-based approach:**
+
 - **Reason:** Poor error messages from generic parsers
 - Type ambiguity issues (Norway problem)
 - Not a DSL, just data serialization
 - Harder to make domain-specific
 
 **3. Language Workbench (JetBrains MPS):**
+
 - **Reason:** Massive upfront investment
 - Requires dedicated tooling
 - Overkill for this DSL complexity
 - Users can't use standard editors
 
 **4. Parser Combinators:**
+
 - **Reason:** Adds functional programming concepts
 - Slower performance than hand-written
 - Less control over error messages
@@ -1237,18 +1353,22 @@ Before proceeding to implementation, validate:
 ### RISK MITIGATION
 
 **Risk 1: Parser implementation complexity**
+
 - **Mitigation:** Start with minimal viable grammar, add features incrementally
 - **Precedent:** TypeScript started simple, added features over years
 
 **Risk 2: Poor error messages**
+
 - **Mitigation:** Invest heavily in error reporting from day 1
 - **Precedent:** Rust compiler success due to excellent errors
 
 **Risk 3: Insufficient tooling (IDE support)**
+
 - **Mitigation:** Phase 1: Basic syntax highlighting, Phase 2: LSP server for autocomplete
 - **Precedent:** Tree-sitter can provide syntax highlighting quickly
 
 **Risk 4: QA testers find syntax too technical**
+
 - **Mitigation:** User testing with QA team, iterate on syntax
 - **Precedent:** Gherkin iterated based on user feedback
 
@@ -1385,6 +1505,7 @@ Based on comprehensive research and analysis against your requirements, here are
 ### RECOMMENDED IMPLEMENTATION APPROACH
 
 **Phase 1 - Core Parser (Weeks 1-3):**
+
 ```typescript
 // 1. Lexer/Scanner
 class Scanner {
@@ -1411,6 +1532,7 @@ interface ASTNode {
 ```
 
 **Phase 2 - Semantic Analysis (Weeks 4-5):**
+
 ```typescript
 class SemanticAnalyzer {
   analyze(ast: Program): ValidationResult {
@@ -1423,6 +1545,7 @@ class SemanticAnalyzer {
 ```
 
 **Phase 3 - Generator (Weeks 6-8):**
+
 ```typescript
 class TestDataGenerator {
   generate(validatedAst: Program): TestData {
@@ -1434,6 +1557,7 @@ class TestDataGenerator {
 ```
 
 **Phase 4 - Tooling (Weeks 9-10):**
+
 - CLI wrapper
 - Error formatter (readable, actionable messages)
 - VS Code extension skeleton (syntax highlighting)
@@ -1441,6 +1565,7 @@ class TestDataGenerator {
 ### SYNTAX DESIGN RECOMMENDATIONS
 
 **1. Use Option B from your brainstorming:**
+
 ```
 context UserAccounts
   @schema: UserProfile
@@ -1448,12 +1573,14 @@ context UserAccounts
 ```
 
 **Rationale:**
+
 - Clean and readable (no excessive punctuation)
 - `@` notation clearly marks references
 - Indentation shows structure (proven by Python, YAML, Gherkin)
 - Minimal keywords (context, schema, profile, etc.)
 
 **2. Add explicit markers for layers:**
+
 ```
 # Context layer
 context UserAccounts
@@ -1474,12 +1601,14 @@ profile StandardUsers
 ```
 
 **Rationale:**
+
 - Makes three-layer architecture explicit
 - Users can see structure clearly
 - Easy to navigate in files
 - Similar to Gherkin's `Feature`/`Scenario` structure
 
 **3. Error Message Format:**
+
 ```
 Error: Unknown schema 'UserProfiles'
   --> users.td:3:12
@@ -1492,6 +1621,7 @@ Error: Unknown schema 'UserProfiles'
 ```
 
 **Rationale:**
+
 - Shows exact location (file, line, column)
 - Visual pointer to problem
 - Helpful suggestions (fuzzy matching for typos)
@@ -1499,23 +1629,27 @@ Error: Unknown schema 'UserProfiles'
 - Pattern proven by Rust compiler (best-in-class error messages)
 
 **Sources:**
+
 - Rust compiler error message format
 - Your REQ-NF01 requirement for clear, actionable errors
 
 ### ALTERNATIVE RECOMMENDATION: ANTLR-based External DSL
 
 **Use ANTLR if:**
+
 - You expect the grammar to change frequently (grammar file easier to modify than parser code)
 - You might want to target multiple platforms later (Python, Java, C++ parsers from same grammar)
 - Team is comfortable learning ANTLR grammar syntax
 - You value grammar-as-documentation
 
 **Implementation would change:**
+
 - Phase 1: ANTLR grammar file (.g4) instead of hand-written scanner/parser
 - Phase 2-4: Same semantic analysis and generation
 - Trade-off: Add ANTLR dependency, gain grammar tooling
 
 **Not recommended because:**
+
 - Your syntax is moderate complexity (hand-written is sufficient)
 - TypeScript-only target (multi-platform not needed)
 - Zero dependencies is valuable for adoption
@@ -1524,24 +1658,28 @@ Error: Unknown schema 'UserProfiles'
 ### EXPLICITLY NOT RECOMMENDED
 
 **1. Internal DSL (TypeScript/Kotlin/Ruby):**
+
 - **Reason:** Cannot achieve readable syntax for QA testers
 - Syntactic noise from host language reduces clarity
 - Requires programming knowledge (braces, semicolons, method calls)
 - Conflicts with REQ-F03 (minimal coding experience)
 
 **2. YAML/JSON-based approach:**
+
 - **Reason:** Poor error messages from generic parsers
 - Type ambiguity issues (Norway problem)
 - Not a DSL, just data serialization
 - Harder to make domain-specific
 
 **3. Language Workbench (JetBrains MPS):**
+
 - **Reason:** Massive upfront investment
 - Requires dedicated tooling
 - Overkill for this DSL complexity
 - Users can't use standard editors
 
 **4. Parser Combinators:**
+
 - **Reason:** Adds functional programming concepts
 - Slower performance than hand-written
 - Less control over error messages
@@ -1563,18 +1701,22 @@ Before proceeding to implementation, validate:
 ### RISK MITIGATION
 
 **Risk 1: Parser implementation complexity**
+
 - **Mitigation:** Start with minimal viable grammar, add features incrementally
 - **Precedent:** TypeScript started simple, added features over years
 
 **Risk 2: Poor error messages**
+
 - **Mitigation:** Invest heavily in error reporting from day 1
 - **Precedent:** Rust compiler success due to excellent errors
 
 **Risk 3: Insufficient tooling (IDE support)**
+
 - **Mitigation:** Phase 1: Basic syntax highlighting, Phase 2: LSP server for autocomplete
 - **Precedent:** Tree-sitter can provide syntax highlighting quickly
 
 **Risk 4: QA testers find syntax too technical**
+
 - **Mitigation:** User testing with QA team, iterate on syntax
 - **Precedent:** Gherkin iterated based on user feedback
 
@@ -1615,6 +1757,7 @@ Before proceeding to implementation, validate:
 
 **Context:**
 We need to design a test data generation DSL for QA testers with minimal coding experience. We must choose between:
+
 1. External DSL - custom syntax with dedicated parser
 2. Internal DSL - embedded in host language (TypeScript/Kotlin/Ruby)
 
@@ -1624,6 +1767,7 @@ We need to design a test data generation DSL for QA testers with minimal coding 
 **Rationale:**
 
 **Factors favoring External DSL:**
+
 1. **Target Audience:** QA testers with minimal coding experience need clean, natural syntax without programming language noise (braces, semicolons, method calls)
 2. **Syntax Requirements:** Option B syntax (`@schema:`, `@profile:`) cannot be achieved with internal DSL constraints
 3. **Precedent:** Gherkin (BDD testing DSL) proves QA-friendly external DSLs are successful and maintainable
@@ -1631,6 +1775,7 @@ We need to design a test data generation DSL for QA testers with minimal coding 
 5. **Requirements Alignment:** REQ-F02 (human-readable), REQ-F03 (QA-friendly), REQ-NF01 (clear errors) all favor external approach
 
 **Factors against Internal DSL:**
+
 1. **Syntactic Noise:** Host language syntax reduces readability for non-programmers (Martin Fowler's DSL analysis)
 2. **Learning Curve:** Requires understanding host language features (lambdas, builder patterns, etc.)
 3. **Tooling Dependency:** Users need IDE configured for host language
@@ -1639,24 +1784,28 @@ We need to design a test data generation DSL for QA testers with minimal coding 
 **Consequences:**
 
 **Positive:**
+
 - Optimal syntax design for domain and audience
 - Complete control over error messages
 - Clean separation from implementation language
 - Version control friendly (plain text files)
 
 **Negative:**
+
 - Must build parser from scratch
 - Need to develop IDE support separately
 - More upfront implementation effort
 - Debugging requires parser knowledge
 
 **Mitigations:**
+
 - Start with minimal viable grammar
 - Use hand-written parser (simpler than parser generator for moderate complexity)
 - Leverage Tree-sitter for quick syntax highlighting
 - Plan for LSP server in roadmap (Phase 2)
 
 **Sources:**
+
 - Martin Fowler: "Domain Specific Languages" - syntactic noise discussion
 - Gherkin case study - 15+ years QA DSL success
 - Your brainstorming session - Option B syntax preference
@@ -1669,6 +1818,7 @@ We need to design a test data generation DSL for QA testers with minimal coding 
 
 **Context:**
 Having chosen external DSL, we must implement a parser. Options:
+
 1. Hand-written recursive descent parser in TypeScript
 2. ANTLR-generated parser from grammar specification
 3. Other parser generators (Tree-sitter for parsing, Pest, etc.)
@@ -1679,6 +1829,7 @@ Having chosen external DSL, we must implement a parser. Options:
 **Rationale:**
 
 **Factors favoring hand-written:**
+
 1. **Syntax Complexity:** Moderate complexity (three layers, references, templates) doesn't justify parser generator overhead
 2. **Dependencies:** Zero external runtime dependencies (ANTLR requires runtime library)
 3. **Error Control:** Maximum control over error message formatting (critical for QA audience per REQ-NF01)
@@ -1687,6 +1838,7 @@ Having chosen external DSL, we must implement a parser. Options:
 6. **Precedent:** HCL (Terraform), TypeScript compiler, CoffeeScript all use hand-written parsers successfully
 
 **Factors against ANTLR:**
+
 1. **Learning Curve:** Team must learn ANTLR grammar syntax
 2. **Dependency:** Adds ANTLR runtime dependency
 3. **Generated Code:** Large, hard-to-debug generated parser code
@@ -1696,6 +1848,7 @@ Having chosen external DSL, we must implement a parser. Options:
 **Consequences:**
 
 **Positive:**
+
 - Full control over parsing logic and error reporting
 - No external dependencies
 - Easier debugging and maintenance
@@ -1703,12 +1856,14 @@ Having chosen external DSL, we must implement a parser. Options:
 - Can optimize for specific patterns
 
 **Negative:**
+
 - More code to write initially (scanner + parser ~500-800 LOC estimated)
 - Grammar changes require code changes (no grammar-as-documentation)
 - Must manually implement error recovery
 - No automatic validation of grammar consistency
 
 **Mitigations:**
+
 - Document grammar in BNF alongside implementation
 - Implement comprehensive tests for parser
 - Use TypeScript scanner pattern (proven in TypeScript compiler)
@@ -1718,6 +1873,7 @@ Having chosen external DSL, we must implement a parser. Options:
 Tree-sitter excels at incremental parsing for editors but still requires grammar specification. Use it for syntax highlighting, not primary parsing.
 
 **Sources:**
+
 - TypeScript compiler scanner/parser implementation
 - HCL parser (hand-written in Go)
 - "Writing an Interpreter From Scratch" - recursive descent patterns
@@ -1737,6 +1893,7 @@ Parser can validate syntax and semantics in single pass or multiple passes. Must
 **Rationale:**
 
 **Factors favoring multi-pass:**
+
 1. **Separation of Concerns:** Each phase has single responsibility (Unix philosophy)
 2. **Better Errors:** Can collect all syntax errors before semantic analysis, reducing cascading errors
 3. **Type Checking:** Can build complete symbol table before resolving references
@@ -1745,6 +1902,7 @@ Parser can validate syntax and semantics in single pass or multiple passes. Must
 6. **Maintainability:** Easier to modify one phase without affecting others
 
 **Architecture:**
+
 ```
 Phase 1: Lexing/Scanning → Tokens
 Phase 2: Parsing → Abstract Syntax Tree (AST)
@@ -1760,6 +1918,7 @@ Phase 4: Generation → Test Data (JSON/CSV/SQL)
 **Consequences:**
 
 **Positive:**
+
 - Clear error reporting (syntax errors separate from semantic errors)
 - Can show all syntax errors at once (better UX)
 - Type system has full program context
@@ -1767,6 +1926,7 @@ Phase 4: Generation → Test Data (JSON/CSV/SQL)
 - Standard architecture, well-understood patterns
 
 **Negative:**
+
 - Multiple passes over AST (performance impact - acceptable for DSL scale)
 - More memory usage (store AST between phases)
 - More complex implementation than single-pass
@@ -1775,6 +1935,7 @@ Phase 4: Generation → Test Data (JSON/CSV/SQL)
 For DSL files <10,000 lines (expected), multi-pass performance is acceptable (milliseconds).
 
 **Sources:**
+
 - "Crash Course in Compilers" - multi-phase architecture
 - TypeScript compiler architecture (binder, checker, emitter phases)
 - Your REQ-NF05 - fail-fast validation requirement
@@ -1787,6 +1948,7 @@ For DSL files <10,000 lines (expected), multi-pass performance is acceptable (mi
 
 **Context:**
 Must decide when to stop processing on errors:
+
 1. Fail immediately on first error
 2. Collect errors and continue parsing
 3. Hybrid approach
@@ -1797,6 +1959,7 @@ Must decide when to stop processing on errors:
 **Rationale:**
 
 **Parsing Phase (Collect Errors):**
+
 - Continue parsing even when syntax errors found
 - Collect all syntax errors in error list
 - Attempt to recover and continue (skip tokens until next valid structure)
@@ -1805,6 +1968,7 @@ Must decide when to stop processing on errors:
 **Why:** Better user experience - users see all syntax errors in one run, don't have to fix-and-rerun repeatedly.
 
 **Semantic Analysis Phase (Collect Errors):**
+
 - Perform all validation checks (type checking, reference resolution, constraint validation)
 - Collect all semantic errors
 - Build complete error report
@@ -1812,6 +1976,7 @@ Must decide when to stop processing on errors:
 **Why:** Users see all validation issues together.
 
 **Generation Phase (Fail-Fast):**
+
 - **Do NOT proceed to generation if any errors exist**
 - Stop after semantic analysis if error count > 0
 - Clear message: "Cannot generate test data due to validation errors"
@@ -1819,6 +1984,7 @@ Must decide when to stop processing on errors:
 **Why:** Aligns with REQ-NF05 fail-fast principle, prevents generating invalid data.
 
 **Error Format (Rust-inspired):**
+
 ```
 Error: Unknown schema 'UserProfiles'
   --> users.td:3:12
@@ -1833,6 +1999,7 @@ Error: Unknown schema 'UserProfiles'
 **Consequences:**
 
 **Positive:**
+
 - Best of both worlds: error collection + fail-fast
 - Clear, actionable error messages (REQ-NF01)
 - Users don't waste time fixing one error at a time
@@ -1840,15 +2007,18 @@ Error: Unknown schema 'UserProfiles'
 - Visual, IDE-quality error messages
 
 **Negative:**
+
 - More complex error recovery in parser
 - Must implement fuzzy matching for suggestions
 
 **Mitigations:**
+
 - Use well-tested error recovery patterns (skip to next statement)
 - Implement Levenshtein distance for "did you mean" suggestions
 - Provide examples in error messages
 
 **Sources:**
+
 - Rust compiler error message format (industry best-in-class)
 - Your REQ-NF01: "Clear, actionable error messages"
 - Your brainstorming: "fail-fast validation" principle
@@ -1868,6 +2038,7 @@ DSL can be imperative (specify steps to generate data) or declarative (describe 
 **Rationale:**
 
 **Declarative Pattern:**
+
 ```
 schema UserProfile
   id: uuid
@@ -1883,6 +2054,7 @@ profile StandardUsers
 Users describe structure and constraints. Generator determines how to create data.
 
 **Not Imperative:**
+
 ```
 // Anti-pattern - imperative approach
 for i in 1..100:
@@ -1893,6 +2065,7 @@ for i in 1..100:
 ```
 
 **Factors favoring declarative:**
+
 1. **Cognitive Load:** Lower for non-programmers (describe "what" not "how")
 2. **Precedents:** SQL (declarative queries), HCL (declarative infrastructure), HTML (declarative structure) all successful
 3. **Optimization:** Declarative allows generator to optimize (like SQL query planner)
@@ -1903,6 +2076,7 @@ for i in 1..100:
 **Consequences:**
 
 **Positive:**
+
 - QA-friendly syntax (describe test scenarios, not algorithms)
 - Generator can optimize and cache
 - Future: could add different generation strategies without syntax changes
@@ -1910,12 +2084,14 @@ for i in 1..100:
 - Easier to validate (check declarations vs trace execution)
 
 **Negative:**
+
 - Less flexible than imperative (by design - simplicity over power)
 - Some advanced scenarios may require imperative escape hatch (future extension)
 - Generator complexity higher (must interpret declarations)
 
 **Future Extension:**
 Can add imperative extensions later for power users if needed:
+
 ```
 profile AdvancedUsers
   count: 100
@@ -1924,6 +2100,7 @@ profile AdvancedUsers
 ```
 
 **Sources:**
+
 - SQL success as declarative DSL (50+ years)
 - HCL declarative approach (millions of users)
 - Your three-layer architecture (inherently declarative: Context + Schema + Profile)
@@ -1944,6 +2121,7 @@ Must choose implementation language for DSL parser and generator. Options: TypeS
 **Rationale:**
 
 **Factors favoring TypeScript:**
+
 1. **Requirement:** REQ-TC01 explicitly requires TypeScript/Node.js ecosystem
 2. **Integration:** Seamless integration with JavaScript testing frameworks (Jest, Mocha, Cypress)
 3. **Ecosystem:** npm for distribution, easy installation for QA teams
@@ -1955,6 +2133,7 @@ Must choose implementation language for DSL parser and generator. Options: TypeS
 **Consequences:**
 
 **Positive:**
+
 - Native integration with Node.js/JavaScript ecosystem
 - Easy distribution via npm
 - Type-safe implementation reduces bugs
@@ -1962,6 +2141,7 @@ Must choose implementation language for DSL parser and generator. Options: TypeS
 - Can embed DSL in JavaScript/TypeScript test suites
 
 **Negative:**
+
 - Slower runtime than Go/Rust (acceptable for DSL parsing scale)
 - Startup time (Node.js VM) - mitigated by CLI design
 - Not systems language (but not needed for this use case)
@@ -1970,6 +2150,7 @@ Must choose implementation language for DSL parser and generator. Options: TypeS
 For expected DSL file sizes (<10,000 lines), TypeScript performance is acceptable (parse + validate in milliseconds).
 
 **Sources:**
+
 - Your REQ-TC01 requirement
 - TypeScript compiler implementation (proves TypeScript can implement parsers)
 - Babel parser (JavaScript parser in JavaScript)
@@ -1989,6 +2170,7 @@ DSL includes references between layers (`@schema: UserProfile`, `@profile: Stand
 **Rationale:**
 
 **Symbol Table Design:**
+
 ```typescript
 interface SymbolTable {
   schemas: Map<string, SchemaNode>;
@@ -1999,11 +2181,13 @@ interface SymbolTable {
 ```
 
 **Resolution Process:**
+
 1. **Phase 1 (Symbol Collection):** Walk AST, collect all definitions
 2. **Phase 2 (Reference Resolution):** Walk AST, resolve all references to definitions
 3. **Phase 3 (Validation):** Check for undefined references, circular dependencies, type mismatches
 
 **Factors favoring symbol table:**
+
 1. **Standard Pattern:** All compilers use symbol tables for name resolution
 2. **Error Detection:** Can detect undefined references before generation
 3. **Type Checking:** Enables type checking (schema defines types used by profiles)
@@ -2013,20 +2197,24 @@ interface SymbolTable {
 **Consequences:**
 
 **Positive:**
+
 - Comprehensive error checking before generation
 - Enables meaningful error messages ("UserProfiles not defined, did you mean UserProfile?")
 - Foundation for future IDE features (go-to-definition, find-references)
 - Standard, well-understood pattern
 
 **Negative:**
+
 - Additional implementation complexity in semantic analyzer
 - Memory overhead (store symbol table)
 
 **Future Extensions:**
+
 - Scope handling (if we add nested scopes later)
 - Import/module system (if we split DSL across files)
 
 **Sources:**
+
 - Standard compiler symbol table design
 - "Crafting Interpreters" - symbol table and environment chapters
 - TypeScript compiler binder (builds symbol table)
@@ -2038,6 +2226,7 @@ interface SymbolTable {
 ### Academic and Foundational Resources
 
 **Books:**
+
 1. **"Domain Specific Languages" by Martin Fowler**
    - Comprehensive guide to DSL design patterns
    - Internal vs External DSL trade-offs
@@ -2051,13 +2240,13 @@ interface SymbolTable {
    - Symbol tables and semantic analysis
    - https://craftinginterpreters.com/
 
-**Articles and Guides:**
-3. **"The complete guide to (external) Domain Specific Languages" by Federico Tomassetti**
-   - 19 DSL examples (SQL, HTML, CSS, Gherkin, etc.)
-   - External vs internal DSL comparison
-   - Tools: Xtext, JetBrains MPS, ANTLR, Whole Platform, MetaEdit+
-   - Design patterns and anti-patterns
-   - https://tomassetti.me/domain-specific-languages/
+**Articles and Guides:** 3. **"The complete guide to (external) Domain Specific Languages" by Federico Tomassetti**
+
+- 19 DSL examples (SQL, HTML, CSS, Gherkin, etc.)
+- External vs internal DSL comparison
+- Tools: Xtext, JetBrains MPS, ANTLR, Whole Platform, MetaEdit+
+- Design patterns and anti-patterns
+- https://tomassetti.me/domain-specific-languages/
 
 4. **"Crash Course in Compilers" (Increment Magazine)**
    - Modern compiler architecture overview
@@ -2067,12 +2256,12 @@ interface SymbolTable {
 
 ### Technical Implementation Resources
 
-**Parser Generators and Tools:**
-5. **ANTLR 4**
-   - Parser generator supporting 10+ target languages
-   - 18,500+ GitHub stars
-   - https://github.com/antlr/antlr4
-   - Documentation: https://www.antlr.org/
+**Parser Generators and Tools:** 5. **ANTLR 4**
+
+- Parser generator supporting 10+ target languages
+- 18,500+ GitHub stars
+- https://github.com/antlr/antlr4
+- Documentation: https://www.antlr.org/
 
 6. **Tree-sitter**
    - Incremental parsing library for syntax highlighting
@@ -2085,13 +2274,13 @@ interface SymbolTable {
    - Performance measurements and best practices
    - https://pest.rs/
 
-**Example Implementations:**
-8. **TypeScript Compiler Source Code**
-   - scanner.ts - Hand-written lexer pattern
-   - parser.ts - Recursive descent parser
-   - binder.ts - Symbol table construction
-   - checker.ts - Type checking
-   - https://github.com/Microsoft/TypeScript
+**Example Implementations:** 8. **TypeScript Compiler Source Code**
+
+- scanner.ts - Hand-written lexer pattern
+- parser.ts - Recursive descent parser
+- binder.ts - Symbol table construction
+- checker.ts - Type checking
+- https://github.com/Microsoft/TypeScript
 
 9. **HCL (HashiCorp Configuration Language)**
    - Hand-written parser in Go
@@ -2101,12 +2290,7 @@ interface SymbolTable {
 
 ### Case Study Resources
 
-**DSL Examples:**
-10. **Gherkin (Cucumber)**
-    - BDD testing DSL for QA testers
-    - 15+ years of proven success
-    - Natural language syntax
-    - https://cucumber.io/docs/gherkin/reference/
+**DSL Examples:** 10. **Gherkin (Cucumber)** - BDD testing DSL for QA testers - 15+ years of proven success - Natural language syntax - https://cucumber.io/docs/gherkin/reference/
 
 11. **Gradle Kotlin DSL**
     - Internal DSL evolution case study
@@ -2154,16 +2338,19 @@ interface SymbolTable {
 ### Tools and Ecosystem
 
 **Testing Frameworks:**
+
 - Jest (JavaScript/TypeScript testing)
 - Mocha (JavaScript testing)
 - Cypress (E2E testing)
 
 **Build Tools:**
+
 - TypeScript compiler (tsc)
 - npm/yarn (package management)
 - esbuild/webpack (bundling)
 
 **IDE Support:**
+
 - VS Code extensions API
 - Language Server Protocol (LSP)
 - TextMate grammars (syntax highlighting)
@@ -2171,16 +2358,19 @@ interface SymbolTable {
 ### Additional Reading
 
 **YAML Pitfalls:**
+
 - "Norway Problem" documentation
 - JSON Schema validation
 - Kubernetes YAML complexity discussions
 
 **Parser Combinators:**
+
 - Parsec (Haskell)
 - FastParse (Scala)
 - pyparsing (Python)
 
 **Language Design:**
+
 - /r/ProgrammingLanguages community
 - Language design discussions and critiques
 - Modern language feature comparisons
@@ -2190,9 +2380,11 @@ interface SymbolTable {
 ## 10. Executive Summary
 
 ### Research Question
+
 What are the best practices and design patterns for creating a test data generation DSL that targets QA testers with minimal coding experience?
 
 ### Methodology
+
 - Comprehensive review of DSL design literature (Martin Fowler, Federico Tomassetti)
 - Analysis of 5 real-world DSL case studies (Gherkin, HCL, Gradle Kotlin DSL, SQL, YAML)
 - Evaluation of 5 implementation approaches (External DSL, Internal DSL, Parser Generators, Parser Combinators, Language Workbenches)
@@ -2202,12 +2394,14 @@ What are the best practices and design patterns for creating a test data generat
 ### Key Findings
 
 **1. External DSL is Optimal for QA Audience:**
+
 - Gherkin proves QA-friendly external DSLs can succeed (15+ years, widespread adoption)
 - Internal DSLs suffer from "syntactic noise" that reduces readability for non-programmers
 - External DSL enables Option B syntax (`@schema:`, `@profile:`) which is unachievable with internal approaches
 - Full control over error messages critical for non-technical users
 
 **2. Hand-written Parser Recommended Over Generators:**
+
 - Your syntax has moderate complexity (three layers, references, templates)
 - Hand-written provides maximum error message control (critical for QA audience)
 - Zero external dependencies aids adoption
@@ -2215,18 +2409,21 @@ What are the best practices and design patterns for creating a test data generat
 - ANTLR overhead not justified for this complexity level
 
 **3. Declarative Syntax Superior to Imperative:**
+
 - SQL, HCL, Gherkin all demonstrate declarative DSL success
 - Lower cognitive load for non-programmers (describe "what" not "how")
 - Aligns with your three-layer architecture (Context + Schema + Profile)
 - Enables future optimization by generator (like SQL query planners)
 
 **4. Multi-pass Compilation Architecture:**
+
 - Industry standard: Lexing → Parsing → Semantic Analysis → Generation
 - Enables comprehensive error reporting (show all errors at once)
 - Supports fail-fast principle (validate completely before generation)
 - Clean separation of concerns aids maintainability
 
 **5. Error Handling Strategy:**
+
 - Collect syntax errors during parsing (better UX - show all at once)
 - Collect semantic errors during validation
 - Fail-fast before generation if any errors exist
@@ -2237,6 +2434,7 @@ What are the best practices and design patterns for creating a test data generat
 **PRIMARY: External DSL with Hand-written Parser in TypeScript**
 
 **Architecture:**
+
 ```
 DSL File (.td)
   → Scanner (Lexical Analysis)
@@ -2246,6 +2444,7 @@ DSL File (.td)
 ```
 
 **Syntax: Option B Enhanced:**
+
 ```
 # Context layer
 context UserAccounts
@@ -2265,12 +2464,14 @@ profile StandardUsers
 ```
 
 **Implementation Timeline:**
+
 - Weeks 1-3: Core parser (scanner + parser + AST)
 - Weeks 4-5: Semantic analysis (symbol table + validation)
 - Weeks 6-8: Test data generator
 - Weeks 9-10: CLI + error formatting + VS Code syntax highlighting
 
 **Success Criteria:**
+
 - QA testers can write specifications without programming knowledge
 - Error messages are clear and actionable (Rust-quality)
 - Version control friendly (meaningful diffs)
@@ -2280,16 +2481,19 @@ profile StandardUsers
 ### Validation Against Requirements
 
 **Functional Requirements:**
+
 - ✅ REQ-F02 (Human-readable): External DSL with Option B syntax
 - ✅ REQ-F03 (QA-friendly): Proven by Gherkin precedent
 - ✅ All others supported by architecture
 
 **Non-Functional Requirements:**
+
 - ✅ REQ-NF01 (Clear errors): Hand-written parser + Rust-inspired format
 - ✅ REQ-NF05 (Fail-fast): Multi-pass with validation before generation
 - ✅ All others achievable with recommended approach
 
 **Technical Constraints:**
+
 - ✅ REQ-TC01 (TypeScript): Native implementation
 - ✅ REQ-TC04 (CLI): Part of implementation plan
 - ✅ REQ-TC05 (Version control): Text-based DSL files
@@ -2297,30 +2501,37 @@ profile StandardUsers
 ### Risks and Mitigations
 
 **Risk 1:** Parser implementation complexity
+
 - **Mitigation:** Start minimal, increment features, use proven patterns (TypeScript scanner approach)
 
 **Risk 2:** Poor error messages
+
 - **Mitigation:** Invest in error reporting from day 1, implement fuzzy matching for suggestions
 
 **Risk 3:** QA testers find syntax too technical
+
 - **Mitigation:** User testing with QA team, iterate based on feedback (Gherkin model)
 
 **Risk 4:** Insufficient tooling
+
 - **Mitigation:** Phase 1 syntax highlighting (Tree-sitter), Phase 2 LSP server
 
 ### Alternative Approaches Considered
 
 **ANTLR-based External DSL:**
+
 - Pros: Grammar-as-documentation, professional error recovery
 - Cons: Dependency, learning curve, less error message control
 - **Decision:** Not recommended (hand-written sufficient)
 
 **Internal DSL (TypeScript):**
+
 - Pros: Fast implementation, IDE support included
 - Cons: Syntactic noise, requires programming knowledge
 - **Decision:** Explicitly not recommended (conflicts with QA audience requirement)
 
 **Language Workbench (JetBrains MPS):**
+
 - Pros: Powerful language composition, graphical elements
 - Cons: Massive investment, requires dedicated tool
 - **Decision:** Overkill for this use case
@@ -2337,6 +2548,7 @@ profile StandardUsers
 ### Conclusion
 
 Research strongly supports **External DSL with hand-written parser** as the optimal approach for a QA-friendly test data generation DSL. This recommendation is grounded in:
+
 - **Precedent:** Gherkin's 15+ year success with QA audiences
 - **Requirements alignment:** Satisfies all 30 functional, non-functional, and technical constraints
 - **Industry best practices:** Multi-pass compilation, declarative syntax, comprehensive error handling

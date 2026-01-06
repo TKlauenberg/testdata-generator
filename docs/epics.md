@@ -1,13 +1,19 @@
 ---
-stepsCompleted: ["step-01-validate-prerequisites", "step-02-design-epics", "step-03-create-stories", "step-04-final-validation"]
+stepsCompleted:
+  [
+    'step-01-validate-prerequisites',
+    'step-02-design-epics',
+    'step-03-create-stories',
+    'step-04-final-validation',
+  ]
 inputDocuments:
-  - "docs/prd.md"
-  - "docs/architecture.md"
-project_name: "testdata-ai"
-user_name: "Tobi"
-date: "2025-12-30"
-completedDate: "2025-12-31"
-status: "complete"
+  - 'docs/prd.md'
+  - 'docs/architecture.md'
+project_name: 'testdata-ai'
+user_name: 'Tobi'
+date: '2025-12-30'
+completedDate: '2025-12-31'
+status: 'complete'
 totalEpics: 12
 totalStories: 54
 allFRsCovered: true
@@ -25,6 +31,7 @@ This document provides the complete epic and story breakdown for testdata-ai, de
 ### Functional Requirements
 
 **Core Data Generation (FR1-FR5):**
+
 - FR1: Schema definition with fields, types, and generators
 - FR2: Configurable volume generation (10 to 1M+ records) with deterministic seeds
 - FR3: Uniqueness constraints (single field and composite)
@@ -32,79 +39,93 @@ This document provides the complete epic and story breakdown for testdata-ai, de
 - FR5: Relationships (generate new OR reference context)
 
 **Context Management (FR6-FR9):**
+
 - FR6: Load existing data as context (JSON, CSV, DB exports)
 - FR7: Reference context data in patterns (`@context.users.random`)
 - FR8: Tag-based context selection (`@staging AND @region-us`)
 - FR9: Save generated data as context for future use
 
 **Cascading Rules (FR10-FR13):**
+
 - FR10: Global defaults across all projects
 - FR11: Workspace defaults (team-shared via `.tdconfig.json`)
 - FR12: Schema-level defaults override workspace
 - FR13: Field-level overrides all defaults
 
 **CLI Operations (FR14-FR17):**
+
 - FR14: Generate test data via CLI (`td generate`)
 - FR15: Validate DSL before generation (`td validate`)
 - FR16: Initialize schemas from templates (`td init`)
 - FR17: Clear, actionable error messages for non-programmers
 
 **Pattern Sharing (FR18-FR21):**
+
 - FR18: Save DSL patterns as text files (`.td` format)
 - FR19: Share patterns via version control (Git-friendly)
 - FR20: Discover and use patterns from team repository
 - FR21: Compose patterns from reusable components
 
 **Data Output (FR22-FR25):**
+
 - FR22: Output in multiple formats (JSON, CSV, SQL)
 - FR23: Generated data includes metadata (timestamp, source pattern, version)
 - FR24: Programmatic API for test scripts integration
 - FR25: Deterministic generation with seed values
 
 **Validation (FR26-FR29):**
+
 - FR26: DSL syntax validation during parsing
 - FR27: Semantic correctness validation
 - FR28: Uniqueness constraint violation prevention
 - FR29: Context reference validation before generation
 
 **Platform Foundations (FR30-FR31):**
+
 - FR30: Metadata for future platform lift (pattern reference, parameters, version)
 - FR31: Export generation history for audit trail
 
 ### Non-Functional Requirements
 
 **Performance (NFR1-3):**
+
 - NFR1: Generate 1000 records in <1 minute (~100-500 records/sec)
 - NFR2: Validate DSL schemas in <1 second
 - NFR3: Support 1M+ records without memory issues (streaming)
 
 **Security (NFR4-5):**
+
 - NFR4: No arbitrary code execution from DSL files
 - NFR5: Safe context data loading without injection risks
 
 **Usability (NFR6-8):**
+
 - NFR6: DSL syntax readable by QA testers with minimal coding experience
 - NFR7: Error messages actionable without developer assistance
 - NFR8: Common use cases achievable in <30 minutes
 
 **Maintainability (NFR9-10):**
+
 - NFR9: DSL patterns remain valid across minor versions
 - NFR10: Clear separation: DSL core, generators, adapters
 
 **Extensibility (NFR11-12):**
+
 - NFR11: Custom generators via plugins (without modifying core)
 - NFR12: New output formats via adapter pattern
 
 ### Additional Requirements
 
 **Starter Template/Project Initialization:**
+
 - Architecture specifies Bun 1.x monorepo setup with packages/core and packages/cli
 - Project structure must be initialized before DSL implementation
 - TypeScript strict mode configuration required
 - ESLint + Prettier configuration needed
 
 **Technical Infrastructure:**
-- Custom Xoshiro256** PRNG implementation (no Faker.js dependency)
+
+- Custom Xoshiro256\*\* PRNG implementation (no Faker.js dependency)
 - Result<T,E> type pattern for error handling
 - AsyncIterable streaming for memory efficiency
 - Discriminated union types for tokens and AST nodes
@@ -112,18 +133,21 @@ This document provides the complete epic and story breakdown for testdata-ai, de
 - Co-located tests using Bun test runner
 
 **Development Patterns:**
+
 - camelCase.ts file naming convention
 - `private _memberName` for all private members
 - index.ts exports for all modules
 - Rust-style error formatting for CLI
 
 **Multi-Pass Compilation Pipeline:**
+
 - Scanner (lexical analysis) → Parser (syntax analysis) → Analyzer (semantic validation) → Generator (data generation)
 - Clear module boundaries with defined inputs/outputs
 
 ### FR Coverage Map
 
 **Core Data Generation:**
+
 - FR1: Epic 2 (basic schema parsing), Epic 5 (advanced generators)
 - FR2: Epic 3 (configurable volume generation)
 - FR3: Epic 7 (uniqueness constraints)
@@ -131,48 +155,56 @@ This document provides the complete epic and story breakdown for testdata-ai, de
 - FR5: Epic 6 (relationships)
 
 **Context Management:**
+
 - FR6: Epic 8 (load context)
 - FR7: Epic 8 (reference context data)
 - FR8: Epic 8 (tag-based context selection)
 - FR9: Epic 8 (save generated as context)
 
 **Cascading Rules:**
+
 - FR10: Epic 9 (global defaults)
 - FR11: Epic 9 (workspace defaults)
 - FR12: Epic 9 (schema defaults)
 - FR13: Epic 9 (field overrides)
 
 **CLI Operations:**
+
 - FR14: Epic 4 (generate command)
 - FR15: Epic 4 (validate command)
 - FR16: Epic 4 (init command)
 - FR17: Epic 4 (error formatting)
 
 **Pattern Sharing:**
+
 - FR18: Epic 2 (text-based DSL)
 - FR19: Epic 11 (version control friendly)
 - FR20: Epic 11 (pattern discovery)
 - FR21: Epic 11 (pattern composition)
 
 **Data Output:**
+
 - FR22: Epic 3 (JSON output), Epic 10 (CSV/SQL output)
 - FR23: Epic 3 (metadata tracking)
 - FR24: Epic 10 (programmatic API)
 - FR25: Epic 3 (deterministic generation)
 
 **Validation:**
+
 - FR26: Epic 2 (DSL syntax validation)
 - FR27: Epic 2 (semantic validation)
 - FR28: Epic 7 (uniqueness enforcement)
 - FR29: Epic 11 (reference validation)
 
 **Platform Foundations:**
+
 - FR30: Epic 12 (platform metadata)
 - FR31: Epic 12 (generation history)
 
 ## Epic List
 
 ### Epic 1: Project Foundation & Development Setup
+
 Development team can start building testdata-ai with proper monorepo structure, tooling, and core utilities in place.
 
 **FRs covered:** Foundation for all other FRs (enables FR1-FR31)
@@ -180,66 +212,77 @@ Development team can start building testdata-ai with proper monorepo structure, 
 **Additional:** Bun monorepo setup, TypeScript strict mode, Result<T,E> pattern, project structure
 
 ### Epic 2: DSL Core - Parse and Validate Schemas
+
 QA testers can write DSL schema files and get immediate validation feedback with clear error messages.
 
 **FRs covered:** FR1 (schema definitions), FR18 (text-based DSL), FR26-FR27 (validation)
 **NFRs supported:** NFR2 (validate in <1 sec), NFR4 (no code execution), NFR6-NFR7 (readable syntax, actionable errors)
 
 ### Epic 3: Basic Data Generation
+
 QA testers can generate simple test data from validated schemas with primitive field types and basic generators.
 
 **FRs covered:** FR2 (configurable volume generation), FR22 (JSON output), FR23 (metadata), FR25 (deterministic seeds)
 **NFRs supported:** NFR1 (performance targets), NFR3 (streaming for large datasets)
 
 ### Epic 4: CLI Tool Interface
+
 QA testers can use intuitive command-line commands to generate, validate, and initialize schemas without programmatic knowledge.
 
 **FRs covered:** FR14 (generate command), FR15 (validate command), FR16 (init command), FR17 (error formatting)
 **NFRs supported:** NFR6-NFR8 (usability for non-programmers)
 
 ### Epic 5: Advanced Field Generation
+
 QA testers can generate realistic personal data, temporal patterns, and complex field types for authentic test scenarios.
 
 **FRs covered:** FR1 (advanced generators - personal, temporal, identity types)
 **NFRs supported:** NFR6 (readable syntax for complex patterns)
 
 ### Epic 6: Cross-Field Templates & Relationships
+
 QA testers can define realistic relationships between fields and generate related entities.
 
 **FRs covered:** FR4 (cross-field templates), FR5 (relationships)
 **NFRs supported:** NFR6 (natural syntax for relationships)
 
 ### Epic 7: Uniqueness Constraints
+
 QA testers can enforce uniqueness rules to ensure realistic test data without duplicates.
 
 **FRs covered:** FR3 (uniqueness constraints - single and composite), FR28 (uniqueness enforcement)
 **NFRs supported:** NFR1 (performance with constraint checking)
 
 ### Epic 8: Context Management
+
 QA testers can load existing data and reference it in new generations, enabling realistic test scenarios with dependencies.
 
 **FRs covered:** FR6 (load context), FR7 (reference context), FR8 (tag-based selection), FR9 (save as context)
 **NFRs supported:** NFR5 (safe data loading)
 
 ### Epic 9: Cascading Configuration System
+
 Teams can establish shared test data standards while individuals maintain flexibility for specific test scenarios.
 
 **FRs covered:** FR10 (global defaults), FR11 (workspace defaults), FR12 (schema defaults), FR13 (field overrides)
 **NFRs supported:** NFR10 (clear separation of concerns)
 
 ### Epic 10: Multi-Format Output & Programmatic API
+
 QA testers can generate test data in their required format (JSON, CSV, SQL) and developers can integrate generation into test scripts.
 
 **FRs covered:** FR22 (CSV/SQL output), FR24 (programmatic API)
 **NFRs supported:** NFR12 (adapter pattern for extensibility)
 
 ### Epic 11: Pattern Composition & Reusability
+
 QA testers can build complex patterns from reusable components and share them across the team.
 
 **FRs covered:** FR19 (version control friendly), FR20 (pattern discovery), FR21 (pattern composition), FR29 (reference validation)
 **NFRs supported:** NFR9 (backward compatibility)
 
 ### Epic 12: Platform-Ready Metadata & Audit Trail
+
 Organizations can track test data generation history and prepare for future platform evolution.
 
 **FRs covered:** FR30 (platform metadata), FR31 (generation history)
@@ -477,12 +520,13 @@ So that **I can fix issues before attempting data generation**.
 **And** the function returns a `ValidatedProgram` on success containing the complete validated AST
 **And** the API is exported from `packages/core/src/index.ts`
 **And** comprehensive Gherkin feature tests cover:
-  - Valid schema validation succeeds
-  - Syntax errors are reported clearly
-  - Semantic errors are reported with suggestions
-  - Multiple errors are collected and reported together
-  - Performance requirements are met
-**And** example schemas in `docs/examples/` demonstrate valid syntax
+
+- Valid schema validation succeeds
+- Syntax errors are reported clearly
+- Semantic errors are reported with suggestions
+- Multiple errors are collected and reported together
+- Performance requirements are met
+  **And** example schemas in `docs/examples/` demonstrate valid syntax
 
 ---
 
@@ -490,7 +534,7 @@ So that **I can fix issues before attempting data generation**.
 
 QA testers can generate simple test data from validated schemas with primitive field types and basic generators.
 
-### Story 3.1: Custom PRNG - Xoshiro256** Implementation
+### Story 3.1: Custom PRNG - Xoshiro256\*\* Implementation
 
 As a **developer**,
 I want **a custom seeded pseudo-random number generator**,
@@ -620,13 +664,14 @@ So that **I can quickly create test datasets for my testing scenarios**.
 **And** the same schema and seed produce identical data across runs
 **And** the API is exported from `packages/core/src/index.ts`
 **And** comprehensive Gherkin feature tests cover:
-  - Valid schema generates correct number of records
-  - Generated records match schema structure
-  - Seed parameter produces reproducible results
-  - Invalid schema returns validation errors
-  - Performance requirements are met (1000 records < 1 minute)
-  - Large dataset generation (10k, 100k records) works without memory issues
-**And** example usage is documented with code samples
+
+- Valid schema generates correct number of records
+- Generated records match schema structure
+- Seed parameter produces reproducible results
+- Invalid schema returns validation errors
+- Performance requirements are met (1000 records < 1 minute)
+- Large dataset generation (10k, 100k records) works without memory issues
+  **And** example usage is documented with code samples
 
 ---
 

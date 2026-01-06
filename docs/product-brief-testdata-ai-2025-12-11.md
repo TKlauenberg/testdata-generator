@@ -33,12 +33,14 @@ The vision is to make complex test data generation easier - enabling realistic r
 ### Problem Statement
 
 **The Performance Testing Paradox:**
+
 - Performance tests require large volumes of test data (thousands to millions of records)
 - Current approaches force oversimplified data generation because complexity doesn't scale
 - Result: Repetitive, unrealistic data that fails to expose real-world system behavior
 - Creating complex, varied test data manually is so tedious that teams simply don't do it
 
 **The Broader Test Data Challenge:**
+
 - Each project rebuilds test data generation from scratch
 - No reusable patterns or organizational standards
 - QA testers depend on developers to create test data tooling
@@ -47,11 +49,13 @@ The vision is to make complex test data generation easier - enabling realistic r
 **Concrete Example - Vehicle Tolls Project:**
 
 In a past project calculating vehicle tolls, the team needed:
+
 - Diverse vehicle configurations (trailer types, axle counts, emission classes, weight categories)
 - Various transport routes with different toll zones
 - Realistic combinations to test edge cases in toll calculations
 
 **The Problem:**
+
 - Vehicle configurations required deep domain knowledge to create
 - Routes were created manually, one by one
 - Testers spent time understanding vehicle details instead of focusing on toll calculation logic
@@ -59,6 +63,7 @@ In a past project calculating vehicle tolls, the team needed:
 - Creating temporal patterns (week of transactions, monthly trends) was prohibitively manual
 
 **What Was Needed:**
+
 - Define vehicle characteristics once, generate variations automatically
 - Focus test cases on specific scenarios without manual data setup
 - Realistic temporal patterns for performance and trend testing
@@ -88,6 +93,7 @@ In a past project calculating vehicle tolls, the team needed:
    - No more "simple because it has to be" test data
 
 **Core Philosophy:**
+
 - Declarative over imperative (describe WHAT, not HOW)
 - Pattern-based generation (not test case enumeration)
 - Progressive sophistication (start simple, grow to organizational standards)
@@ -96,6 +102,7 @@ In a past project calculating vehicle tolls, the team needed:
 ### Key Differentiators
 
 **Individual-First, Team-Enabled Design:**
+
 - Individual QA tester writes DSL files for specific test scenarios
 - Definitions are immediately shareable (text files, version control)
 - No centralized service required for core value
@@ -103,11 +110,13 @@ In a past project calculating vehicle tolls, the team needed:
 - Future web service enhances collaboration but isn't a prerequisite
 
 **Progressive Sophistication Path:**
+
 1. **Individual**: Custom patterns for specific test cases
 2. **Team**: Shared schemas and profiles in version control
 3. **Organization**: Centralized team workspace with remote generation (future)
 
 **Focus on QA Tester Autonomy:**
+
 - Minimal coding experience required
 - No dependency on developers for test data tooling
 - Readable syntax (self-documenting patterns)
@@ -120,6 +129,7 @@ In a past project calculating vehicle tolls, the team needed:
 ### Primary Users: Individual QA Testers
 
 **Profile:**
+
 - QA tester working on a software development team
 - Minimal coding experience (not professional developers)
 - Needs test data for functional testing, edge cases, and performance scenarios
@@ -127,6 +137,7 @@ In a past project calculating vehicle tolls, the team needed:
 - Comfortable with text files and version control basics
 
 **Current Workflow Pain:**
+
 - Manual test data creation is tedious and error-prone
 - Requesting developer help for test data generation creates bottlenecks
 - Simple scripts generate unrealistic, repetitive data
@@ -134,6 +145,7 @@ In a past project calculating vehicle tolls, the team needed:
 - Complex relationships and temporal patterns are prohibitively difficult
 
 **What They Need:**
+
 - Write DSL definitions for their specific test scenarios
 - Generate varied, realistic test data without programming
 - Iterate quickly on test data patterns
@@ -143,12 +155,14 @@ In a past project calculating vehicle tolls, the team needed:
 ### Secondary Users: QA Teams (Collective)
 
 **Team Context:**
+
 - Multiple QA testers working on the same application
 - Need consistent test data across team members
 - Build shared library of reusable schemas and generation profiles
 - Collaborate on test data patterns via version control
 
 **Team Benefits:**
+
 - Share `.td` DSL files in Git repository (day one capability)
 - Reuse schemas across different test scenarios
 - Build organizational test data standards over time
@@ -156,6 +170,7 @@ In a past project calculating vehicle tolls, the team needed:
 - Consistent data generation across the team
 
 **Future: Team Workspace (Web Service)**
+
 - Generate data remotely via API
 - Save generated datasets as reusable context
 - Manage organizational patterns centrally
@@ -164,6 +179,7 @@ In a past project calculating vehicle tolls, the team needed:
 ### User Journey: From Baseline to Reusable Patterns
 
 **Phase 1: Generate Baseline Data**
+
 1. QA tester writes DSL definition for test scenario (e.g., vehicle configurations)
 2. Generates 1000 realistic, varied records via CLI
 3. Manually modifies 5-10 records to create specific edge cases
@@ -171,12 +187,14 @@ In a past project calculating vehicle tolls, the team needed:
 4. Uses the modified dataset for testing
 
 **Phase 2: Edge Case Becomes Pattern**
+
 1. Tester realizes this edge case is valuable for other scenarios
 2. Extracts manual modifications into DSL generation rule/profile
 3. Shares with team (Git commit): "Here's the 'overweight-trailer' profile"
 4. Other testers use it as-is or as base for their variations
 
 **Phase 3: Team Library Emerges**
+
 1. Collection of edge case profiles accumulates over time
 2. New testers discover existing patterns in repository
 3. Test scenarios compose multiple profiles together
@@ -192,6 +210,7 @@ Success is not "zero manual work" - it's **reducing 1000 manual records to 5 man
 ### Individual Tester Productivity
 
 **Time Savings:**
+
 - Baseline data generation: **Minutes instead of hours**
   - Current: Hours to manually create or script 1000 varied records
   - Target: Minutes to write DSL and generate
@@ -200,6 +219,7 @@ Success is not "zero manual work" - it's **reducing 1000 manual records to 5 man
   - 99.5% reduction in manual data creation
 
 **Iteration Speed:**
+
 - Test scenario changes: **Seconds to regenerate** with modified patterns
 - Current: Must rebuild scripts or manually recreate datasets
 - Target: Edit DSL, regenerate, continue testing
@@ -207,11 +227,13 @@ Success is not "zero manual work" - it's **reducing 1000 manual records to 5 man
 ### Team Collaboration
 
 **Pattern Reuse:**
+
 - Edge case → reusable pattern: **One sharing action** (Git commit)
 - Team adoption: **Measurable increase in shared pattern usage over time**
 - New team member onboarding: **Discover existing patterns through repository**
 
 **Quality Indicators:**
+
 - Test data realism: **Subjective improvement** (varied vs repetitive)
 - Edge case coverage: **More edge cases tested** (because they're easier to create)
 - Performance test validity: **Data complexity matches production** scenarios
@@ -219,12 +241,14 @@ Success is not "zero manual work" - it's **reducing 1000 manual records to 5 man
 ### MVP Success Criteria
 
 **A QA tester can:**
+
 1. Write a DSL definition for a moderately complex schema (10-15 fields) in **under 30 minutes**
 2. Generate 1000+ varied, realistic records in **under 1 minute**
 3. Share the definition with a teammate who can **use it without explanation**
 4. Iterate on patterns **5+ times in a testing session** without friction
 
 **Team adoption indicator:**
+
 - At least **3 team members actively using** shared DSL definitions within first month
 - Repository contains **10+ reusable patterns** within first quarter
 
@@ -235,6 +259,7 @@ Success is not "zero manual work" - it's **reducing 1000 manual records to 5 man
 ### Core Features (v1 - Must Have)
 
 **1. Context Management**
+
 - Reference existing or previously generated data within new generation rules
 - Load context from files (JSON, CSV, database exports)
 - Reference context data in relationships: `@context.users.random`, `@context.regions`
@@ -244,12 +269,14 @@ Success is not "zero manual work" - it's **reducing 1000 manual records to 5 man
 **Why Critical:** Without context, every generation is isolated. Context enables the workflow: generate baseline → save as context → use in next scenario. This is the foundation of reusability.
 
 **2. Cascading Rules (CSS-inspired)**
+
 - Global defaults apply to all schemas
 - Workspace defaults override globals (team-shared settings)
 - Schema-level defaults override workspace
 - Field-level specifications override all
 
 **Hierarchy Example:**
+
 ```
 Global: id format = UUID
 Workspace: id format = Sequential Integer (team preference)
@@ -260,6 +287,7 @@ Field: User.id = Custom(prefix="USR-") (specific override)
 **Why Critical:** Enables teams to share common patterns while customizing where needed. Without cascading, every schema must redefine everything, killing reusability.
 
 **3. Schema Definitions with Basic Patterns**
+
 - Define data structure (fields, types)
 - Basic field generators: faker patterns, ranges, templates
 - Uniqueness constraints (single field, composite)
@@ -267,12 +295,14 @@ Field: User.id = Custom(prefix="USR-") (specific override)
 - Relationship support: generate new OR reference context
 
 **4. CLI Tool for Generation**
+
 - Parse DSL files (`.td` format)
 - Generate data to multiple outputs: JSON, CSV, SQL inserts
 - Clear error messages with fail-fast validation
 - Volume control: `--count=1000` parameter
 
 **5. Git-Friendly DSL Syntax**
+
 - Text-based format (Option B style: compact notation with `@` references)
 - Meaningful diffs when patterns change
 - Comment support for documentation
@@ -281,6 +311,7 @@ Field: User.id = Custom(prefix="USR-") (specific override)
 ### Essential Features (v2 - Post-MVP)
 
 **Temporal Patterns**
+
 - Time-series data generation: "30 days of transactions"
 - Date distributions: "realistic weekday vs weekend patterns"
 - Temporal relationships: "order date before shipment date"
@@ -291,6 +322,7 @@ Field: User.id = Custom(prefix="USR-") (specific override)
 ### Future Features (v3+ - Lower Priority)
 
 **Generation Profiles**
+
 - Multiple pattern sets per schema: "standard-vehicle", "overweight-trailer", "edge-case-emissions"
 - Profile composition: combine multiple profiles
 - Profile inheritance: "heavy-truck extends standard-vehicle"
@@ -298,6 +330,7 @@ Field: User.id = Custom(prefix="USR-") (specific override)
 **Why Lower Priority:** Can be simulated with separate schema definitions initially. Profiles become valuable when pattern library grows and duplication becomes painful.
 
 **Team Workspace / Web Service**
+
 - Remote generation via API
 - Save generated datasets as managed context
 - Central pattern library
@@ -325,6 +358,7 @@ A successful MVP enables a QA tester to:
 6. **Iterate quickly** - modify pattern, regenerate, verify in seconds
 
 **Technical Validation:**
+
 - DSL parser handles moderate complexity without performance issues
 - Context loading supports 10k+ record datasets
 - Cascading rule resolution is deterministic and debuggable
@@ -333,17 +367,20 @@ A successful MVP enables a QA tester to:
 ## Technical Preferences
 
 **Implementation Language:** TypeScript/Node.js ecosystem
+
 - Aligns with QA team tooling familiarity
 - Rich ecosystem for parsing and CLI tools
 - Cross-platform support (Windows, macOS, Linux)
 
 **DSL Approach:** External DSL with hand-written parser
+
 - Based on technical research conclusions (December 2025)
 - Maximum control over error messages (critical for QA audience)
 - Zero external parser dependencies
 - Option B syntax style: compact notation with `@` references
 
 **Architecture:**
+
 ```
 DSL Core (patterns, schemas, context-agnostic)
     ↓
@@ -353,12 +390,14 @@ Tooling (CLI, future: visual graph, validation)
 ```
 
 **Parser Architecture:** Multi-pass compilation
+
 1. Lexing/Scanning → Tokens
 2. Parsing → AST
 3. Semantic Analysis → Validated AST (symbol table, type checking, reference resolution)
 4. Generation → Test data output
 
 **Design Philosophy:**
+
 - Declarative over imperative
 - Type inference by default, explicit when needed
 - Fail-fast validation with actionable error messages
@@ -370,11 +409,13 @@ Tooling (CLI, future: visual graph, validation)
 ## Supporting Materials
 
 This product brief was informed by:
+
 - **Brainstorming Session** (2025-11-29): Explored DSL design approaches, identified three-layer architecture, established core principles
 - **Technical Research** (2025-12-03): Evaluated 5 DSL implementation approaches, recommended external DSL with hand-written TypeScript parser
 - **Personal Experience:** Vehicle tolls project and multiple performance testing scenarios across different projects
 
 **Key Research Findings:**
+
 - External DSL optimal for QA audience (proven by Gherkin's 15+ year success)
 - Hand-written parser recommended for moderate complexity DSL
 - Declarative syntax superior to imperative for non-programmers

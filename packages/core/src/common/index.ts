@@ -9,7 +9,12 @@
 export type { Result } from './result';
 export { ok, err, isOk, isErr, unwrap, unwrapOr, map, mapErr } from './result';
 
-export type { Diagnostic, SourceLocation, DiagnosticSeverity, CreateDiagnosticOptions } from './diagnostic';
+export type {
+  Diagnostic,
+  SourceLocation,
+  DiagnosticSeverity,
+  CreateDiagnosticOptions,
+} from './diagnostic';
 export {
   createDiagnostic,
   unterminatedString,

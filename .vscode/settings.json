@@ -8,5 +8,12 @@
     "cursor-global": true,
     "cursor-workspace": true
   },
-  "github.copilot.chat.agent.autoFix": true
+  "github.copilot.chat.agent.autoFix": true,
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "eslint.validate": ["javascript", "typescript"],
+  "typescript.tsdk": "node_modules/typescript/lib"
 }

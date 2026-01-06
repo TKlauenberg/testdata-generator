@@ -126,6 +126,7 @@ This story establishes the **code quality foundation** for the entire testdata-a
 **From [architecture.md](../architecture.md):**
 
 **Technology Stack Decisions:**
+
 - **Bun 1.x** as primary runtime (built-in TypeScript support)
 - **TypeScript 5.x** with strict mode enabled
 - **ESLint 9.x** for code quality (latest version with flat config)
@@ -136,18 +137,21 @@ This story establishes the **code quality foundation** for the entire testdata-a
 The architecture document specifies several critical conventions that MUST be enforced through tooling:
 
 1. **File Naming Convention**: camelCase for all TypeScript files
+
    ```
    ✅ scanner.ts, parser.ts, diagnostic.ts
    ❌ Scanner.ts, Parser.ts, Diagnostic.ts
    ```
 
 2. **Private Member Convention**: All private class members must start with underscore
+
    ```typescript
    ✅ private _tokens: Token[];
    ❌ private tokens: Token[];
    ```
 
 3. **Module Boundaries**: All exports must go through `index.ts` files
+
    ```typescript
    // packages/core/src/scanner/index.ts
    export { scan } from './scanner';
@@ -162,6 +166,7 @@ The architecture document specifies several critical conventions that MUST be en
 5. **ESM Modules**: No CommonJS, only ES modules (`import`/`export`)
 
 **From [architecture.md](../architecture.md#distribution-strategy):**
+
 - Prettier configuration: Single quotes, trailing commas
 - ESLint configuration: TypeScript plugin with strict rules
 - CI/CD: GitHub Actions for automated checks
@@ -169,12 +174,14 @@ The architecture document specifies several critical conventions that MUST be en
 **From [project-context.md](../project-context.md):**
 
 **Technology Stack:**
+
 - Bun 1.x (primary runtime)
 - TypeScript 5.x with strict mode
 - ESLint with TypeScript plugin
 - Prettier (single quotes, trailing commas)
 
 **Critical Project Rules:**
+
 - NO `any` types (strict mode prevents this)
 - Explicit return types for all public functions
 - Named exports preferred over default exports
@@ -183,12 +190,14 @@ The architecture document specifies several critical conventions that MUST be en
 ### Previous Story Intelligence
 
 **From Story 1.1 (Initialize Bun Monorepo):**
+
 - Workspace structure established: `packages/core/` and `packages/cli/`
 - Root `package.json` configured with `"workspaces": ["packages/*"]`
 - TypeScript configured with strict mode
 - Bun 1.x is the primary runtime
 
 **From Story 1.2 (Result Type Pattern):**
+
 - Created `packages/core/src/common/result.ts`
 - Used TypeScript discriminated unions
 - Implemented unit tests using Bun test runner
@@ -196,13 +205,15 @@ The architecture document specifies several critical conventions that MUST be en
 - **Pattern established**: All exports go through index.ts files
 
 **From Story 1.3 (Diagnostic System):**
+
 - Created `packages/core/src/common/diagnostic.ts`
 - Implemented comprehensive error reporting types
 - Added unit tests
 - Exported through common index.ts
-- **Pattern established**: Co-located tests (*.test.ts next to implementation)
+- **Pattern established**: Co-located tests (\*.test.ts next to implementation)
 
 **From Story 1.4 (Gherkin/BDD Testing Infrastructure):**
+
 - Set up Cucumber with SerenityJS Screenplay pattern
 - Created `packages/core/features/` directory structure
 - Implemented Actors, Abilities, Tasks, Questions pattern
@@ -216,15 +227,17 @@ The architecture document specifies several critical conventions that MUST be en
   - `tests/cucumber.runner.ts` - Bun test integration
 
 **Development Patterns Observed:**
+
 1. **Strict TypeScript**: All code uses strict mode with explicit types
 2. **Module exports**: Everything exports through index.ts
-3. **Co-located tests**: Unit tests (*.test.ts) next to implementation
+3. **Co-located tests**: Unit tests (\*.test.ts) next to implementation
 4. **Separate BDD tests**: Feature files in dedicated features/ directory
 5. **Comprehensive documentation**: Each story includes detailed README.md
 
 ### Git Intelligence
 
 **Recent Commits Analysis:**
+
 ```
 f138008 - implementation of story 1.4 (Gherkin/BDD infrastructure)
 15d68a5 - create-story 1.4
@@ -244,6 +257,7 @@ c65446f - create story details for story 1.3
 5. **CI/CD Gap**: No CI pipeline exists yet - this story will create it
 
 **Files Modified in Story 1.4:**
+
 - Created comprehensive Cucumber/SerenityJS infrastructure
 - Added multiple feature files and step definitions
 - Created Screenplay pattern components (Abilities, Tasks, Questions)
@@ -259,6 +273,7 @@ c65446f - create story details for story 1.3
 ESLint 9.x introduced a **new flat config format** that replaces the old `.eslintrc` format. This is a **breaking change** and is now the recommended approach.
 
 **Old Format (DO NOT USE):**
+
 ```json
 // .eslintrc.json
 {
@@ -268,6 +283,7 @@ ESLint 9.x introduced a **new flat config format** that replaces the old `.eslin
 ```
 
 **New Flat Config Format (USE THIS):**
+
 ```javascript
 // eslint.config.js
 import js from '@eslint/js';
@@ -279,12 +295,13 @@ export default [
   {
     rules: {
       // Custom rules
-    }
-  }
+    },
+  },
 ];
 ```
 
 **Key Differences:**
+
 1. **File name**: `eslint.config.js` (NOT `.eslintrc.js`)
 2. **Export format**: Default export of array (NOT JSON object)
 3. **Config composition**: Spread configs into array
@@ -296,11 +313,13 @@ export default [
 The `typescript-eslint` package provides full TypeScript support for ESLint 9.x.
 
 **Installation:**
+
 ```bash
 bun add -D eslint @eslint/js typescript-eslint
 ```
 
 **Basic Configuration:**
+
 ```javascript
 // eslint.config.js
 import js from '@eslint/js';
@@ -323,10 +342,13 @@ export default tseslint.config(
       // TypeScript-specific rules
       '@typescript-eslint/explicit-function-return-type': 'warn',
       '@typescript-eslint/no-explicit-any': 'error',
-      '@typescript-eslint/no-unused-vars': ['error', {
-        argsIgnorePattern: '^_',
-        varsIgnorePattern: '^_'
-      }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+        },
+      ],
     },
   },
 );
@@ -335,6 +357,7 @@ export default tseslint.config(
 **Custom Rules for Project Conventions:**
 
 We need custom rules to enforce:
+
 1. **camelCase file naming**: Check that all .ts files use camelCase
 2. **Private member naming**: Check that private class members start with `_`
 3. **Module boundary enforcement**: Ensure imports go through index.ts
@@ -346,11 +369,13 @@ These can be implemented as custom ESLint rules or as separate linting scripts.
 Prettier 3.x is stable and widely adopted. Configuration is straightforward.
 
 **Installation:**
+
 ```bash
 bun add -D prettier eslint-config-prettier eslint-plugin-prettier
 ```
 
 **Configuration (.prettierrc):**
+
 ```json
 {
   "semi": true,
@@ -365,6 +390,7 @@ bun add -D prettier eslint-config-prettier eslint-plugin-prettier
 **Integration with ESLint:**
 
 Option 1: Disable conflicting rules (recommended)
+
 ```javascript
 // eslint.config.js
 import eslintConfigPrettier from 'eslint-config-prettier';
@@ -376,6 +402,7 @@ export default [
 ```
 
 Option 2: Run Prettier as ESLint rule (more integrated)
+
 ```javascript
 // eslint.config.js
 import eslintPluginPrettier from 'eslint-plugin-prettier/recommended';
@@ -393,6 +420,7 @@ export default [
 Use the official `oven-sh/setup-bun` action for CI/CD.
 
 **Basic CI Workflow:**
+
 ```yaml
 # .github/workflows/ci.yml
 name: CI
@@ -435,10 +463,12 @@ jobs:
 For optimal developer experience, configure VS Code extensions.
 
 **Required Extensions:**
+
 - `dbaeumer.vscode-eslint` - ESLint integration
 - `esbenp.prettier-vscode` - Prettier integration
 
 **.vscode/settings.json:**
+
 ```json
 {
   "editor.formatOnSave": true,
@@ -451,13 +481,10 @@ For optimal developer experience, configure VS Code extensions.
 ```
 
 **.vscode/extensions.json:**
+
 ```json
 {
-  "recommendations": [
-    "dbaeumer.vscode-eslint",
-    "esbenp.prettier-vscode",
-    "oven.bun-vscode"
-  ]
+  "recommendations": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode", "oven.bun-vscode"]
 }
 ```
 
@@ -499,6 +526,7 @@ For optimal developer experience, configure VS Code extensions.
 ### Technical Requirements
 
 **ESLint Configuration (eslint.config.js):**
+
 - Use flat config format (ESLint 9.x)
 - Configure TypeScript support via `typescript-eslint`
 - Enable recommended TypeScript rules
@@ -510,6 +538,7 @@ For optimal developer experience, configure VS Code extensions.
 - Configure file patterns to lint
 
 **Prettier Configuration (.prettierrc):**
+
 - Single quotes: `true`
 - Trailing commas: `"all"`
 - Print width: 100 (or 120)
@@ -518,6 +547,7 @@ For optimal developer experience, configure VS Code extensions.
 - Semicolons: `true`
 
 **CI/CD Workflow (.github/workflows/ci.yml):**
+
 - Trigger: Pull requests to main, pushes to main
 - Setup Bun using `oven-sh/setup-bun@v1`
 - Install dependencies: `bun install`
@@ -527,6 +557,7 @@ For optimal developer experience, configure VS Code extensions.
 - Fail if any step fails
 
 **Package.json Scripts:**
+
 ```json
 {
   "scripts": {
@@ -542,6 +573,7 @@ For optimal developer experience, configure VS Code extensions.
 ### Architecture Compliance
 
 **Module Structure:**
+
 ```
 testdata-ai/
 ├── .github/
@@ -566,6 +598,7 @@ testdata-ai/
 ESLint cannot enforce file naming directly, but we can add a custom script or use a plugin.
 
 **Option 1: Custom validation script**
+
 ```typescript
 // scripts/validate-file-names.ts
 import { readdirSync } from 'fs';
@@ -616,6 +649,7 @@ TypeScript ESLint can enforce this with a custom rule:
 **Module Boundary Enforcement:**
 
 This is harder to enforce automatically. Options:
+
 1. **Import resolution plugin**: Restrict imports that bypass index.ts
 2. **Manual code review**: Check during PRs
 3. **Custom linting rule**: Write custom ESLint rule
@@ -625,6 +659,7 @@ This is harder to enforce automatically. Options:
 ### Library & Framework Requirements
 
 **Required Dependencies (devDependencies):**
+
 ```json
 {
   "devDependencies": {
@@ -639,12 +674,14 @@ This is harder to enforce automatically. Options:
 ```
 
 **Framework Versions:**
+
 - ESLint: 9.x (latest with flat config)
 - TypeScript ESLint: 8.x (compatible with ESLint 9)
 - Prettier: 3.x (latest stable)
 - eslint-config-prettier: 9.x (disables conflicting rules)
 
 **Installation Commands:**
+
 ```bash
 # Install ESLint with TypeScript support
 bun add -D eslint @eslint/js typescript-eslint
@@ -657,6 +694,7 @@ bun add -D eslint-config-prettier eslint-plugin-prettier
 ```
 
 **Note on Bun Compatibility:**
+
 - All these tools are Bun-compatible
 - ESLint runs natively on Bun
 - Prettier works seamlessly with Bun
@@ -665,6 +703,7 @@ bun add -D eslint-config-prettier eslint-plugin-prettier
 ### File Structure Requirements
 
 **Configuration Files to Create:**
+
 1. `eslint.config.js` - ESLint flat config (root)
 2. `.prettierrc` - Prettier configuration (root)
 3. `.prettierignore` - Prettier ignore patterns (root)
@@ -675,6 +714,7 @@ bun add -D eslint-config-prettier eslint-plugin-prettier
 **Ignore Patterns:**
 
 **.prettierignore:**
+
 ```
 node_modules
 dist
@@ -684,6 +724,7 @@ coverage
 ```
 
 **Note on .eslintignore:**
+
 - With flat config, ignore patterns are in `eslint.config.js`
 - No separate `.eslintignore` file needed
 
@@ -700,6 +741,7 @@ export default [
 ### Testing Requirements
 
 **What to Test:**
+
 1. **Linting works**: Run `bun run lint` on codebase
 2. **Formatting works**: Run `bun run format` on codebase
 3. **Auto-fix works**: Run `bun run lint:fix` and verify issues are fixed
@@ -707,6 +749,7 @@ export default [
 5. **Editor integration**: Test VS Code format-on-save and auto-fix
 
 **Manual Testing Steps:**
+
 1. Create a file with linting violations (e.g., `any` type)
 2. Run `bun run lint` - should report error
 3. Run `bun run lint:fix` - should fix if auto-fixable
@@ -716,6 +759,7 @@ export default [
 7. Push to GitHub - CI should run and pass all checks
 
 **No Automated Tests Needed:**
+
 - This is infrastructure setup, not application logic
 - Manual verification is sufficient
 - CI workflow will validate everything works
@@ -723,6 +767,7 @@ export default [
 ### Previous Story Intelligence Summary
 
 **Key Patterns to Follow:**
+
 1. **Export through index.ts**: All modules export via index.ts
 2. **Co-located tests**: Unit tests next to implementation
 3. **Comprehensive documentation**: Create detailed README or update main README
@@ -730,11 +775,13 @@ export default [
 5. **Commit messages**: Use conventional commits format
 
 **Files to Update:**
+
 - `package.json` (root) - Add lint and format scripts
 - `README.md` (root) - Add section on code quality tooling
 - `docs/sprint-artifacts/sprint-status.yaml` - Update story status
 
 **Files to Create:**
+
 - `eslint.config.js`
 - `.prettierrc`
 - `.prettierignore`
@@ -743,17 +790,20 @@ export default [
 - `.vscode/extensions.json`
 
 **DO NOT Create:**
+
 - `.eslintrc.json` or `.eslintrc.js` (old format)
 - `.eslintignore` (use ignores in flat config)
 
 ### Project Context Reference
 
 **Primary Reference Documents:**
+
 - [Architecture Document](../architecture.md) - Technology stack, code conventions
 - [Project Context](../project-context.md) - Critical implementation rules
 - [Epics](../epics.md) - Story 1.5 acceptance criteria
 
 **Critical Rules from Project Context:**
+
 1. **Bun 1.x** is primary runtime
 2. **TypeScript strict mode** required
 3. **No `any` types** allowed
@@ -763,6 +813,7 @@ export default [
 7. **Private members** with `_` prefix
 
 **Technology Stack:**
+
 - Runtime: Bun 1.x
 - Language: TypeScript 5.x (strict mode)
 - Linting: ESLint 9.x (flat config)
@@ -772,6 +823,7 @@ export default [
 ### References
 
 **Source Documents:**
+
 - [Source: docs/epics.md#story-15-development-tooling-setup] - Acceptance criteria
 - [Source: docs/architecture.md#technology-stack] - ESLint/Prettier configuration
 - [Source: docs/architecture.md#code-quality-requirements] - File naming, private member conventions
@@ -780,6 +832,7 @@ export default [
 - [Source: docs/sprint-artifacts/1-4-gherkin-bdd-testing-infrastructure.md] - Previous story patterns
 
 **External Documentation:**
+
 - ESLint 9.x Flat Config: https://eslint.org/docs/latest/use/configure/configuration-files-new
 - TypeScript ESLint: https://typescript-eslint.io/
 - Prettier: https://prettier.io/docs/en/configuration.html

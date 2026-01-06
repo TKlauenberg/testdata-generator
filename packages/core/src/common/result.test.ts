@@ -1,15 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import {
-  ok,
-  err,
-  isOk,
-  isErr,
-  unwrap,
-  unwrapOr,
-  map,
-  mapErr,
-  type Result,
-} from './result';
+import { ok, err, isOk, isErr, unwrap, unwrapOr, map, mapErr, type Result } from './result';
 
 describe('Result type', () => {
   describe('Factory functions', () => {

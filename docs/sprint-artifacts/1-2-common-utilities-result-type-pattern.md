@@ -58,6 +58,7 @@ so that **I can handle expected errors explicitly without throwing exceptions**.
 **From [project-context.md](../project-context.md#error-handling-patterns):**
 
 **Result<T, E> Type Pattern (MANDATORY):**
+
 - **NEVER throw exceptions for expected errors** - Use Result type instead
 - Discriminated union with `ok` boolean discriminator for TypeScript narrowing
 - Success variant: `{ ok: true; value: T }`
@@ -65,10 +66,9 @@ so that **I can handle expected errors explicitly without throwing exceptions**.
 - Enable exhaustive checking via TypeScript strict mode
 
 **Example from project-context.md:**
+
 ```typescript
-type Result<T, E> =
-  | { ok: true; value: T }
-  | { ok: false; error: E };
+type Result<T, E> = { ok: true; value: T } | { ok: false; error: E };
 
 // ✅ Correct usage
 function parse(tokens: Token[]): Result<Program, Diagnostic[]> {
@@ -90,6 +90,7 @@ if (result.ok) {
 **From [architecture.md](../architecture.md#error-handling-strategy):**
 
 **Error Handling Philosophy:**
+
 - Two error categories:
   1. **Expected errors** (DSL syntax errors, validation failures) → Use Result<T, E>
   2. **Unexpected errors** (file system failures, OOM) → Can throw exceptions
@@ -100,12 +101,14 @@ if (result.ok) {
 **From [project-context.md](../project-context.md#typescript-strict-mode-requirements):**
 
 **TypeScript Constraints:**
+
 - **strict: true** enabled - ensures exhaustive checking works
 - **No `any` types** - Result generic parameters must be concrete
 - **Explicit return types** required for all public functions
 - **Immutable data structures** - use `readonly` for Result properties
 
 **File Naming & Module Structure:**
+
 - **camelCase.ts** naming: `result.ts` (NOT Result.ts, not result-type.ts)
 - **Module exports through index.ts**: Create `common/index.ts` barrel
 - **Co-located tests**: `result.test.ts` in same directory as `result.ts`
@@ -113,11 +116,10 @@ if (result.ok) {
 ### Implementation Guidance
 
 **Core Result Type (result.ts):**
+
 ```typescript
 // Main discriminated union type
-export type Result<T, E> =
-  | { ok: true; value: T }
-  | { ok: false; errors: E };
+export type Result<T, E> = { ok: true; value: T } | { ok: false; errors: E };
 
 // Factory functions
 export function ok<T>(value: T): Result<T, never> {
@@ -148,28 +150,24 @@ export function unwrapOr<T, E>(result: Result<T, E>, defaultValue: T): T {
 }
 
 // Functional transformations
-export function map<T, U, E>(
-  result: Result<T, E>,
-  fn: (value: T) => U
-): Result<U, E> {
+export function map<T, U, E>(result: Result<T, E>, fn: (value: T) => U): Result<U, E> {
   return result.ok ? ok(fn(result.value)) : result;
 }
 
-export function mapErr<T, E, F>(
-  result: Result<T, E>,
-  fn: (errors: E) => F
-): Result<T, F> {
+export function mapErr<T, E, F>(result: Result<T, E>, fn: (errors: E) => F): Result<T, F> {
   return result.ok ? result : err(fn(result.errors));
 }
 ```
 
 **Module Barrel Export (common/index.ts):**
+
 ```typescript
 export type { Result } from './result';
 export { ok, err, isOk, isErr, unwrap, unwrapOr, map, mapErr } from './result';
 ```
 
 **Test Strategy (result.test.ts):**
+
 - Use Bun's built-in test runner (import from 'bun:test' or use globals)
 - Test factory functions create correct structure
 - Test discriminator-based narrowing works
@@ -179,12 +177,14 @@ export { ok, err, isOk, isErr, unwrap, unwrapOr, map, mapErr } from './result';
 ### Dependencies on Previous Stories
 
 **Story 1.1 (Initialize Bun Monorepo):**
+
 - ✅ Complete - monorepo structure exists
 - `packages/core/` directory exists with `src/` folder
 - TypeScript strict mode enabled in `tsconfig.json`
 - `bun test` command configured and working
 
 **Files Created in Story 1.1:**
+
 - `packages/core/package.json` - package metadata
 - `packages/core/tsconfig.json` - strict mode enabled
 - `packages/core/src/index.ts` - main entry point (currently empty)
@@ -192,16 +192,19 @@ export { ok, err, isOk, isErr, unwrap, unwrapOr, map, mapErr } from './result';
 ### Files to Create in This Story
 
 **New Files:**
+
 1. `packages/core/src/common/result.ts` - Result type implementation
 2. `packages/core/src/common/index.ts` - Barrel export for common utilities
 3. `packages/core/src/common/result.test.ts` - Unit tests
 
 **Modified Files:**
+
 1. `packages/core/src/index.ts` - Add export: `export * from './common';`
 
 ### Testing Strategy
 
 **Unit Test Coverage (result.test.ts):**
+
 ```typescript
 import { describe, test, expect } from 'bun:test';
 import { ok, err, isOk, isErr, unwrap, unwrapOr, map, mapErr } from './result';
@@ -226,14 +229,14 @@ describe('Result type', () => {
   test('discriminator enables exhaustive checking', () => {
     const successResult = ok(100);
     const errorResult = err(['failed']);
-    
+
     // Type narrowing works
     if (successResult.ok) {
       // TypeScript knows: successResult.value is number
       const value: number = successResult.value;
       expect(value).toBe(100);
     }
-    
+
     if (!errorResult.ok) {
       // TypeScript knows: errorResult.errors is string[]
       const errors: string[] = errorResult.errors;
@@ -300,23 +303,27 @@ describe('Result type', () => {
 ### Integration with Future Stories
 
 **Story 1.3 (Diagnostic System) - NEXT:**
+
 - Will define `Diagnostic` type for structured errors
 - Result type will be specialized: `Result<Program, Diagnostic[]>`
 - Error handling pattern established here will be reused
 
 **Story 2.1-2.6 (DSL Parser):**
+
 - Scanner will return: `Result<Token[], Diagnostic[]>`
 - Parser will return: `Result<Program, Diagnostic[]>`
 - Analyzer will return: `Result<ValidatedProgram, Diagnostic[]>`
 - All use the Result pattern defined here
 
 **Story 3.x (Generator):**
+
 - Generator may return: `Result<AsyncIterable<Record>, Diagnostic[]>`
 - Consistent error handling throughout the pipeline
 
 ### Project Structure Notes
 
 **Alignment with Unified Project Structure:**
+
 - ✅ Follows camelCase naming: `result.ts`, not `Result.ts` or `result-type.ts`
 - ✅ Module organization: `common/` for shared utilities
 - ✅ Co-located tests: `result.test.ts` next to implementation
@@ -324,6 +331,7 @@ describe('Result type', () => {
 - ✅ TypeScript strict mode: Enables exhaustive checking
 
 **No Conflicts Detected:**
+
 - Architecture document prescribes this exact pattern
 - Project context mandates Result<T,E> for error handling
 - File naming convention followed exactly
@@ -337,6 +345,7 @@ describe('Result type', () => {
 ### Quality Checklist
 
 **Before marking story as done:**
+
 - [x] Result type correctly implements discriminated union with `ok: boolean`
 - [x] Factory functions (ok, err) work correctly
 - [x] Utility functions (unwrap, unwrapOr, map, mapErr) are implemented
@@ -361,6 +370,7 @@ No issues encountered during implementation.
 ### Completion Notes List
 
 ✅ **Result Type Implementation (2026-01-04)**
+
 - Implemented discriminated union `Result<T, E>` with `ok: boolean` discriminator
 - Added `readonly` properties for immutability (AC: 1)
 - Created factory functions: `ok()` and `err()` with proper type signatures (AC: 2)
@@ -370,12 +380,14 @@ No issues encountered during implementation.
 - All functions include comprehensive JSDoc documentation with examples (AC: 6)
 
 ✅ **Module Structure (AC: 4)**
+
 - Created `packages/core/src/common/` directory
 - Implemented barrel export pattern through `common/index.ts`
 - Updated main `packages/core/src/index.ts` to re-export common utilities
 - Follows camelCase.ts naming convention as per project-context.md
 
 ✅ **Comprehensive Testing (AC: 5)**
+
 - Created 40 unit tests covering all functions and edge cases
 - Verified discriminator-based type narrowing works correctly (AC: 3)
 - Tested factory functions, type guards, unwrap utilities
@@ -384,6 +396,7 @@ No issues encountered during implementation.
 - All tests pass: `40 pass, 0 fail` with Bun test runner
 
 ✅ **Quality Assurance**
+
 - TypeScript strict mode compilation passes with no errors
 - No regressions in existing tests (packages/core and packages/cli)
 - Added @types/bun for proper bun:test type support
@@ -391,6 +404,7 @@ No issues encountered during implementation.
 - Code follows all project-context.md patterns and conventions
 
 ✅ **Code Review Fixes (2026-01-04)**
+
 - Updated project-context.md canonical example to use `errors` (plural) for consistency
 - Enhanced unwrap() error message to include error details for debugging
 - Completed all quality checklist items after verification
@@ -400,11 +414,13 @@ No issues encountered during implementation.
 ### File List
 
 **Files Created:**
+
 - `packages/core/src/common/result.ts` - Result type and utilities (219 lines)
 - `packages/core/src/common/index.ts` - Barrel export (8 lines)
 - `packages/core/src/common/result.test.ts` - Unit tests (329 lines)
 
 **Files Modified:**
+
 - `packages/core/src/index.ts` - Added export for common module (3 lines added)
 - `package.json` - Added @types/bun devDependency (1 line added)
 - `docs/sprint-artifacts/sprint-status.yaml` - Updated story status to in-progress → review → done

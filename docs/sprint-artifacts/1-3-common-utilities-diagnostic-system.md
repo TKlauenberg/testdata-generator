@@ -76,14 +76,14 @@ Analyzer → Result<ValidatedProgram, Diagnostic[]>
 
 ```typescript
 interface Diagnostic {
-  kind: 'error' | 'warning';  // Note: Update to use 'severity' field instead
+  kind: 'error' | 'warning'; // Note: Update to use 'severity' field instead
   message: string;
   location: SourceLocation;
 }
 
 interface SourceLocation {
   file: string;
-  line: number;   // 1-indexed
+  line: number; // 1-indexed
   column: number; // 1-indexed
   length: number;
 }
@@ -117,9 +117,7 @@ interface SourceLocation {
 The Result type was implemented in Story 1.2 with this structure:
 
 ```typescript
-type Result<T, E> =
-  | { ok: true; value: T }
-  | { ok: false; errors: E };  // Note: field is "errors" (plural)
+type Result<T, E> = { ok: true; value: T } | { ok: false; errors: E }; // Note: field is "errors" (plural)
 ```
 
 **INTEGRATION REQUIREMENTS:**
@@ -130,6 +128,7 @@ type Result<T, E> =
 4. This allows users to see ALL problems at once instead of fixing one at a time
 
 **Example Integration Pattern:**
+
 ```typescript
 function scan(source: string): Result<Token[], Diagnostic[]> {
   const diagnostics: Diagnostic[] = [];
@@ -150,12 +149,14 @@ function scan(source: string): Result<Token[], Diagnostic[]> {
 **From [architecture.md](../architecture.md#implementation-patterns-consistency-rules):**
 
 **Naming Patterns (MANDATORY):**
+
 - **Files**: `camelCase.ts` - MUST be `diagnostic.ts` not `Diagnostic.ts` or `diagnostic-system.ts`
 - **Interfaces/Types**: `PascalCase` - `Diagnostic`, `SourceLocation`, `DiagnosticSeverity`
 - **Functions**: `camelCase` - `createDiagnostic`, `formatDiagnostic`
 - **Private members**: `private _memberName` - if class is used, all private fields need underscore prefix
 
 **TypeScript Patterns (MANDATORY):**
+
 - Use `readonly` for all fields in interfaces (immutability requirement)
 - No `any` types - TypeScript strict mode
 - Explicit return types for all public functions
@@ -163,6 +164,7 @@ function scan(source: string): Result<Token[], Diagnostic[]> {
 - Export through index.ts barrel pattern
 
 **File Organization:**
+
 ```
 packages/core/src/common/
 ├── result.ts              # ✅ Already exists (Story 1.2)
@@ -188,14 +190,14 @@ describe('Diagnostic', () => {
       file: 'test.td',
       line: 1,
       column: 1,
-      length: 5
+      length: 5,
     };
 
     const diagnostic: Diagnostic = createDiagnostic({
       code: 'scanner.unterminatedString',
       message: 'Unterminated string literal',
       severity: 'error',
-      location
+      location,
     });
 
     expect(diagnostic.code).toBe('scanner.unterminatedString');
@@ -222,6 +224,7 @@ describe('Diagnostic', () => {
 The CLI tool (Story 4.5) will eventually format these diagnostics with Rust-style error messages. The diagnostic system should provide ALL the information needed for beautiful formatting:
 
 **Example 1: Scanner Error (Unterminated String)**
+
 ```
 error: scanner.unterminatedString
   --> schema.td:3:15
@@ -233,6 +236,7 @@ error: scanner.unterminatedString
 ```
 
 **Example 2: Parser Error (Missing Semicolon)**
+
 ```
 error: parser.expectedToken
   --> schema.td:5:20
@@ -244,6 +248,7 @@ error: parser.expectedToken
 ```
 
 **Example 3: Analyzer Error (Undefined Reference)**
+
 ```
 error: analyzer.undefinedReference
   --> schema.td:10:25
@@ -255,6 +260,7 @@ error: analyzer.undefinedReference
 ```
 
 **Example 4: Analyzer Error with Related Diagnostic (Duplicate Definition)**
+
 ```
 error: analyzer.duplicateDefinition
   --> schema.td:15:8
@@ -270,6 +276,7 @@ note: schema 'User' was first defined here
 ```
 
 **YOUR IMPLEMENTATION** should create Diagnostic objects that contain all this information:
+
 - `code`: e.g., `"analyzer.undefinedReference"`
 - `message`: e.g., `"undefined field reference"`
 - `location`: File, line, column, length of problematic text
@@ -281,17 +288,20 @@ note: schema 'User' was first defined here
 This diagnostic system will be used immediately in the next stories:
 
 **Story 2.1 (Scanner)**: Will create diagnostics for:
+
 - Unterminated strings: `scanner.unterminatedString`
 - Invalid characters: `scanner.invalidCharacter`
 - Unexpected EOF: `scanner.unexpectedEOF`
 
 **Story 2.3 (Parser)**: Will create diagnostics for:
+
 - Unexpected tokens: `parser.unexpectedToken`
 - Expected tokens: `parser.expectedToken`
 - Missing semicolons: `parser.missingSemicolon`
 - Invalid syntax: `parser.invalidSyntax`
 
 **Story 2.5 (Semantic Analyzer)**: Will create diagnostics for:
+
 - Undefined references: `analyzer.undefinedReference`
 - Type mismatches: `analyzer.typeMismatch`
 - Duplicate definitions: `analyzer.duplicateDefinition`
@@ -304,6 +314,7 @@ This diagnostic system will be used immediately in the next stories:
 Looking at the completed Story 1.2 implementation patterns:
 
 **File Structure Established:**
+
 ```
 packages/core/src/common/
 ├── result.ts           # Main implementation
@@ -312,6 +323,7 @@ packages/core/src/common/
 ```
 
 **Export Pattern Used in index.ts:**
+
 ```typescript
 // From packages/core/src/common/index.ts (current state after Story 1.2)
 export { ok, err, isOk, isErr } from './result';
@@ -319,11 +331,13 @@ export type { Result } from './result';
 ```
 
 **YOU SHOULD FOLLOW THE SAME PATTERN:**
+
 - Create `diagnostic.ts` with all types and factory functions
 - Create `diagnostic.test.ts` with comprehensive tests
 - Update `index.ts` to export diagnostic types and functions
 
 **TypeScript Patterns to Follow (from Story 1.2):**
+
 - Use `readonly` for interface fields
 - Use `type` for discriminated unions
 - Use `interface` for object shapes
@@ -341,6 +355,7 @@ export type { Result } from './result';
 - SourceLocation should be efficient to create (just 4 numbers)
 
 **Memory Efficiency:**
+
 - Diagnostics accumulate during compilation but are released after reporting
 - For a typical schema file (100-500 lines), expect 0-50 diagnostics
 - Each diagnostic ~200 bytes, so memory impact is minimal
@@ -348,41 +363,46 @@ export type { Result } from './result';
 ### Anti-Patterns to Avoid
 
 **❌ WRONG: Throwing exceptions for expected errors**
+
 ```typescript
 throw new Error('Unterminated string at line 5');
 ```
 
 **✅ CORRECT: Creating diagnostic objects**
+
 ```typescript
 return createDiagnostic({
   code: 'scanner.unterminatedString',
   message: 'Unterminated string literal',
   severity: 'error',
-  location: { file, line: 5, column: 10, length: 8 }
+  location: { file, line: 5, column: 10, length: 8 },
 });
 ```
 
 **❌ WRONG: 0-indexed line numbers**
+
 ```typescript
 const location: SourceLocation = {
   file: 'test.td',
-  line: 0,  // WRONG! Should be 1-indexed
+  line: 0, // WRONG! Should be 1-indexed
   column: 0,
-  length: 5
+  length: 5,
 };
 ```
 
 **✅ CORRECT: 1-indexed line numbers**
+
 ```typescript
 const location: SourceLocation = {
   file: 'test.td',
-  line: 1,  // CORRECT! First line is line 1
+  line: 1, // CORRECT! First line is line 1
   column: 1,
-  length: 5
+  length: 5,
 };
 ```
 
 **❌ WRONG: Mutable diagnostic objects**
+
 ```typescript
 interface Diagnostic {
   code: string;
@@ -395,6 +415,7 @@ diag.message = "Changed!";  // Should not be allowed
 ```
 
 **✅ CORRECT: Immutable diagnostic objects**
+
 ```typescript
 interface Diagnostic {
   readonly code: string;
@@ -420,6 +441,7 @@ interface Diagnostic {
 10. ✅ Include JSDoc documentation for all public APIs
 
 **Success Criteria:**
+
 - `bun test` passes all tests
 - TypeScript compiles with no errors
 - Can import diagnostic types from `@testdata-ai/core` package
@@ -455,12 +477,14 @@ testdata-ai/
 ### Reference Documentation
 
 **Key Files to Reference:**
+
 1. [architecture.md](../architecture.md) - Overall architecture decisions
 2. [project-context.md](../project-context.md) - Critical implementation rules
 3. [epics.md](../epics.md) - Story 1.3 acceptance criteria
 4. [1-2-common-utilities-result-type-pattern.md](./1-2-common-utilities-result-type-pattern.md) - Previous story patterns
 
 **Online Resources:**
+
 - TypeScript Handbook: https://www.typescriptlang.org/docs/handbook/
 - Bun Test API: https://bun.sh/docs/cli/test
 - Rust Error Messages (inspiration): https://doc.rust-lang.org/book/ch09-00-error-handling.html

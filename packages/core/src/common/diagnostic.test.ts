@@ -24,7 +24,7 @@ import {
   duplicateDefinition,
   type Diagnostic,
   type SourceLocation,
-  type DiagnosticSeverity,
+  type DiagnosticSeverity as _DiagnosticSeverity,
 } from './diagnostic';
 
 describe('SourceLocation', () => {
@@ -187,9 +187,7 @@ describe('Diagnostic', () => {
 
     expect(diagnostic.related).toBeDefined();
     expect(diagnostic.related?.length).toBe(1);
-    expect(diagnostic.related?.[0].message).toBe(
-      "Symbol 'User' was first defined here",
-    );
+    expect(diagnostic.related?.[0].message).toBe("Symbol 'User' was first defined here");
     expect(diagnostic.related?.[0].location).toEqual(originalLocation);
   });
 });
@@ -225,9 +223,7 @@ describe('Scanner Diagnostic Factories', () => {
         'Add closing quote (") at the end of the string',
       );
 
-      expect(diagnostic.suggestion).toBe(
-        'Add closing quote (") at the end of the string',
-      );
+      expect(diagnostic.suggestion).toBe('Add closing quote (") at the end of the string');
     });
   });
 
@@ -263,9 +259,7 @@ describe('Scanner Diagnostic Factories', () => {
       );
 
       expect(diagnostic.message).toBe("Invalid character: '$'");
-      expect(diagnostic.suggestion).toBe(
-        'Remove this character or escape it in a string',
-      );
+      expect(diagnostic.suggestion).toBe('Remove this character or escape it in a string');
     });
   });
 
@@ -294,14 +288,9 @@ describe('Scanner Diagnostic Factories', () => {
         length: 0,
       };
 
-      const diagnostic = unexpectedEOF(
-        location,
-        'Expected closing brace before end of file',
-      );
+      const diagnostic = unexpectedEOF(location, 'Expected closing brace before end of file');
 
-      expect(diagnostic.suggestion).toBe(
-        'Expected closing brace before end of file',
-      );
+      expect(diagnostic.suggestion).toBe('Expected closing brace before end of file');
     });
   });
 });
@@ -332,11 +321,7 @@ describe('Parser Diagnostic Factories', () => {
         length: 2,
       };
 
-      const diagnostic = unexpectedToken(
-        location,
-        '==',
-        'Use single = for assignment',
-      );
+      const diagnostic = unexpectedToken(location, '==', 'Use single = for assignment');
 
       expect(diagnostic.message).toBe("Unexpected token: '=='");
       expect(diagnostic.suggestion).toBe('Use single = for assignment');
@@ -381,12 +366,7 @@ describe('Parser Diagnostic Factories', () => {
         length: 0,
       };
 
-      const diagnostic = expectedToken(
-        location,
-        ';',
-        undefined,
-        "Add ';' at the end of this line",
-      );
+      const diagnostic = expectedToken(location, ';', undefined, "Add ';' at the end of this line");
 
       expect(diagnostic.suggestion).toBe("Add ';' at the end of this line");
     });
@@ -418,10 +398,7 @@ describe('Parser Diagnostic Factories', () => {
         length: 0,
       };
 
-      const diagnostic = missingSemicolon(
-        location,
-        'Terminate statement with semicolon',
-      );
+      const diagnostic = missingSemicolon(location, 'Terminate statement with semicolon');
 
       expect(diagnostic.suggestion).toBe('Terminate statement with semicolon');
     });
@@ -454,11 +431,7 @@ describe('Analyzer Diagnostic Factories', () => {
         length: 10,
       };
 
-      const diagnostic = undefinedReference(
-        location,
-        'usrName',
-        "Did you mean 'userName'?",
-      );
+      const diagnostic = undefinedReference(location, 'usrName', "Did you mean 'userName'?");
 
       expect(diagnostic.suggestion).toBe("Did you mean 'userName'?");
     });
@@ -476,9 +449,7 @@ describe('Analyzer Diagnostic Factories', () => {
       const diagnostic = typeMismatch(location, 'number', 'string');
 
       expect(diagnostic.code).toBe('analyzer.typeMismatch');
-      expect(diagnostic.message).toBe(
-        "Type mismatch: expected 'number' but found 'string'",
-      );
+      expect(diagnostic.message).toBe("Type mismatch: expected 'number' but found 'string'");
       expect(diagnostic.severity).toBe('error');
       expect(diagnostic.location).toEqual(location);
     });
@@ -535,20 +506,12 @@ describe('Analyzer Diagnostic Factories', () => {
         length: 4,
       };
 
-      const diagnostic = duplicateDefinition(
-        duplicateLocation,
-        'User',
-        originalLocation,
-      );
+      const diagnostic = duplicateDefinition(duplicateLocation, 'User', originalLocation);
 
       expect(diagnostic.related).toBeDefined();
       expect(diagnostic.related?.length).toBe(1);
-      expect(diagnostic.related?.[0].code).toBe(
-        'analyzer.duplicateDefinition.note',
-      );
-      expect(diagnostic.related?.[0].message).toBe(
-        "'User' was first defined here",
-      );
+      expect(diagnostic.related?.[0].code).toBe('analyzer.duplicateDefinition.note');
+      expect(diagnostic.related?.[0].message).toBe("'User' was first defined here");
       expect(diagnostic.related?.[0].severity).toBe('info');
       expect(diagnostic.related?.[0].location).toEqual(originalLocation);
     });
@@ -568,9 +531,7 @@ describe('Analyzer Diagnostic Factories', () => {
         'Rename this schema or remove the duplicate',
       );
 
-      expect(diagnostic.suggestion).toBe(
-        'Rename this schema or remove the duplicate',
-      );
+      expect(diagnostic.suggestion).toBe('Rename this schema or remove the duplicate');
     });
   });
 });
@@ -584,12 +545,8 @@ describe('Error Code Conventions', () => {
       length: 1,
     };
 
-    expect(unterminatedString(location).code).toBe(
-      'scanner.unterminatedString',
-    );
-    expect(invalidCharacter(location, '@').code).toBe(
-      'scanner.invalidCharacter',
-    );
+    expect(unterminatedString(location).code).toBe('scanner.unterminatedString');
+    expect(invalidCharacter(location, '@').code).toBe('scanner.invalidCharacter');
     expect(unexpectedEOF(location).code).toBe('scanner.unexpectedEOF');
   });
 
@@ -614,15 +571,9 @@ describe('Error Code Conventions', () => {
       length: 1,
     };
 
-    expect(undefinedReference(location, 'x').code).toBe(
-      'analyzer.undefinedReference',
-    );
-    expect(typeMismatch(location, 'number', 'string').code).toBe(
-      'analyzer.typeMismatch',
-    );
-    expect(duplicateDefinition(location, 'User').code).toBe(
-      'analyzer.duplicateDefinition',
-    );
+    expect(undefinedReference(location, 'x').code).toBe('analyzer.undefinedReference');
+    expect(typeMismatch(location, 'number', 'string').code).toBe('analyzer.typeMismatch');
+    expect(duplicateDefinition(location, 'User').code).toBe('analyzer.duplicateDefinition');
   });
 });
 

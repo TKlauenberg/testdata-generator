@@ -61,18 +61,21 @@ so that **I can develop the library and CLI tool independently with clear separa
 **From [project-context.md](../project-context.md):**
 
 **Runtime & Technology:**
+
 - **Bun 1.x** - Primary runtime (NOT Node.js). Use `bun` commands exclusively.
 - **TypeScript 5.x** with strict mode - `strict: true`, `target: "ESNext"`, `module: "ESNext"`
 - **ESM modules only** - NO CommonJS. Use `import/export`, never `require()`
 - **Commander.js v14.0.2** - CLI framework for argument parsing
 
 **File Naming Convention (CRITICAL):**
+
 - ALL files MUST use `camelCase.ts` format
 - ❌ NEVER use: kebab-case.ts, snake_case.ts, PascalCase.ts
 - ✅ Examples: `scanner.ts`, `astNodes.ts`, `errorFormatter.ts`
 - Directories also use camelCase: `scanner/`, `parser/`, `generator/`
 
 **Module Organization:**
+
 - Every module exports through `index.ts` - single export point
 - Clear module boundaries enforced
 - Core package MUST NOT import from CLI package (one-way dependency)
@@ -80,6 +83,7 @@ so that **I can develop the library and CLI tool independently with clear separa
 **From [architecture.md](../architecture.md#starter-template-evaluation):**
 
 **Monorepo Structure:**
+
 ```
 testdata-ai/
 ├── packages/
@@ -102,12 +106,14 @@ testdata-ai/
 ```
 
 **TypeScript Strict Mode Requirements (CRITICAL):**
+
 - `strict: true` in ALL tsconfig.json files
 - No `any` types allowed
 - Explicit return types for all public functions
 - Non-null assertions forbidden
 
 **Package Configuration:**
+
 - Root package.json: `"workspaces": ["packages/*"]`
 - All packages: `"type": "module"` for ESM
 - Core package: Named `@testdata-ai/core`
@@ -118,18 +124,21 @@ testdata-ai/
 **Initialization Steps (from [architecture.md](../architecture.md#initialization-commands)):**
 
 1. **Create project structure:**
+
    ```bash
    mkdir -p testdata-ai/packages/{core,cli}/src
    cd testdata-ai
    ```
 
 2. **Initialize Bun workspace:**
+
    ```bash
    bun init -y
    # Add to package.json: "workspaces": ["packages/*"]
    ```
 
 3. **Initialize core package:**
+
    ```bash
    cd packages/core && bun init -y
    ```
@@ -144,6 +153,7 @@ testdata-ai/
 **Key Files to Create:**
 
 **Root `package.json`:**
+
 ```json
 {
   "name": "testdata-ai",
@@ -158,6 +168,7 @@ testdata-ai/
 ```
 
 **Root `tsconfig.json` (shared base configuration):**
+
 ```json
 {
   "compilerOptions": {
@@ -178,6 +189,7 @@ testdata-ai/
 ```
 
 **`packages/core/package.json`:**
+
 ```json
 {
   "name": "@testdata-ai/core",
@@ -202,6 +214,7 @@ testdata-ai/
 ```
 
 **`packages/core/tsconfig.json`:**
+
 ```json
 {
   "extends": "../../tsconfig.json",
@@ -214,12 +227,14 @@ testdata-ai/
 ```
 
 **`packages/core/src/index.ts`:**
+
 ```typescript
 // Public API exports - will be expanded in future stories
 export const version = '0.1.0';
 ```
 
 **`packages/cli/package.json`:**
+
 ```json
 {
   "name": "@testdata-ai/cli",
@@ -244,6 +259,7 @@ export const version = '0.1.0';
 ```
 
 **`packages/cli/tsconfig.json`:**
+
 ```json
 {
   "extends": "../../tsconfig.json",
@@ -256,6 +272,7 @@ export const version = '0.1.0';
 ```
 
 **`packages/cli/bin/td.ts`:**
+
 ```typescript
 #!/usr/bin/env bun
 import { Command } from 'commander';
@@ -263,10 +280,7 @@ import { version } from '@testdata-ai/core';
 
 const program = new Command();
 
-program
-  .name('td')
-  .description('testdata-ai - Declarative test data generation')
-  .version(version);
+program.name('td').description('testdata-ai - Declarative test data generation').version(version);
 
 // Future commands will be added here in subsequent stories
 
@@ -274,12 +288,14 @@ program.parse();
 ```
 
 **`packages/cli/src/index.ts`:**
+
 ```typescript
 // CLI implementation - will be expanded in future stories
-export { /* future exports */ };
+export /* future exports */ {};
 ```
 
 **`.gitignore`:**
+
 ```
 node_modules/
 dist/
@@ -289,6 +305,7 @@ dist/
 ```
 
 **`bunfig.toml`:**
+
 ```toml
 [install]
 # Bun-specific configuration
@@ -302,6 +319,7 @@ preload = []
 ### Project Structure Compliance
 
 **Alignment with Unified Structure:**
+
 - ✅ Matches [architecture.md](../architecture.md#project-structure) exactly
 - ✅ Two-package monorepo: `core/` (library) and `cli/` (tool)
 - ✅ Clear separation of concerns
@@ -309,6 +327,7 @@ preload = []
 - ✅ TypeScript strict mode enabled throughout
 
 **No Conflicts Detected:**
+
 - Structure is foundational - no existing code to conflict with
 - Establishes base patterns for all future stories
 - All naming conventions follow camelCase requirement
@@ -324,6 +343,7 @@ preload = []
 **For this story, create basic verification tests:**
 
 **`packages/core/src/index.test.ts`:**
+
 ```typescript
 import { describe, test, expect } from 'bun:test';
 import { version } from './index';
@@ -337,6 +357,7 @@ describe('Core Package', () => {
 ```
 
 **`packages/cli/bin/td.test.ts`:**
+
 ```typescript
 import { describe, test, expect } from 'bun:test';
 import { spawn } from 'bun';
@@ -381,6 +402,7 @@ describe('CLI', () => {
 ### Critical Success Criteria
 
 **Definition of Done:**
+
 1. ✅ All directories created matching architecture specification
 2. ✅ All package.json files have correct metadata and workspace configuration
 3. ✅ All tsconfig.json files enable strict mode and ESM modules
@@ -393,6 +415,7 @@ describe('CLI', () => {
 10. ✅ README.md documents the setup
 
 **Verification Commands:**
+
 ```bash
 # Verify structure
 ls -la packages/core/src
@@ -418,6 +441,7 @@ Claude Sonnet 4.5 (GitHub Copilot)
 ### Debug Log References
 
 **Code Review Fixes Applied (2026-01-01):**
+
 - Fixed Issue #1: Removed node_modules, dist, and build artifacts from git staging
 - Fixed Issue #2: Cleaned root tsconfig.json to match specification exactly (removed NestJS decorator configs)
 - Fixed Issue #3: Updated .gitignore with recursive patterns (dist/ not /dist)
@@ -432,6 +456,7 @@ All fixes verified with passing tests and clean git status.
 ### Completion Notes List
 
 **Implementation Summary:**
+
 - ✅ Created Bun monorepo structure with workspaces configuration
 - ✅ Initialized @testdata-ai/core package with TypeScript strict mode
 - ✅ Initialized @testdata-ai/cli package with Commander.js integration
@@ -443,9 +468,10 @@ All fixes verified with passing tests and clean git status.
 - ✅ Updated README.md with project overview, structure, and quick start guide
 - ✅ Fixed root tsconfig.json to match specification (removed NestJS artifacts)
 - ✅ Fixed .gitignore to properly exclude build artifacts
-- ✅ Removed build artifacts from git staging (node_modules, dist, *.tsbuildinfo)
+- ✅ Removed build artifacts from git staging (node_modules, dist, \*.tsbuildinfo)
 
 **Technical Decisions:**
+
 - Removed `@commander-js/extra-typings` dependency (version not available)
 - Root tsconfig.json cleaned to match exact specification from Dev Notes
 - Updated .gitignore patterns to use recursive exclusions (dist/ vs /dist)
@@ -454,6 +480,7 @@ All fixes verified with passing tests and clean git status.
 - bun.lock excluded from commits (standard for libraries, may reconsider for applications)
 
 **Files Created/Modified:**
+
 - Created: `package.json` (root)
 - Created: `bunfig.toml`
 - Modified: `tsconfig.json` (root - configured per specification, removed NestJS artifacts)
@@ -471,10 +498,11 @@ All fixes verified with passing tests and clean git status.
 - Modified: `README.md` (replaced old content with testdata-ai documentation)
 
 **Build Artifacts (NOT committed to git):**
+
 - bun.lock (dependency lock file)
-- packages/core/dist/* (TypeScript build output)
+- packages/core/dist/\* (TypeScript build output)
 - packages/core/tsconfig.tsbuildinfo (TypeScript incremental build cache)
-- packages/*/node_modules/* (installed dependencies)
+- packages/_/node_modules/_ (installed dependencies)
 
 ### File List
 

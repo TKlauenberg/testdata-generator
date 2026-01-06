@@ -17,9 +17,7 @@ import { Diagnostic } from '../../src/common/diagnostic.ts';
 Given(
   '{actor} performs an operation that succeeds with value {string}',
   async (actorName: string, value: string) => {
-    await actorCalled(actorName).attemptsTo(
-      PerformOperation.thatSucceeds(value),
-    );
+    await actorCalled(actorName).attemptsTo(PerformOperation.thatSucceeds(value));
   },
 );
 
@@ -39,44 +37,28 @@ Given(
       suggestion: 'Add a closing quote',
     };
 
-    await actorCalled(actorName).attemptsTo(
-      PerformOperation.thatFails([diagnostic]),
-    );
+    await actorCalled(actorName).attemptsTo(PerformOperation.thatFails([diagnostic]));
   },
 );
 
-Then(
-  '{actor} should see the operation succeeded',
-  async (actorName: string) => {
-    await actorCalled(actorName).attemptsTo(
-      Ensure.that(OperationResult.succeeded(), isTrue()),
-    );
-  },
-);
+Then('{actor} should see the operation succeeded', async (actorName: string) => {
+  await actorCalled(actorName).attemptsTo(Ensure.that(OperationResult.succeeded(), isTrue()));
+});
 
 Then('{actor} should see the operation failed', async (actorName: string) => {
-  await actorCalled(actorName).attemptsTo(
-    Ensure.that(OperationResult.failed(), isTrue()),
-  );
+  await actorCalled(actorName).attemptsTo(Ensure.that(OperationResult.failed(), isTrue()));
 });
 
 Then('the success value should be {string}', async (expected: string) => {
   // Use the current actor context
   const actor = actorCalled('QA Tester');
-  await actor.attemptsTo(
-    Ensure.that(OperationResult.successValue(), equals(expected)),
-  );
+  await actor.attemptsTo(Ensure.that(OperationResult.successValue(), equals(expected)));
 });
 
-Then(
-  'the first error message should contain {string}',
-  async (text: string) => {
-    const actor = actorCalled('QA Tester');
-    await actor.attemptsTo(
-      Ensure.that(OperationResult.firstErrorMessage(), includes(text)),
-    );
-  },
-);
+Then('the first error message should contain {string}', async (text: string) => {
+  const actor = actorCalled('QA Tester');
+  await actor.attemptsTo(Ensure.that(OperationResult.firstErrorMessage(), includes(text)));
+});
 
 Then('the error should be at line {int}', async (expectedLine: number) => {
   const actor = actorCalled('QA Tester');
@@ -88,18 +70,15 @@ Then('the error should be at line {int}', async (expectedLine: number) => {
   );
 });
 
-Then(
-  '{actor} can safely access the success value',
-  async (actorName: string) => {
-    // This demonstrates type-safe access pattern
-    const actor = actorCalled(actorName);
-    const result = await OperationResult.value().answeredBy(actor);
+Then('{actor} can safely access the success value', async (actorName: string) => {
+  // This demonstrates type-safe access pattern
+  const actor = actorCalled(actorName);
+  const result = await OperationResult.value().answeredBy(actor);
 
-    // TypeScript type narrowing with Result discriminator
-    if (result && result.ok) {
-      // TypeScript knows result.value is string here
-      const value: string = result.value;
-      await actor.attemptsTo(Ensure.that(value, equals('valid data')));
-    }
-  },
-);
+  // TypeScript type narrowing with Result discriminator
+  if (result?.ok) {
+    // TypeScript knows result.value is string here
+    const value: string = result.value;
+    await actor.attemptsTo(Ensure.that(value, equals('valid data')));
+  }
+});

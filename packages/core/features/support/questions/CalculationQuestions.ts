@@ -1,8 +1,4 @@
-import {
-  Question,
-  type AnswersQuestions,
-  type UsesAbilities,
-} from '@serenity-js/core';
+import { Question, type AnswersQuestions, type UsesAbilities } from '@serenity-js/core';
 import { PerformCalculations } from '../abilities/PerformCalculations.ts';
 
 /**
@@ -24,13 +20,10 @@ export const CalculationResult = {
    * Usage: actor.asks(CalculationResult.value())
    */
   value: () =>
-    Question.about<number>(
-      'the calculation result',
-      (actor: AnswersQuestions & UsesAbilities) => {
-        const calculations = PerformCalculations.as(actor);
-        return calculations.getResult();
-      },
-    ),
+    Question.about<number>('the calculation result', (actor: AnswersQuestions & UsesAbilities) => {
+      const calculations = PerformCalculations.as(actor);
+      return calculations.getResult();
+    }),
 };
 
 /**

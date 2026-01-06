@@ -127,6 +127,7 @@ This story is **FOUNDATIONAL** for the entire testing strategy of testdata-ai. E
 **From [architecture.md](../architecture.md#testing-strategy):**
 
 The architecture document doesn't explicitly mandate Gherkin, but it does specify:
+
 - Bun's built-in test runner is the primary test framework
 - Tests should be comprehensive and cover edge cases
 - Testing strategy should validate each compilation phase independently
@@ -134,8 +135,9 @@ The architecture document doesn't explicitly mandate Gherkin, but it does specif
 **From [project-context.md](../project-context.md#testing-rules):**
 
 The project context specifies:
+
 - **Bun's built-in test runner** is mandatory (NOT Jest, NOT Mocha)
-- Co-located tests (*.test.ts files next to implementation)
+- Co-located tests (\*.test.ts files next to implementation)
 - Test structure uses Bun's `describe`, `test`, `expect`
 - Running tests: `bun test`, `bun test scanner`, `bun test --coverage`
 
@@ -148,6 +150,7 @@ The project context specifies:
 #### Chosen Approach: Cucumber + SerenityJS
 
 **Framework Stack:**
+
 - `@cucumber/cucumber` - Standard Cucumber runner with `runCucumber()` function
 - `@serenity-js/cucumber` - SerenityJS integration for Cucumber
 - `@serenity-js/core` - Core Screenplay pattern implementation
@@ -180,7 +183,7 @@ test('Run Cucumber features', async () => {
   configure({
     crew: [
       // Configure reporters, stage crew
-    ]
+    ],
   });
 
   // Run Cucumber with configuration
@@ -188,7 +191,7 @@ test('Run Cucumber features', async () => {
     parallel: 0,
     format: ['progress'],
     require: ['features/step_definitions/**/*.ts', 'features/support/**/*.ts'],
-    import: ['features/**/*.feature']
+    import: ['features/**/*.feature'],
   });
 
   if (!result.success) {
@@ -204,7 +207,7 @@ test('Run Cucumber features', async () => {
 const tester = Actor.named('QA Tester').whoCan(
   ParseSchemas.usingCoreLibrary(),
   GenerateData.usingCoreLibrary(),
-  ValidateSchemas.usingCoreLibrary()
+  ValidateSchemas.usingCoreLibrary(),
 );
 
 // Task example
@@ -215,9 +218,7 @@ export class ValidateSchema implements Task {
 
   async performAs(actor: Actor): Promise<void> {
     const validate = ValidateSchemas.as(actor);
-    await actor.attemptsTo(
-      validate.schema(this.source)
-    );
+    await actor.attemptsTo(validate.schema(this.source));
   }
 }
 
@@ -234,15 +235,11 @@ Given('{actor} has a valid DSL schema', (actor: Actor) => {
 });
 
 When('{actor} validates the schema', async (actor: Actor) => {
-  await actor.attemptsTo(
-    ValidateSchema.fromSource(actor.recall('schemaSource'))
-  );
+  await actor.attemptsTo(ValidateSchema.fromSource(actor.recall('schemaSource')));
 });
 
 Then('{actor} should see validation succeeded', async (actor: Actor) => {
-  await actor.attemptsTo(
-    Ensure.that(ValidationResult.value(), property('ok', equals(true)))
-  );
+  await actor.attemptsTo(Ensure.that(ValidationResult.value(), property('ok', equals(true))));
 });
 ```
 
@@ -286,6 +283,7 @@ packages/core/
 ```
 
 **Rationale:**
+
 - **Co-location for unit tests**: `*.test.ts` files stay next to implementation (Bun best practice)
 - **Separate features/ for BDD**: Cucumber tests in dedicated folder (Cucumber convention)
 - **Screenplay components organized**: Abilities, Tasks, Questions in separate folders for clarity
@@ -352,7 +350,12 @@ Feature: Test Data Generation
 
 ```typescript
 import { Ability, Actor, AnswersQuestions, UsesAbilities } from '@serenity-js/core';
-import { validateSchema, type Result, type ValidatedProgram, type Diagnostic } from '../../../src/index';
+import {
+  validateSchema,
+  type Result,
+  type ValidatedProgram,
+  type Diagnostic,
+} from '../../../src/index';
 
 export class ParseSchemas implements Ability {
   private lastResult?: Result<ValidatedProgram, Diagnostic[]>;
@@ -416,7 +419,9 @@ import { Question, Actor } from '@serenity-js/core';
 import { ParseSchemas } from '../abilities/ParseSchemas';
 import type { Result, ValidatedProgram, Diagnostic } from '../../../src/index';
 
-export class ValidationResult implements Question<Result<ValidatedProgram, Diagnostic[]> | undefined> {
+export class ValidationResult implements Question<
+  Result<ValidatedProgram, Diagnostic[]> | undefined
+> {
   static value(): ValidationResult {
     return new ValidationResult();
   }
@@ -463,66 +468,58 @@ import { GeneratedRecords } from '../support/questions/GeneratedRecords';
 // Actor setup (typically in support/serenity.config.ts)
 class TestCast implements Cast {
   prepare(actor: Actor): Actor {
-    return actor.whoCan(
-      ParseSchemas.usingCoreLibrary(),
-      GenerateData.usingCoreLibrary()
-    );
+    return actor.whoCan(ParseSchemas.usingCoreLibrary(), GenerateData.usingCoreLibrary());
   }
 }
 
 // Step definitions with Screenplay pattern
-Given('{actor} has a valid DSL schema with the following content:', async (actor: Actor, docString: string) => {
-  await actor.attemptsTo(
-    Note.that('schemaSource', docString)
-  );
-});
+Given(
+  '{actor} has a valid DSL schema with the following content:',
+  async (actor: Actor, docString: string) => {
+    await actor.attemptsTo(Note.that('schemaSource', docString));
+  },
+);
 
 When('{actor} validates the schema', async (actor: Actor) => {
   const schemaSource = await actor.recall('schemaSource');
-  await actor.attemptsTo(
-    ValidateSchema.withSource(schemaSource)
-  );
+  await actor.attemptsTo(ValidateSchema.withSource(schemaSource));
 });
 
 Then('{actor} should see that validation succeeded', async (actor: Actor) => {
-  await actor.attemptsTo(
-    Ensure.that(ValidationSucceeded.check(), equals(true))
-  );
+  await actor.attemptsTo(Ensure.that(ValidationSucceeded.check(), equals(true)));
 });
 
 Then('{actor} should see that validation failed', async (actor: Actor) => {
-  await actor.attemptsTo(
-    Ensure.that(ValidationSucceeded.check(), equals(false))
-  );
+  await actor.attemptsTo(Ensure.that(ValidationSucceeded.check(), equals(false)));
 });
 
-Then('the validated schema should contain a {string} schema', async (actor: Actor, schemaName: string) => {
-  const result = await actor.asks(ValidationResult.value());
+Then(
+  'the validated schema should contain a {string} schema',
+  async (actor: Actor, schemaName: string) => {
+    const result = await actor.asks(ValidationResult.value());
 
-  await actor.attemptsTo(
-    Ensure.that(result, property('ok', equals(true)))
-  );
+    await actor.attemptsTo(Ensure.that(result, property('ok', equals(true))));
 
-  if (result?.ok) {
-    const hasSchema = result.value.schemas.some((s: any) => s.name === schemaName);
+    if (result?.ok) {
+      const hasSchema = result.value.schemas.some((s: any) => s.name === schemaName);
+      await actor.attemptsTo(Ensure.that(hasSchema, equals(true)));
+    }
+  },
+);
+
+When(
+  '{actor} generates {int} records with seed {int}',
+  async (actor: Actor, count: number, seed: number) => {
+    const schemaSource = await actor.recall('schemaSource');
     await actor.attemptsTo(
-      Ensure.that(hasSchema, equals(true))
+      GenerateRecords.fromSource(schemaSource).withCount(count).withSeed(seed),
     );
-  }
-});
-
-When('{actor} generates {int} records with seed {int}', async (actor: Actor, count: number, seed: number) => {
-  const schemaSource = await actor.recall('schemaSource');
-  await actor.attemptsTo(
-    GenerateRecords.fromSource(schemaSource).withCount(count).withSeed(seed)
-  );
-});
+  },
+);
 
 Then('{actor} should see {int} generated records', async (actor: Actor, expectedCount: number) => {
   const records = await actor.asks(GeneratedRecords.all());
-  await actor.attemptsTo(
-    Ensure.that(records.length, equals(expectedCount))
-  );
+  await actor.attemptsTo(Ensure.that(records.length, equals(expectedCount)));
 });
 ```
 
@@ -542,9 +539,7 @@ export class ValidationResult implements Question<Result<ValidatedProgram, Diagn
 Then('{actor} should see validation succeeded', async (actor: Actor) => {
   const result = await actor.asks(ValidationResult.value());
 
-  await actor.attemptsTo(
-    Ensure.that(result, property('ok', equals(true)))
-  );
+  await actor.attemptsTo(Ensure.that(result, property('ok', equals(true))));
 
   if (result.ok) {
     // TypeScript narrows type, can safely access result.value
@@ -580,16 +575,12 @@ export class ErrorLineNumber implements Question<number | undefined> {
 
 // Using in step definitions
 Then('{actor} should see an error at line {int}', async (actor: Actor, lineNumber: number) => {
-  await actor.attemptsTo(
-    Ensure.that(ErrorLineNumber.value(), equals(lineNumber))
-  );
+  await actor.attemptsTo(Ensure.that(ErrorLineNumber.value(), equals(lineNumber)));
 });
 
 Then('the error message should mention {string}', async (actor: Actor, expectedText: string) => {
   const errorMessage = await actor.asks(FirstErrorMessage.value());
-  await actor.attemptsTo(
-    Ensure.that(errorMessage, includes(expectedText))
-  );
+  await actor.attemptsTo(Ensure.that(errorMessage, includes(expectedText)));
 });
 ```
 
@@ -607,20 +598,14 @@ import { ConsoleReporter } from '@serenity-js/console-reporter';
 test('Run Cucumber BDD tests with Screenplay pattern', async () => {
   // Configure SerenityJS
   configure({
-    crew: [
-      ConsoleReporter.forDarkTerminals(),
-      new SerenityBDDReporter(),
-    ],
+    crew: [ConsoleReporter.forDarkTerminals(), new SerenityBDDReporter()],
   });
 
   // Run Cucumber with configuration
   const { success } = await runCucumber({
     parallel: 0,
     format: ['progress', 'json:test-results/cucumber-report.json'],
-    require: [
-      'features/step_definitions/**/*.ts',
-      'features/support/**/*.ts'
-    ],
+    require: ['features/step_definitions/**/*.ts', 'features/support/**/*.ts'],
     import: ['features/**/*.feature'],
     requireModule: ['ts-node/register'], // or configure for Bun's TS support
   });
@@ -632,6 +617,7 @@ test('Run Cucumber BDD tests with Screenplay pattern', async () => {
 ```
 
 **Running Tests:**
+
 ```bash
 # Run all tests (unit + Cucumber)
 bun test
@@ -642,9 +628,11 @@ bun test cucumber.runner
 # Run with Bun's native test runner
 bun test --preload ./tests/cucumber.runner.ts
 ```
-  }
+
+}
 });
-```
+
+````
 
 **Story 1.3 (Diagnostic System)**: Step definitions will validate diagnostics:
 
@@ -661,7 +649,7 @@ Then('the error should include a helpful suggestion', function() {
   expect(diagnostic.suggestion).toBeDefined();
   expect(diagnostic.suggestion).not.toBe('');
 });
-```
+````
 
 ### Documentation Requirements
 
@@ -742,18 +730,19 @@ Must include comprehensive Screenplay pattern documentation:
     - Complete Question example
     - Complete step definition example
     - End-to-end scenario example
-7. **Common Patterns**:
-   - Testing Result<T, E> types
-   - Testing diagnostics with locations
-   - Testing async generators (AsyncIterable)
-   - Testing file I/O operations
-   - Testing error scenarios
+12. **Common Patterns**:
+    - Testing Result<T, E> types
+    - Testing diagnostics with locations
+    - Testing async generators (AsyncIterable)
+    - Testing file I/O operations
+    - Testing error scenarios
 
 ### Testing Strategy for This Story
 
 Since this is the story that creates the testing infrastructure, you can test the Screenplay components themselves using traditional Bun unit tests:
 
 **File: `packages/core/features/support/abilities/ParseSchemas.test.ts`**
+
 ```typescript
 import { describe, test, expect } from 'bun:test';
 import { Actor } from '@serenity-js/core';
@@ -778,6 +767,7 @@ describe('ParseSchemas Ability', () => {
 ```
 
 **Integration Test**: The example.feature must run successfully via `runCucumber()`:
+
 ```bash
 # Run Cucumber tests through Bun test runner
 bun test cucumber.runner.ts
@@ -799,18 +789,19 @@ Then QA Tester should see an error at line 3, column 10
 export class ErrorLineNumber implements Question<number | undefined> {
   async answeredBy(actor: Actor): Promise<number | undefined> {
     const errors = await DiagnosticErrors.answeredBy(actor);
-    return errors[0]?.location?.line;  // Already 1-indexed from diagnostic system
+    return errors[0]?.location?.line; // Already 1-indexed from diagnostic system
   }
 }
 
 // Step definition
-Then('{actor} should see an error at line {int}, column {int}',
+Then(
+  '{actor} should see an error at line {int}, column {int}',
   async (actor: Actor, line: number, column: number) => {
     await actor.attemptsTo(
       Ensure.that(ErrorLineNumber.value(), equals(line)),
-      Ensure.that(ErrorColumnNumber.value(), equals(column))
+      Ensure.that(ErrorColumnNumber.value(), equals(column)),
     );
-  }
+  },
 );
 ```
 
@@ -828,9 +819,7 @@ export class ValidationResult implements Question<Result<ValidatedProgram, Diagn
 Then('{actor} should see validation succeeded', async (actor: Actor) => {
   const result = await actor.asks(ValidationResult.value());
 
-  await actor.attemptsTo(
-    Ensure.that(result, property('ok', equals(true)))
-  );
+  await actor.attemptsTo(Ensure.that(result, property('ok', equals(true))));
 
   if (result.ok) {
     // TypeScript narrows type, can safely access result.value
@@ -882,6 +871,7 @@ After this story, **all subsequent stories** should include both:
 Example for Story 2.1 (Scanner):
 
 **Unit test** (`scanner.test.ts`): Test token generation edge cases
+
 ```typescript
 import { describe, test, expect } from 'bun:test';
 import { scan } from './scanner';
@@ -894,6 +884,7 @@ test('handles unterminated string', () => {
 ```
 
 **Cucumber test with Screenplay** (`features/scanner.feature`):
+
 ```gherkin
 Feature: DSL Scanner
   As a QA tester
@@ -950,26 +941,24 @@ export class ScanResult implements Question<Result<Token[], Diagnostic[]>> {
 // Step definition
 When('{actor} scans the source code', async (actor: Actor) => {
   const source = await actor.recall('sourceCode');
-  await actor.attemptsTo(
-    ScanDSLSource.withSource(source)
-  );
+  await actor.attemptsTo(ScanDSLSource.withSource(source));
 });
 
 Then('{actor} should see a scanner error', async (actor: Actor) => {
   const result = await actor.asks(ScanResult.value());
-  await actor.attemptsTo(
-    Ensure.that(result, property('ok', equals(false)))
-  );
+  await actor.attemptsTo(Ensure.that(result, property('ok', equals(false))));
 });
 ```
 
 ### Reference Materials
 
 **Cucumber Documentation**:
+
 - Cucumber.js: https://github.com/cucumber/cucumber-js
 - runCucumber API: https://github.com/cucumber/cucumber-js/blob/main/docs/cli.md
 
 **SerenityJS Documentation**:
+
 - Screenplay Pattern: https://serenity-js.org/handbook/design/screenplay-pattern/
 - Cucumber Integration: https://serenity-js.org/api/cucumber/
 - Core Concepts: https://serenity-js.org/handbook/
@@ -978,10 +967,12 @@ Then('{actor} should see a scanner error', async (actor: Actor) => {
 - Questions: https://serenity-js.org/handbook/design/questions/
 
 **Bun Test Documentation**:
+
 - Bun Test Runner: https://bun.sh/docs/cli/test
 - Bun TypeScript Support: https://bun.sh/docs/runtime/typescript
 
 **Gherkin Syntax Reference**:
+
 - Gherkin Language: https://cucumber.io/docs/gherkin/reference/
 
 ### Screenplay Pattern Architecture Summary
@@ -989,6 +980,7 @@ Then('{actor} should see a scanner error', async (actor: Actor) => {
 The Screenplay pattern implemented with SerenityJS provides these key advantages:
 
 **Component Separation:**
+
 - **Feature Files**: Business-readable test specifications (What to test)
 - **Step Definitions**: Thin translation layer using Actor language
 - **Tasks**: High-level business actions (How to achieve goals)
@@ -1008,16 +1000,19 @@ The Screenplay pattern implemented with SerenityJS provides these key advantages
 ### Project Context Reference
 
 See [project-context.md](../project-context.md) for:
+
 - Testing rules and conventions
 - Bun test runner requirements
 - Co-located test patterns
 
 See [architecture.md](../architecture.md) for:
+
 - Multi-pass compilation pipeline
 - Testing strategy overview
 - Result type pattern
 
 See [epics.md](../epics.md) for:
+
 - All story acceptance criteria in Given/When/Then format
 - Examples of behavior-driven requirements
 
@@ -1034,18 +1029,21 @@ No critical debugging issues encountered. Implementation followed the Screenplay
 ### Completion Notes List
 
 ✅ **Cucumber and SerenityJS Installation** (AC: 1)
+
 - Installed @cucumber/cucumber v12.5.0+ for Gherkin feature files with runCucumber() function
 - Installed @serenity-js/cucumber, @serenity-js/core, @serenity-js/assertions, @serenity-js/serenity-bdd v3.29.4+ for Screenplay pattern
 - All packages verified compatible with Bun runtime and TypeScript
 - Updated package.json with test:bdd script for convenience
 
 ✅ **Cucumber Integration with Bun** (AC: 1, 5, 7)
+
 - Created tests/cucumber.runner.test.ts that invokes runCucumber() within Bun test framework
 - Configured IRunOptions with all required fields (sources, support, formats, runtime)
 - Bun test command now runs both unit tests (.test.ts) and Cucumber tests (.feature) seamlessly
 - All 83 tests pass including 3 BDD scenarios with 16 steps
 
 ✅ **Directory Structure** (AC: 2, 3)
+
 - Created features/ directory with complete Screenplay architecture:
   - step_definitions/ for step definition files
   - support/abilities/, support/tasks/, support/questions/ for Screenplay components
@@ -1054,6 +1052,7 @@ No critical debugging issues encountered. Implementation followed the Screenplay
 - Added .gitkeep files to preserve empty directories for future implementation
 
 ✅ **Example Feature File** (AC: 2, 4)
+
 - Created example.feature with 3 scenarios demonstrating:
   - Simple calculation (happy path)
   - Multiple operations in sequence
@@ -1062,6 +1061,7 @@ No critical debugging issues encountered. Implementation followed the Screenplay
 - Includes tags (@example, @happy-path, @multiple-operations, @screenplay-pattern)
 
 ✅ **Screenplay Pattern Infrastructure** (AC: 3, 4, 7, 8)
+
 - **Abilities**: Created PerformCalculations.ts demonstrating Ability structure
   - Extends Ability base class
   - Encapsulates system interaction logic
@@ -1082,6 +1082,7 @@ No critical debugging issues encountered. Implementation followed the Screenplay
   - Sets appropriate timeouts
 
 ✅ **Step Definitions** (AC: 3, 4, 7)
+
 - Created example.steps.ts demonstrating Screenplay pattern in action
 - Uses regex patterns to capture actor names (handles multi-word names like "QA Tester")
 - Shows actor.attemptsTo(Task) pattern for actions
@@ -1089,6 +1090,7 @@ No critical debugging issues encountered. Implementation followed the Screenplay
 - All step definitions concise and delegate to Tasks/Questions
 
 ✅ **Comprehensive Documentation** (AC: 6)
+
 - Created features/README.md with 10 major sections:
   - Overview and rationale for BDD with Screenplay
   - Framework stack details
@@ -1104,6 +1106,7 @@ No critical debugging issues encountered. Implementation followed the Screenplay
 - Documents integration with project's Result type pattern
 
 ✅ **Integration and Testing** (AC: 4, 5, 8)
+
 - All tests pass: 83 tests including 3 BDD scenarios with 16 steps
 - Test output clear and readable with scenario/step information
 - Both unit tests and Cucumber tests run via single `bun test` command
@@ -1121,6 +1124,7 @@ No critical debugging issues encountered. Implementation followed the Screenplay
 ### File List
 
 **New Files:**
+
 - packages/core/features/example.feature
 - packages/core/features/step_definitions/example.steps.ts
 - packages/core/features/support/hooks.ts
@@ -1135,4 +1139,5 @@ No critical debugging issues encountered. Implementation followed the Screenplay
 - packages/core/tests/cucumber.runner.test.ts
 
 **Modified Files:**
+
 - packages/core/package.json (added Cucumber and SerenityJS dependencies, test:bdd script)
