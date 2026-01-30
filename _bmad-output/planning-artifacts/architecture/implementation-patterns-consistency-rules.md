@@ -158,6 +158,24 @@ Error codes follow `phase.errorType` pattern:
 
 Tests are **co-located** with source files as `*.test.ts`
 
+### Dual Testing Approach
+
+The project uses a **dual testing strategy**:
+
+1. **Unit Tests** (`*.test.ts`): Fast, focused tests for individual functions and edge cases
+2. **BDD/Gherkin Tests** (`.feature` files): Behavior-driven tests for acceptance criteria and use case validation
+
+### When to Use Gherkin Tests
+
+**MANDATORY: Gherkin tests MUST be created for:**
+
+- **Acceptance Criteria Testing**: All acceptance criteria defined in stories MUST be verified with Gherkin scenarios
+- **Use Case Validation**: Features with special business logic or domain-specific behavior
+- **Integration Scenarios**: Multi-module workflows and end-to-end user journeys
+- **QA Documentation**: Tests that serve as living documentation for QA and stakeholders
+
+**Pattern Reference**: Complete BDD testing patterns and Screenplay architecture are documented in [packages/core/features/README.md](../../../packages/core/features/README.md)
+
 ### Test Structure
 
 ```typescript
@@ -183,6 +201,38 @@ describe('Scanner', () => {
   });
 });
 ```
+
+### Gherkin Feature Structure
+
+```gherkin
+Feature: DSL Schema Validation
+  As a QA tester
+  I want to validate DSL schemas
+  So that I can ensure they are correct before generating data
+
+  Background:
+    Given the testdata-ai core library is initialized
+
+  @validation @happy-path
+  Scenario: Valid schema passes validation
+    Given QA Tester has a valid DSL schema:
+      """
+      schema User {
+        id: uuid;
+        name: string;
+      }
+      """
+    When QA Tester validates the schema
+    Then QA Tester should see validation succeeded
+    And the validated schema should contain a "User" schema
+```
+
+**Screenplay Pattern Components** (see [packages/core/features/README.md](../../../packages/core/features/README.md) for details):
+
+- **Abilities**: System interaction capabilities (e.g., `ParseSchemas.usingCoreLibrary()`)
+- **Tasks**: High-level business actions (e.g., `ValidateSchema.withSource(source)`)
+- **Questions**: System state queries (e.g., `ValidationResult.value()`)
+- **Step Definitions**: Thin translation layer between Gherkin and Screenplay components
 
 ### Snapshot Testing for AST
 
@@ -218,6 +268,8 @@ it('should generate identical output with same seed', () => {
 8. Export only through `index.ts` files
 9. Keep AST nodes as readonly immutable data
 10. Use `AsyncIterable` for streaming generation output
+11. **Create Gherkin `.feature` files for all acceptance criteria** - Test user-facing behaviors with BDD scenarios
+12. **Use Screenplay pattern for BDD tests** - Follow the patterns in [packages/core/features/README.md](../../../packages/core/features/README.md)
 
 **Anti-Patterns to Avoid:**
 
@@ -228,3 +280,5 @@ it('should generate identical output with same seed', () => {
 - ❌ Tests in separate `__tests__/` directories
 - ❌ Private members without both `private` keyword and underscore
 - ❌ Numeric error codes (use descriptive strings)
+- ❌ **Implementing features without corresponding Gherkin tests for acceptance criteria**
+- ❌ **Writing step definitions that contain business logic** (use Screenplay: Tasks, Questions, Abilities)
