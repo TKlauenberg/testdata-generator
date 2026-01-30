@@ -3,3 +3,6 @@ export const version = '0.1.0';
 
 // Common utilities
 export * from './common';
+
+// Scanner (lexical analysis)
+export * from './scanner';

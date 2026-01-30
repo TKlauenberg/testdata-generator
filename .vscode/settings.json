@@ -14,6 +14,12 @@
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
   },
-  "eslint.validate": ["javascript", "typescript"],
-  "typescript.tsdk": "node_modules/typescript/lib"
+  "eslint.validate": [
+    "javascript",
+    "typescript"
+  ],
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "cucumber.glue": [
+    "**/features/**/*.ts"
+  ]
 }
