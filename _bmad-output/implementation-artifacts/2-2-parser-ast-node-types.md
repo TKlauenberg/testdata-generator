@@ -1,6 +1,6 @@
 # Story 2.2: Parser - AST Node Types
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -28,118 +28,118 @@ So that **the parser can build a type-safe abstract syntax tree**.
 
 ## Tasks / Subtasks
 
-- [ ] Define base AST node structures (AC: 1, 7, 8, 11)
-  - [ ] Create `packages/core/src/parser/ast.ts`
-  - [ ] Define base `ASTNode` interface with common properties
-  - [ ] Define `NodeKind` enum or type union for all node types
-  - [ ] Ensure all nodes include `kind` discriminator and `location: SourceLocation`
-  - [ ] Use `readonly` modifier for all properties
-  - [ ] Add JSDoc documentation for each node type
+- [x] Define base AST node structures (AC: 1, 7, 8, 11)
+  - [x] Create `packages/core/src/parser/ast.ts`
+  - [x] Define base `ASTNode` interface with common properties
+  - [x] Define `NodeKind` enum or type union for all node types
+  - [x] Ensure all nodes include `kind` discriminator and `location: SourceLocation`
+  - [x] Use `readonly` modifier for all properties
+  - [x] Add JSDoc documentation for each node type
 
-- [ ] Define Program node (AC: 2)
-  - [ ] Create `Program` interface as root AST node
-  - [ ] Include `readonly kind: 'program'` discriminator
-  - [ ] Include `readonly declarations: readonly Declaration[]` array
-  - [ ] Include `readonly location: SourceLocation`
-  - [ ] Document: "Root node containing all top-level declarations in DSL file"
+- [x] Define Program node (AC: 2)
+  - [x] Create `Program` interface as root AST node
+  - [x] Include `readonly kind: 'program'` discriminator
+  - [x] Include `readonly declarations: readonly Declaration[]` array
+  - [x] Include `readonly location: SourceLocation`
+  - [x] Document: "Root node containing all top-level declarations in DSL file"
 
-- [ ] Define SchemaNode type (AC: 3)
-  - [ ] Create `SchemaNode` interface for schema declarations
-  - [ ] Include `readonly kind: 'schema'` discriminator
-  - [ ] Include `readonly name: string` for schema identifier
-  - [ ] Include `readonly fields: readonly FieldNode[]` for field definitions
-  - [ ] Include `readonly location: SourceLocation`
-  - [ ] Document: "Schema declaration defining a data structure with named fields"
+- [x] Define SchemaNode type (AC: 3)
+  - [x] Create `SchemaNode` interface for schema declarations
+  - [x] Include `readonly kind: 'schema'` discriminator
+  - [x] Include `readonly name: string` for schema identifier
+  - [x] Include `readonly fields: readonly FieldNode[]` for field definitions
+  - [x] Include `readonly location: SourceLocation`
+  - [x] Document: "Schema declaration defining a data structure with named fields"
 
-- [ ] Define FieldNode type (AC: 4)
-  - [ ] Create `FieldNode` interface for field definitions within schemas
-  - [ ] Include `readonly kind: 'field'` discriminator
-  - [ ] Include `readonly name: string` for field name
-  - [ ] Include `readonly type: string` for field type
-  - [ ] Include `readonly generator?: GeneratorSpec` for optional generator configuration
-  - [ ] Include `readonly constraints?: FieldConstraints` for uniqueness/validation rules
-  - [ ] Include `readonly location: SourceLocation`
-  - [ ] Document: "Field definition within a schema"
+- [x] Define FieldNode type (AC: 4)
+  - [x] Create `FieldNode` interface for field definitions within schemas
+  - [x] Include `readonly kind: 'field'` discriminator
+  - [x] Include `readonly name: string` for field name
+  - [x] Include `readonly type: string` for field type
+  - [x] Include `readonly generator?: GeneratorSpec` for optional generator configuration
+  - [x] Include `readonly constraints?: FieldConstraints` for uniqueness/validation rules
+  - [x] Include `readonly location: SourceLocation`
+  - [x] Document: "Field definition within a schema"
 
-- [ ] Define GeneratorSpec type (AC: 4)
-  - [ ] Create `GeneratorSpec` interface for generator configurations
-  - [ ] Include `readonly name: string` for generator name (e.g., 'uuid', 'randomInt')
-  - [ ] Include `readonly parameters?: readonly GeneratorParameter[]` for generator args
-  - [ ] Document: "Specification of generator function and its parameters"
+- [x] Define GeneratorSpec type (AC: 4)
+  - [x] Create `GeneratorSpec` interface for generator configurations
+  - [x] Include `readonly name: string` for generator name (e.g., 'uuid', 'randomInt')
+  - [x] Include `readonly parameters?: readonly GeneratorParameter[]` for generator args
+  - [x] Document: "Specification of generator function and its parameters"
 
-- [ ] Define GeneratorParameter type (AC: 4)
-  - [ ] Create `GeneratorParameter` interface for generator arguments
-  - [ ] Include `readonly name: string` for parameter name
-  - [ ] Include `readonly value: LiteralValue` for parameter value
-  - [ ] Document: "Named parameter passed to a generator function"
+- [x] Define GeneratorParameter type (AC: 4)
+  - [x] Create `GeneratorParameter` interface for generator arguments
+  - [x] Include `readonly name: string` for parameter name
+  - [x] Include `readonly value: LiteralValue` for parameter value
+  - [x] Document: "Named parameter passed to a generator function"
 
-- [ ] Define LiteralValue type (AC: 4)
-  - [ ] Create `LiteralValue` type union for primitive values
-  - [ ] Support: string, number, boolean
-  - [ ] Document: "Literal value types that can appear in DSL"
+- [x] Define LiteralValue type (AC: 4)
+  - [x] Create `LiteralValue` type union for primitive values
+  - [x] Support: string, number, boolean
+  - [x] Document: "Literal value types that can appear in DSL"
 
-- [ ] Define FieldConstraints type (AC: 4)
-  - [ ] Create `FieldConstraints` interface for field validation rules
-  - [ ] Include `readonly unique?: boolean` for single-field uniqueness
-  - [ ] Include optional future constraints (min, max, pattern, etc.)
-  - [ ] Document: "Constraints and validation rules for a field"
+- [x] Define FieldConstraints type (AC: 4)
+  - [x] Create `FieldConstraints` interface for field validation rules
+  - [x] Include `readonly unique?: boolean` for single-field uniqueness
+  - [x] Include optional future constraints (min, max, pattern, etc.)
+  - [x] Document: "Constraints and validation rules for a field"
 
-- [ ] Define ProfileNode type (AC: 5)
-  - [ ] Create `ProfileNode` interface for generation profiles
-  - [ ] Include `readonly kind: 'profile'` discriminator
-  - [ ] Include `readonly name: string` for profile identifier
-  - [ ] Include `readonly defaults: readonly DefaultSpec[]` for default settings
-  - [ ] Include `readonly location: SourceLocation`
-  - [ ] Document: "Generation profile defining default settings (future use)"
+- [x] Define ProfileNode type (AC: 5)
+  - [x] Create `ProfileNode` interface for generation profiles
+  - [x] Include `readonly kind: 'profile'` discriminator
+  - [x] Include `readonly name: string` for profile identifier
+  - [x] Include `readonly defaults: readonly DefaultSpec[]` for default settings
+  - [x] Include `readonly location: SourceLocation`
+  - [x] Document: "Generation profile defining default settings (future use)"
 
-- [ ] Define DefaultSpec type (AC: 5)
-  - [ ] Create `DefaultSpec` interface for profile defaults
-  - [ ] Include `readonly fieldType: string` for type pattern
-  - [ ] Include `readonly generator: GeneratorSpec` for default generator
-  - [ ] Document: "Default generator specification for a field type pattern"
+- [x] Define DefaultSpec type (AC: 5)
+  - [x] Create `DefaultSpec` interface for profile defaults
+  - [x] Include `readonly fieldType: string` for type pattern
+  - [x] Include `readonly generator: GeneratorSpec` for default generator
+  - [x] Document: "Default generator specification for a field type pattern"
 
-- [ ] Define Declaration discriminated union (AC: 1)
-  - [ ] Create `Declaration` type as union of all top-level declaration types
-  - [ ] Include: `SchemaNode | ProfileNode | ContextNode` (ContextNode reserved for future)
-  - [ ] Ensure discriminated by `kind` property for type-safe handling
-  - [ ] Document: "Top-level declarations that can appear in a DSL file"
+- [x] Define Declaration discriminated union (AC: 1)
+  - [x] Create `Declaration` type as union of all top-level declaration types
+  - [x] Include: `SchemaNode | ProfileNode | ContextNode` (ContextNode reserved for future)
+  - [x] Ensure discriminated by `kind` property for type-safe handling
+  - [x] Document: "Top-level declarations that can appear in a DSL file"
 
-- [ ] Define helper types and utilities
-  - [ ] Create `NodeVisitor` interface for traversing AST (future use)
-  - [ ] Create type guards: `isSchemaNode()`, `isFieldNode()`, `isProfileNode()`
-  - [ ] Document all type guards with examples
+- [x] Define helper types and utilities
+  - [x] Create `NodeVisitor` interface for traversing AST (future use)
+  - [x] Create type guards: `isSchemaNode()`, `isFieldNode()`, `isProfileNode()`
+  - [x] Document all type guards with examples
 
-- [ ] Create comprehensive type exports (AC: 9)
-  - [ ] Create `packages/core/src/parser/index.ts`
-  - [ ] Export all node types: `Program`, `SchemaNode`, `FieldNode`, etc.
-  - [ ] Export all supporting types: `GeneratorSpec`, `FieldConstraints`, etc.
-  - [ ] Export type guards and utilities
-  - [ ] Do NOT export internal implementation details
+- [x] Create comprehensive type exports (AC: 9)
+  - [x] Create `packages/core/src/parser/index.ts`
+  - [x] Export all node types: `Program`, `SchemaNode`, `FieldNode`, etc.
+  - [x] Export all supporting types: `GeneratorSpec`, `FieldConstraints`, etc.
+  - [x] Export type guards and utilities
+  - [x] Do NOT export internal implementation details
 
-- [ ] Write unit tests (AC: 11)
-  - [ ] Create `packages/core/src/parser/ast.test.ts`
-  - [ ] Test: type guards correctly identify node types
-  - [ ] Test: TypeScript enforces immutability (attempt to modify should fail to compile)
-  - [ ] Test: discriminated unions work correctly (exhaustive switch checks)
-  - [ ] Test: all required properties are present in node definitions
-  - [ ] Test: readonly arrays prevent mutation
-  - [ ] Test: example AST construction validates structure
+- [x] Write unit tests (AC: 11)
+  - [x] Create `packages/core/src/parser/ast.test.ts`
+  - [x] Test: type guards correctly identify node types
+  - [x] Test: TypeScript enforces immutability (attempt to modify should fail to compile)
+  - [x] Test: discriminated unions work correctly (exhaustive switch checks)
+  - [x] Test: all required properties are present in node definitions
+  - [x] Test: readonly arrays prevent mutation
+  - [x] Test: example AST construction validates structure
 
-- [ ] Write documentation and examples (AC: 11)
-  - [ ] Add comprehensive JSDoc to all types
-  - [ ] Create example AST structures in comments
-  - [ ] Document the AST design philosophy (immutable data + pure functions)
-  - [ ] Document relationship to architecture patterns
-  - [ ] Include example of constructing a simple AST manually
+- [x] Write documentation and examples (AC: 11)
+  - [x] Add comprehensive JSDoc to all types
+  - [x] Create example AST structures in comments
+  - [x] Document the AST design philosophy (immutable data + pure functions)
+  - [x] Document relationship to architecture patterns
+  - [x] Include example of constructing a simple AST manually
 
-- [ ] Integration and validation
-  - [ ] Verify SourceLocation import from `packages/core/src/common/diagnostic.ts`
-  - [ ] Ensure all types use `readonly` consistently
-  - [ ] Run `bun test` and verify all tests pass
-  - [ ] Run `bun run lint` and fix any violations
-  - [ ] Run `bun run format` to format code
-  - [ ] Update exports in `packages/core/src/index.ts` if needed
-  - [ ] Verify TypeScript strict mode catches mutation attempts
+- [x] Integration and validation
+  - [x] Verify SourceLocation import from `packages/core/src/common/diagnostic.ts`
+  - [x] Ensure all types use `readonly` consistently
+  - [x] Run `bun test` and verify all tests pass
+  - [x] Run `bun run lint` and fix any violations
+  - [x] Run `bun run format` to format code
+  - [x] Update exports in `packages/core/src/index.ts` if needed
+  - [x] Verify TypeScript strict mode catches mutation attempts
 
 ## Dev Notes
 
@@ -505,8 +505,8 @@ Story 2.2 defines the **AST data structures** used between Parser → Analyzer �
 
 **Source Documents:**
 
-- [Epic Definition: packages/core/src/parser/ast.ts](/_bmad-output/planning-artifacts/epics.md#story-22-parser-ast-node-types) - Complete story requirements
-- [Architecture - AST Design](/_bmad-output/planning-artifacts/architecture.md#ast-design-immutable-data--pure-functions) - Immutable data pattern, pure functions philosophy
+- [Epic Definition: Story 2.2](/_bmad-output/planning-artifacts/epics.md#story-22-parser-ast-node-types) - Complete story requirements
+- [Architecture - AST Design: Immutable Data + Pure Functions](/_bmad-output/planning-artifacts/architecture/core-architectural-decisions.md#ast-design-immutable-data-pure-functions) - Architectural decision and rationale
 - [Architecture - Token Representation](/_bmad-output/planning-artifacts/architecture.md#token-representation-discriminated-union-types) - Discriminated union pattern (same pattern for AST)
 - [Architecture - Multi-Pass Compilation](/_bmad-output/planning-artifacts/architecture.md#dsl-parser-architecture) - Scanner → Parser → Analyzer → Generator pipeline
 - [Project Context - TypeScript Patterns](/_bmad-output/planning-artifacts/project-context.md#typescript-strict-mode-requirements) - TypeScript strict mode, immutability requirements
@@ -568,16 +568,80 @@ This story establishes:
 
 ### Agent Model Used
 
-*To be filled by dev agent*
+Claude Sonnet 4.5
 
 ### Debug Log References
 
-*To be filled by dev agent*
+No debugging required - implementation proceeded smoothly following architecture patterns.
 
 ### Completion Notes List
 
-*To be filled by dev agent*
+✅ **Implementation Complete (2026-01-30)**
+
+**Created Files:**
+- [packages/core/src/parser/ast.ts](packages/core/src/parser/ast.ts) - Complete AST node type definitions with immutability enforcement
+- [packages/core/src/parser/ast.test.ts](packages/core/src/parser/ast.test.ts) - 24 unit tests covering all node types, type guards, and immutability
+- [packages/core/src/parser/index.ts](packages/core/src/parser/index.ts) - Public API exports
+
+**Key Implementation Decisions:**
+1. Used TypeScript interfaces (not classes) for pure data structures following architecture
+2. Applied `readonly` modifier to ALL properties and arrays for immutability enforcement
+3. Implemented discriminated union pattern with `kind` property for type-safe exhaustive checking
+4. Added comprehensive JSDoc documentation with examples for all types
+5. Created 5 type guard functions for safe type narrowing
+6. Included SourceLocation on every node for error reporting capability
+
+**Testing Coverage:**
+- 24 unit tests written covering:
+  - Node construction for all types
+  - Type guard functionality
+  - Discriminated union exhaustiveness
+  - Immutability enforcement (compile-time tests)
+  - Example AST structures
+- **BDD Tests (added 2026-01-31):**
+  - 11 Gherkin scenarios in [packages/core/features/ast-nodes.feature](packages/core/features/ast-nodes.feature)
+  - 128 BDD test steps using Cucumber + SerenityJS Screenplay pattern
+  - Screenplay support files:
+    - [packages/core/features/support/abilities/ConstructASTNodes.ts](packages/core/features/support/abilities/ConstructASTNodes.ts) - Ability to construct AST nodes
+    - [packages/core/features/support/tasks/ASTTasks.ts](packages/core/features/support/tasks/ASTTasks.ts) - High-level Tasks using Interaction.where()
+    - [packages/core/features/support/questions/ASTQuestions.ts](packages/core/features/support/questions/ASTQuestions.ts) - Questions for querying node state
+    - [packages/core/features/step_definitions/ast.steps.ts](packages/core/features/step_definitions/ast.steps.ts) - Step definitions with actorCalled() pattern
+  - Tests verify: Program/Schema/Field/Profile node construction, type guards, location tracking, immutability operations
+- All tests pass (158 total including 26 BDD scenarios with 128 steps)
+- Linter passes with no violations
+- Code formatted with Prettier
+
+**Code Review Completed (2026-01-31):**
+- ContextNode enhanced with name property for consistency with other declaration types
+- Type guard parameters narrowed for better type precision (Declaration instead of ASTNode | Declaration)
+- Architecture documentation links validated and updated
+- All 158 tests passing after review fixes
+
+**Architecture Compliance:**
+- ✅ Pure data structures (no methods/behavior)
+- ✅ Immutability enforced via readonly
+- ✅ Discriminated unions for type safety
+- ✅ Source location tracking for errors
+- ✅ Clear node hierarchy (Program → Declaration → SchemaNode/ProfileNode)
+- ✅ Multi-pass compilation alignment (Scanner → Parser → Analyzer → Generator)
+
+**Fixed Pre-existing Issue:**
+- Removed unused `OperatorType` import from [packages/core/src/scanner/scanner.ts](packages/core/src/scanner/scanner.ts#L20)
 
 ### File List
 
-*To be filled by dev agent*
+**New Files:**
+- packages/core/src/parser/ast.ts
+- packages/core/src/parser/ast.test.ts
+- packages/core/src/parser/index.ts
+- packages/core/features/ast-nodes.feature (added 2026-01-31)
+- packages/core/features/support/abilities/ConstructASTNodes.ts (added 2026-01-31)
+- packages/core/features/support/tasks/ASTTasks.ts (added 2026-01-31)
+- packages/core/features/support/questions/ASTQuestions.ts (added 2026-01-31)
+- packages/core/features/step_definitions/ast.steps.ts (added 2026-01-31)
+
+**Modified Files:**
+- packages/core/src/index.ts (added parser exports)
+- packages/core/src/scanner/scanner.ts (removed unused import)
+- packages/core/tests/cucumber.runner.test.ts (increased timeout to 30s for BDD tests)
+- .prettierignore (added _bmad and _bmad-output folders to ignore list)

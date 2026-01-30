@@ -17,7 +17,7 @@ import { invalidCharacter, unterminatedString } from '../common/diagnostic';
 import type { Result } from '../common/result';
 import { err, ok } from '../common/result';
 import { getOperators, isKeyword, isOperator } from './keywords';
-import type { OperatorType, Token } from './tokens';
+import type { Token } from './tokens';
 
 const OPERATOR_START_CHARS = new Set(getOperators().map((operator) => operator[0]));
 

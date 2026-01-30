@@ -6,3 +6,6 @@ export * from './common';
 
 // Scanner (lexical analysis)
 export * from './scanner';
+
+// Parser (syntax analysis)
+export * from './parser';

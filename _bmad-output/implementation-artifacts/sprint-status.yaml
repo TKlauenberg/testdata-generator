@@ -50,7 +50,7 @@ development_status:
 
   epic-2: in-progress
   2-1-scanner-token-types-and-lexical-analysis: done
-  2-2-parser-ast-node-types: ready-for-dev
+  2-2-parser-ast-node-types: done
   2-3-parser-recursive-descent-implementation: backlog
   2-4-semantic-analyzer-symbol-table: backlog
   2-5-semantic-analyzer-type-checking-and-validation: backlog
