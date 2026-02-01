@@ -48,7 +48,7 @@ Feature: Scanner - Lexical Analysis
     When QA Tester scans the source code
     Then QA Tester should see the scan failed
     And the error code should be "scanner.unterminatedString"
-    And the error message should contain "Unterminated string"
+    And the scan error message should contain "Unterminated string"
 
   @scanner @error-handling
   Scenario: Scanner detects invalid characters

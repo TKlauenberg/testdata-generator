@@ -17,3 +17,6 @@ export type {
 
 // Type Guards
 export { isSchemaNode, isFieldNode, isProfileNode, isContextNode, isProgramNode } from './ast';
+
+// Parser
+export { Parser, parse } from './parser';

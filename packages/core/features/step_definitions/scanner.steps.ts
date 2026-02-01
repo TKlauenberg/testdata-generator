@@ -18,6 +18,12 @@ Given('{actor} has DSL source code {string}', async (actorName: string, source: 
   await actorCalled(actorName).whoCan(ScanSourceCode.using()).attemptsTo(SetSourceCode.to(source));
 });
 
+// Step definition for multiline DSL source code using docstrings
+// Used by parser.feature scenarios with """ delimited source
+Given('{actor} has DSL source code:', async (actorName: string, docString: string) => {
+  await actorCalled(actorName).whoCan(ScanSourceCode.using()).attemptsTo(SetSourceCode.to(docString));
+});
+
 Given('{actor} has DSL source code with an unterminated string', async (actorName: string) => {
   await actorCalled(actorName)
     .whoCan(ScanSourceCode.using())
@@ -102,7 +108,8 @@ Then('the error code should be {string}', async (errorCode: string) => {
   );
 });
 
-Then('the error message should contain {string}', async (text: string) => {
+// Scanner-specific error message step (disambiguated from parser.steps.ts)
+Then('the scan error message should contain {string}', async (text: string) => {
   await actorCalled('QA Tester').attemptsTo(
     Ensure.that(ScanResult.firstErrorMessage(), includes(text)),
   );

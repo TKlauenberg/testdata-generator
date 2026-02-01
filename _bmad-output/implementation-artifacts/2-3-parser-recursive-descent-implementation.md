@@ -1,6 +1,6 @@
 # Story 2.3: Parser - Recursive Descent Implementation
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -28,118 +28,118 @@ So that **DSL schemas can be transformed into structured data for validation**.
 
 ## Tasks / Subtasks
 
-- [ ] Create Parser class foundation (AC: 1)
-  - [ ] Create `packages/core/src/parser/parser.ts`
-  - [ ] Define `Parser` class with constructor accepting `Token[]`
-  - [ ] Implement `parse(): Result<Program>` method
-  - [ ] Setup internal state: current token position, errors array
-  - [ ] Implement token navigation methods: `current()`, `peek()`, `advance()`, `isAtEnd()`
-  - [ ] Implement `expect(kind: TokenKind): Result<Token>` for token matching
+- [x] Create Parser class foundation (AC: 1)
+  - [x] Create `packages/core/src/parser/parser.ts`
+  - [x] Define `Parser` class with constructor accepting `Token[]`
+  - [x] Implement `parse(): Result<Program>` method
+  - [x] Setup internal state: current token position, errors array
+  - [x] Implement token navigation methods: `current()`, `peek()`, `advance()`, `isAtEnd()`
+  - [x] Implement `expect(kind: TokenKind): Result<Token>` for token matching
 
-- [ ] Implement top-level parsing (AC: 2, 3, 4)
-  - [ ] Implement `parseProgram(): Result<Program>` - entry point
-  - [ ] Parse declarations in a loop until EOF
-  - [ ] Handle different declaration types (schema, profile, context)
-  - [ ] Build Program AST node with all declarations
-  - [ ] Collect all parse errors without stopping
+- [x] Implement top-level parsing (AC: 2, 3, 4)
+  - [x] Implement `parseProgram(): Result<Program>` - entry point
+  - [x] Parse declarations in a loop until EOF
+  - [x] Handle different declaration types (schema, profile, context)
+  - [x] Build Program AST node with all declarations
+  - [x] Collect all parse errors without stopping
 
-- [ ] Implement schema declaration parsing (AC: 4)
-  - [ ] Implement `parseSchemaDeclaration(): Result<SchemaNode>`
-  - [ ] Match `schema` keyword token
-  - [ ] Parse schema identifier name
-  - [ ] Match opening brace `{`
-  - [ ] Parse field declarations in a loop until closing brace
-  - [ ] Match closing brace `}`
-  - [ ] Build SchemaNode with all fields
-  - [ ] Track source location from start to end token
+- [x] Implement schema declaration parsing (AC: 4)
+  - [x] Implement `parseSchemaDeclaration(): Result<SchemaNode>`
+  - [x] Match `schema` keyword token
+  - [x] Parse schema identifier name
+  - [x] Match opening brace `{`
+  - [x] Parse field declarations in a loop until closing brace
+  - [x] Match closing brace `}`
+  - [x] Build SchemaNode with all fields
+  - [x] Track source location from start to end token
 
-- [ ] Implement field declaration parsing (AC: 4)
-  - [ ] Implement `parseFieldDeclaration(): Result<FieldNode>`
-  - [ ] Parse field name identifier
-  - [ ] Match colon `:` separator
-  - [ ] Parse field type identifier
-  - [ ] Parse optional generator specification
-  - [ ] Parse optional constraints (e.g., `unique`)
-  - [ ] Build FieldNode with all properties
-  - [ ] Track source location
+- [x] Implement field declaration parsing (AC: 4)
+  - [x] Implement `parseFieldDeclaration(): Result<FieldNode>`
+  - [x] Parse field name identifier
+  - [x] Match colon `:` separator
+  - [x] Parse field type identifier
+  - [x] Parse optional generator specification
+  - [x] Parse optional constraints (e.g., `unique`)
+  - [x] Build FieldNode with all properties
+  - [x] Track source location
 
-- [ ] Implement generator specification parsing (AC: 4)
-  - [ ] Implement `parseGeneratorSpec(): Result<GeneratorSpec>`
-  - [ ] Match `generator=` syntax
-  - [ ] Parse generator name identifier
-  - [ ] Check for parameter list in parentheses
-  - [ ] Parse parameter list if present: `(param1=value1, param2=value2)`
-  - [ ] Build GeneratorSpec with parameters
-  - [ ] Handle literals: strings, numbers, booleans
+- [x] Implement generator specification parsing (AC: 4)
+  - [x] Implement `parseGeneratorSpec(): Result<GeneratorSpec>`
+  - [x] Match `generator=` syntax
+  - [x] Parse generator name identifier
+  - [x] Check for parameter list in parentheses
+  - [x] Parse parameter list if present: `(param1=value1, param2=value2)`
+  - [x] Build GeneratorSpec with parameters
+  - [x] Handle literals: strings, numbers, booleans
 
-- [ ] Implement constraints parsing (AC: 4)
-  - [ ] Implement `parseConstraints(): Result<FieldConstraints>`
-  - [ ] Parse `unique` keyword → set `unique: true`
-  - [ ] Future: Parse other constraint keywords (min, max, pattern)
-  - [ ] Build FieldConstraints object
-  - [ ] Track constraint locations for error reporting
+- [x] Implement constraints parsing (AC: 4)
+  - [x] Implement `parseConstraints(): Result<FieldConstraints>`
+  - [x] Parse `unique` keyword → set `unique: true`
+  - [x] Future: Parse other constraint keywords (min, max, pattern)
+  - [x] Build FieldConstraints object
+  - [x] Track constraint locations for error reporting
 
-- [ ] Implement error recovery and accumulation (AC: 5, 6, 7, 8)
-  - [ ] Use Result type to accumulate errors without stopping
-  - [ ] On syntax error, record diagnostic with location and message
-  - [ ] Implement synchronization points to skip to next valid declaration
-  - [ ] Provide contextual error messages with token context
-  - [ ] Add helpful suggestions for common mistakes
-  - [ ] Include token kind and value in error messages
-  - [ ] Track line and column numbers in all error messages
+- [x] Implement error recovery and accumulation (AC: 5, 6, 7, 8)
+  - [x] Use Result type to accumulate errors without stopping
+  - [x] On syntax error, record diagnostic with location and message
+  - [x] Implement synchronization points to skip to next valid declaration
+  - [x] Provide contextual error messages with token context
+  - [x] Add helpful suggestions for common mistakes
+  - [x] Include token kind and value in error messages
+  - [x] Track line and column numbers in all error messages
 
-- [ ] Add helpful error suggestions (AC: 7)
-  - [ ] Missing colon after field name → "Expected ':' after field name '{{name}}'"
-  - [ ] Missing type → "Expected type after ':' in field declaration"
-  - [ ] Unclosed brace → "Expected '}' to close schema declaration"
-  - [ ] Invalid generator syntax → "Generator syntax: generator=name or generator=name(param=value)"
-  - [ ] Unexpected token → "Unexpected token '{{token}}', expected '{{expected}}'"
-  - [ ] Typo detection → "Did you mean 'schema' instead of 'shema'?"
+- [x] Add helpful error suggestions (AC: 7)
+  - [x] Missing colon after field name → "Expected ':' after field name '{{name}}'"
+  - [x] Missing type → "Expected type after ':' in field declaration"
+  - [x] Unclosed brace → "Expected '}' to close schema declaration"
+  - [x] Invalid generator syntax → "Generator syntax: generator=name or generator=name(param=value)"
+  - [x] Unexpected token → "Unexpected token '{{token}}', expected '{{expected}}'"
+  - [x] Typo detection → "Did you mean 'schema' instead of 'shema'?"
 
-- [ ] Export parser through public API (AC: 9)
-  - [ ] Update `packages/core/src/parser/index.ts`
-  - [ ] Export `Parser` class
-  - [ ] Export `parse()` convenience function: `parse(tokens: Token[]): Result<Program>`
-  - [ ] Export AST node types (already done in Story 2.2)
-  - [ ] Do NOT export internal parser methods
+- [x] Export parser through public API (AC: 9)
+  - [x] Update `packages/core/src/parser/index.ts`
+  - [x] Export `Parser` class
+  - [x] Export `parse()` convenience function: `parse(tokens: Token[]): Result<Program>`
+  - [x] Export AST node types (already done in Story 2.2)
+  - [x] Do NOT export internal parser methods
 
-- [ ] Write comprehensive unit tests (AC: 10, 11)
-  - [ ] Create `packages/core/src/parser/parser.test.ts`
-  - [ ] Test: Parse simple schema with one field
-  - [ ] Test: Parse schema with multiple fields
-  - [ ] Test: Parse field with generator specification
-  - [ ] Test: Parse field with parameters in generator
-  - [ ] Test: Parse field with unique constraint
-  - [ ] Test: Parse multiple schemas in one program
-  - [ ] Test: Error - missing colon after field name
-  - [ ] Test: Error - missing type after colon
-  - [ ] Test: Error - unclosed schema brace
-  - [ ] Test: Error - invalid token in schema body
-  - [ ] Test: Error - multiple errors collected together
-  - [ ] Test: Verify AST structure matches expected nodes
-  - [ ] Test: Verify source locations are accurate
+- [x] Write comprehensive unit tests (AC: 10, 11)
+  - [x] Create `packages/core/src/parser/parser.test.ts`
+  - [x] Test: Parse simple schema with one field
+  - [x] Test: Parse schema with multiple fields
+  - [x] Test: Parse field with generator specification
+  - [x] Test: Parse field with parameters in generator
+  - [x] Test: Parse field with unique constraint
+  - [x] Test: Parse multiple schemas in one program
+  - [x] Test: Error - missing colon after field name
+  - [x] Test: Error - missing type after colon
+  - [x] Test: Error - unclosed schema brace
+  - [x] Test: Error - invalid token in schema body
+  - [x] Test: Error - multiple errors collected together
+  - [x] Test: Verify AST structure matches expected nodes
+  - [x] Test: Verify source locations are accurate
 
-- [ ] Write Gherkin feature tests (AC: 10)
-  - [ ] Create `packages/core/tests/features/parser.feature`
-  - [ ] Scenario: Parse valid schema with single field
-  - [ ] Scenario: Parse valid schema with multiple fields
-  - [ ] Scenario: Parse schema with generator and constraints
-  - [ ] Scenario: Parse multiple schemas
-  - [ ] Scenario: Syntax error - missing colon
-  - [ ] Scenario: Syntax error - unclosed brace
-  - [ ] Scenario: Multiple syntax errors reported together
-  - [ ] Verify error messages include line/column numbers
-  - [ ] Verify suggestions are provided for common errors
+- [x] Write Gherkin feature tests (AC: 10)
+  - [x] Create `packages/core/tests/features/parser.feature`
+  - [x] Scenario: Parse valid schema with single field
+  - [x] Scenario: Parse valid schema with multiple fields
+  - [x] Scenario: Parse schema with generator and constraints
+  - [x] Scenario: Parse multiple schemas
+  - [x] Scenario: Syntax error - missing colon
+  - [x] Scenario: Syntax error - unclosed brace
+  - [x] Scenario: Multiple syntax errors reported together
+  - [x] Verify error messages include line/column numbers
+  - [x] Verify suggestions are provided for common errors
 
-- [ ] Integration and validation
-  - [ ] Verify Token types imported from `packages/core/src/scanner/`
-  - [ ] Verify AST node types imported from `packages/core/src/parser/ast.ts`
-  - [ ] Verify Result type imported from `packages/core/src/common/result.ts`
-  - [ ] Verify Diagnostic imported from `packages/core/src/common/diagnostic.ts`
-  - [ ] Run `bun test` and verify all tests pass
-  - [ ] Run `bun run lint` and fix any violations
-  - [ ] Run `bun run format` to format code
-  - [ ] Update exports in `packages/core/src/index.ts` if needed
+- [x] Integration and validation
+  - [x] Verify Token types imported from `packages/core/src/scanner/`
+  - [x] Verify AST node types imported from `packages/core/src/parser/ast.ts`
+  - [x] Verify Result type imported from `packages/core/src/common/result.ts`
+  - [x] Verify Diagnostic imported from `packages/core/src/common/diagnostic.ts`
+  - [x] Run `bun test` and verify all tests pass
+  - [x] Run `bun run lint` and fix any violations
+  - [x] Run `bun run format` to format code
+  - [x] Update exports in `packages/core/src/index.ts` if needed
 
 ## Dev Notes
 
@@ -498,16 +498,114 @@ export { parse } from './parser';
 
 ### Agent Model Used
 
-_To be filled by dev agent_
+Claude Sonnet 4.5
 
 ### Debug Log References
 
-_To be filled by dev agent_
+- Used test-debug.ts file for tracing parser execution with specific token streams
+- Debugged type narrowing issues with Token discriminated union
+- Traced synchronization logic to understand why "generator" keyword was treated as new field
 
 ### Completion Notes List
 
-_To be filled by dev agent_
+**Implementation Summary:**
+- ✅ Implemented complete Parser class (~795 lines) with recursive descent pattern
+- ✅ All grammar rules implemented: Program, SchemaDeclaration, FieldDeclaration, GeneratorSpec, Parameters, Literals, Constraints
+- ✅ Error accumulation and recovery working correctly
+- ✅ Helpful error messages with suggestions implemented
+- ✅ Source location tracking accurate for all AST nodes
+- ✅ 21 comprehensive unit tests - all passing
+- ✅ 10 Gherkin BDD scenarios with full Screenplay pattern support
+- ✅ Full test suite: 179 tests pass (all passing)
+- ✅ Code passes lint and format checks
+
+**Key Technical Decisions:**
+1. Parser class uses private methods prefixed with underscore (_parseProgram, _parseSchemaDeclaration, etc.)
+2. Token navigation methods return Token | undefined, checked with _isAtEnd() and _check()
+3. _check() method enhanced to handle identifier value matching for 'generator' keyword detection
+4. Error recovery uses synchronization points (_synchronize, _synchronizeToNextField) to continue parsing after errors
+5. All AST nodes built using readonly object literals, maintaining immutability from Story 2.2
+6. Diagnostic objects use correct interface: severity (not level), suggestion (string, not array)
+7. Result type pattern used throughout for explicit success/failure handling
+
+**Challenges Encountered:**
+1. **Type Narrowing Issue:** TypeScript discriminated unions required explicit type guards in _check() method. Fixed by adding identifier value comparison.
+2. **Generator Keyword Handling:** Parser initially treated 'generator' identifier as field name. Fixed by enhancing _synchronizeToNextField() to skip 'generator' keyword during recovery.
+3. **Diagnostic Interface Mismatch:** Initially used wrong property names. Fixed to match Story 1.3 interface.
+4. **Serenity Assertions Version:** isGreaterThanOrEqual not available. Workaround: used isGreaterThan(count-1).
+5. **Linting Issues:** Unused imports in test files. Cleaned up in final validation pass.
+
+**Patterns Successfully Applied:**
+- Recursive descent with one method per grammar rule
+- Error accumulation without stopping at first error
+- Panic mode synchronization for error recovery
+- Helpful contextual error messages with suggestions
+- Immutable AST construction
+- Result type for explicit error handling
+- Source location tracking on all nodes
+- Discriminated unions for type safety
+- Private method naming convention with underscore prefix
+
+**Test Coverage:**
+- Unit tests: 21 tests covering valid parsing, generators, constraints, error detection, error recovery, source locations, AST structure
+- BDD tests: 10 Gherkin scenarios covering end-to-end parsing flows
+- All acceptance criteria validated through tests
+
+**Documentation Added:**
+- Comprehensive JSDoc comments on all public methods
+- Inline comments explaining error recovery logic
+- Examples in JSDoc for parse() convenience function
+- Grammar rules documented in class-level JSDoc
+
+### Code Review Fixes (2026-01-31)
+
+**Review conducted by:** Claude Opus 4.5
+
+**Issues Fixed:**
+
+1. **CRITICAL - BDD Test Failures (Ambiguous/Undefined Steps)**
+   - Added missing docstring step definition: `Given '{actor} has DSL source code:'` in scanner.steps.ts
+   - Renamed scanner's duplicate step from `the error message should contain` to `the scan error message should contain` to avoid ambiguity
+   - Fixed parser.steps.ts `When` step to not overwrite actor's existing ScanSourceCode ability
+   - Updated scanner.feature to use new disambiguated step name
+   - **Result:** All 36 BDD scenarios now pass (was 25 passed, 4 ambiguous, 7 undefined)
+
+2. **CRITICAL - Security Validation Added**
+   - Added `_maxTokenCount` constant (100,000) to prevent DoS via massive token streams
+   - Constructor now validates: non-empty tokens array, token count limit, EOF token present
+   - Added defensive bounds checking in `_currentToken()` method
+   - **File:** packages/core/src/parser/parser.ts
+
+3. **CRITICAL - Enhanced Helpful Suggestions**
+   - Expanded `_getSuggestions()` method with more context-aware hints
+   - Added suggestions for: missing closing brace, missing equals after generator, missing generator name, unclosed parentheses
+   - Added typo detection for: Generator, Schema, Profile, Context, Unique (case variations)
+   - Added guidance for unexpected tokens at top level
+   - **File:** packages/core/src/parser/parser.ts
+
+4. **MEDIUM - Documentation Updates**
+   - Updated line count from ~700 to ~795 (actual)
+   - Fixed test count claim from "178 tests pass, 1 failure" to "179 tests pass (all passing)"
+
+**Verification:**
+- All 21 parser unit tests pass
+- All 36 BDD scenarios pass (10 parser-specific)
+- Full test suite: 179 tests pass, 0 fail
+- Lint passes (after fixing naming convention)
 
 ### File List
 
-_To be filled by dev agent_
+**Created:**
+- `packages/core/src/parser/parser.ts` (~795 lines) - Complete Parser class implementation
+- `packages/core/src/parser/parser.test.ts` (~698 lines) - Comprehensive unit tests (21 tests)
+- `packages/core/features/parser.feature` (~148 lines) - Gherkin BDD scenarios (10 scenarios)
+- `packages/core/features/step_definitions/parser.steps.ts` (~247 lines) - Cucumber step definitions
+- `packages/core/features/support/abilities/ParseTokens.ts` - SerenityJS Ability for parsing
+- `packages/core/features/support/tasks/ParserTasks.ts` - Screenplay Tasks for parsing
+- `packages/core/features/support/questions/ParserQuestions.ts` - Screenplay Questions for AST inspection
+
+**Modified:**
+- `packages/core/src/parser/index.ts` - Added Parser and parse exports
+- `packages/core/features/step_definitions/scanner.steps.ts` - Added docstring step, renamed error step
+- `packages/core/features/scanner.feature` - Updated to use disambiguated step name
+- `_bmad-output/implementation-artifacts/sprint-status.yaml` - Updated story status ready-for-dev → review
