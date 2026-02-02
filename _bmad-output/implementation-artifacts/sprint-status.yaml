@@ -53,7 +53,7 @@ development_status:
   2-2-parser-ast-node-types: done
   2-3-parser-recursive-descent-implementation: done
   2-4-semantic-analyzer-symbol-table: done
-  2-5-semantic-analyzer-type-checking-and-validation: backlog
+  2-5-semantic-analyzer-type-checking-and-validation: ready-for-dev
   2-6-end-to-end-schema-validation: backlog
   epic-2-retrospective: optional
 
