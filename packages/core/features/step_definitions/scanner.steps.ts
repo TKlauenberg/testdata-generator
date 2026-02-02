@@ -21,7 +21,9 @@ Given('{actor} has DSL source code {string}', async (actorName: string, source: 
 // Step definition for multiline DSL source code using docstrings
 // Used by parser.feature scenarios with """ delimited source
 Given('{actor} has DSL source code:', async (actorName: string, docString: string) => {
-  await actorCalled(actorName).whoCan(ScanSourceCode.using()).attemptsTo(SetSourceCode.to(docString));
+  await actorCalled(actorName)
+    .whoCan(ScanSourceCode.using())
+    .attemptsTo(SetSourceCode.to(docString));
 });
 
 Given('{actor} has DSL source code with an unterminated string', async (actorName: string) => {

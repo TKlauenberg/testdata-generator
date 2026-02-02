@@ -9,3 +9,6 @@ export * from './scanner';
 
 // Parser (syntax analysis)
 export * from './parser';
+
+// Analyzer (semantic analysis)
+export * from './analyzer';

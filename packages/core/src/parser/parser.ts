@@ -68,7 +68,7 @@ export class Parser {
     if (tokens.length > Parser._maxTokenCount) {
       throw new Error(
         `Token count (${tokens.length}) exceeds maximum allowed (${Parser._maxTokenCount}). ` +
-        `Consider splitting the file or checking for malformed input.`
+          `Consider splitting the file or checking for malformed input.`,
       );
     }
 
@@ -104,7 +104,7 @@ export class Parser {
     // because _isAtEnd() checks for EOF token, but prevents undefined access
     if (this._current < 0 || this._current >= this._tokens.length) {
       throw new Error(
-        `Parser internal error: current index ${this._current} out of bounds [0, ${this._tokens.length})`
+        `Parser internal error: current index ${this._current} out of bounds [0, ${this._tokens.length})`,
       );
     }
     return this._tokens[this._current];
@@ -258,7 +258,7 @@ export class Parser {
 
     // Missing equals after generator keyword
     if (expectedKind === 'operator' && expectedValue === '=' && found.kind !== 'operator') {
-      suggestions.push("Generator syntax: generator=name or generator=name(param=value)");
+      suggestions.push('Generator syntax: generator=name or generator=name(param=value)');
       suggestions.push('Example: email: string generator=email');
     }
 
