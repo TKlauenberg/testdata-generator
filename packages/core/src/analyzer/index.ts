@@ -8,5 +8,8 @@
 export { SymbolTable } from './symbolTable';
 export type { Symbol, SymbolKind } from './symbolTable';
 
+export { analyze } from './analyzer';
+export type { ValidatedProgram, ValidatedSchema, ValidatedField } from './types';
+
 // Re-export AST types used in symbol table API
 export type { ContextNode, ProfileNode } from '../parser/ast';

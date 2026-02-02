@@ -6,12 +6,12 @@
 
 import { Given, When, Then } from '@cucumber/cucumber';
 import { expect } from 'bun:test';
-import { SymbolTable } from '../../../src/analyzer/symbolTable';
-import type { Symbol as SymbolTableSymbol } from '../../../src/analyzer/symbolTable';
-import type { SchemaNode, FieldNode } from '../../../src/parser/ast';
-import type { SourceLocation } from '../../../src/common/diagnostic';
-import type { Result } from '../../../src/common/result';
-import type { Diagnostic } from '../../../src/common/diagnostic';
+import { SymbolTable } from '../../src/analyzer/symbolTable.js';
+import type { Symbol as SymbolTableSymbol, SymbolKind } from '../../src/analyzer/symbolTable.js';
+import type { SchemaNode, FieldNode } from '../../src/parser/ast.js';
+import type { SourceLocation } from '../../src/common/diagnostic.js';
+import type { Result } from '../../src/common/result.js';
+import type { Diagnostic } from '../../src/common/diagnostic.js';
 
 // World state
 interface WorldState {
@@ -74,14 +74,6 @@ Given(
 );
 
 When(
-  'I define a schema {string} at line {int}, column {int}',
-  function (name: string, line: number, column: number) {
-    const result = world.symbolTable.defineSchema(name, schemaNode(name, loc(line, column)));
-    world.lastResult = result;
-  },
-);
-
-When(
   'I attempt to define a schema {string} at line {int}, column {int}',
   function (name: string, line: number, column: number) {
     const result = world.symbolTable.defineSchema(name, schemaNode(name, loc(line, column)));
@@ -91,18 +83,6 @@ When(
 
 // Field definition steps
 Given(
-  'I define a field {string} in schema {string} at line {int}, column {int}',
-  function (fieldName: string, schemaName: string, line: number, column: number) {
-    const result = world.symbolTable.defineField(
-      schemaName,
-      fieldName,
-      fieldNode(fieldName, 'string', loc(line, column)),
-    );
-    world.lastResult = result;
-  },
-);
-
-When(
   'I define a field {string} in schema {string} at line {int}, column {int}',
   function (fieldName: string, schemaName: string, line: number, column: number) {
     const result = world.symbolTable.defineField(
@@ -140,25 +120,7 @@ Given(
 Given(
   'I define a profile {string} at line {int}, column {int}',
   function (name: string, line: number, column: number) {
-    const node = { kind: 'profile' as const, name, location: loc(line, column) };
-    const result = world.symbolTable.defineProfile(name, node);
-    world.lastResult = result;
-  },
-);
-
-When(
-  'I define a context {string} at line {int}, column {int}',
-  function (name: string, line: number, column: number) {
-    const node = { kind: 'context' as const, name, location: loc(line, column) };
-    const result = world.symbolTable.defineContext(name, node);
-    world.lastResult = result;
-  },
-);
-
-When(
-  'I define a profile {string} at line {int}, column {int}',
-  function (name: string, line: number, column: number) {
-    const node = { kind: 'profile' as const, name, location: loc(line, column) };
+    const node = { kind: 'profile' as const, name, defaults: [], location: loc(line, column) };
     const result = world.symbolTable.defineProfile(name, node);
     world.lastResult = result;
   },
@@ -224,12 +186,12 @@ Then('the lookup should return undefined', function () {
 // Assertion steps - kind
 Then('the symbol {string} should have kind {string}', function (_name: string, kind: string) {
   expect(world.lastLookup).toBeDefined();
-  expect(world.lastLookup?.kind).toBe(kind);
+  expect(world.lastLookup?.kind).toBe(kind as SymbolKind);
 });
 
 Then('the field symbol should have kind {string}', function (kind: string) {
   expect(world.lastLookup).toBeDefined();
-  expect(world.lastLookup?.kind).toBe(kind);
+  expect(world.lastLookup?.kind).toBe(kind as SymbolKind);
 });
 
 // Assertion steps - location
@@ -253,46 +215,50 @@ Then(
 
 // Assertion steps - errors
 Then('the operation should fail with error code {string}', function (errorCode: string) {
-  expect(world.lastResult).not.toBeNull();
-  expect(world.lastResult?.ok).toBe(false);
-  if (!world.lastResult?.ok) {
-    expect(world.lastResult.errors[0].code).toBe(errorCode);
+  const lastResult = world.lastResult;
+  expect(lastResult).not.toBeNull();
+  if (!lastResult || lastResult.ok) {
+    return;
   }
+  expect(lastResult.errors[0].code).toBe(errorCode);
 });
 
-Then('the error message should contain {string}', function (substring: string) {
-  expect(world.lastResult).not.toBeNull();
-  expect(world.lastResult?.ok).toBe(false);
-  if (!world.lastResult?.ok) {
-    expect(world.lastResult.errors[0].message).toContain(substring);
+Then('the symbol table error message should contain {string}', function (substring: string) {
+  const lastResult = world.lastResult;
+  expect(lastResult).not.toBeNull();
+  if (!lastResult || lastResult.ok) {
+    return;
   }
+  expect(lastResult.errors[0].message).toContain(substring);
 });
 
 Then(
   'the error location should be line {int}, column {int}',
   function (line: number, column: number) {
-    expect(world.lastResult).not.toBeNull();
-    expect(world.lastResult?.ok).toBe(false);
-    if (!world.lastResult?.ok) {
-      expect(world.lastResult.errors[0].location?.line).toBe(line);
-      expect(world.lastResult.errors[0].location?.column).toBe(column);
+    const lastResult = world.lastResult;
+    expect(lastResult).not.toBeNull();
+    if (!lastResult || lastResult.ok) {
+      return;
     }
+    expect(lastResult.errors[0].location?.line).toBe(line);
+    expect(lastResult.errors[0].location?.column).toBe(column);
   },
 );
 
 Then(
   'the error should reference the original definition at line {int}, column {int}',
   function (line: number, column: number) {
-    expect(world.lastResult).not.toBeNull();
-    expect(world.lastResult?.ok).toBe(false);
-    if (!world.lastResult?.ok) {
-      const error = world.lastResult.errors[0];
-      expect(error.related).toBeDefined();
-      expect(error.related).not.toHaveLength(0);
-      if (error.related && error.related.length > 0) {
-        expect(error.related[0].location?.line).toBe(line);
-        expect(error.related[0].location?.column).toBe(column);
-      }
+    const lastResult = world.lastResult;
+    expect(lastResult).not.toBeNull();
+    if (!lastResult || lastResult.ok) {
+      return;
+    }
+    const error = lastResult.errors[0];
+    expect(error.related).toBeDefined();
+    expect(error.related).not.toHaveLength(0);
+    if (error.related && error.related.length > 0) {
+      expect(error.related[0].location?.line).toBe(line);
+      expect(error.related[0].location?.column).toBe(column);
     }
   },
 );

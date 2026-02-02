@@ -215,7 +215,12 @@ describe('SymbolTable', () => {
       // Use same name for all three types - should be tracked separately
       table.defineSchema('Entity', schemaNode('Entity', loc(1, 1)));
       table.defineContext('Entity', { kind: 'context', name: 'Entity', location: loc(10, 1) });
-      table.defineProfile('Entity', { kind: 'profile', name: 'Entity', defaults: [], location: loc(20, 1) });
+      table.defineProfile('Entity', {
+        kind: 'profile',
+        name: 'Entity',
+        defaults: [],
+        location: loc(20, 1),
+      });
 
       // All should be independently accessible
       expect(table.lookupSchema('Entity')).toBeDefined();
@@ -230,8 +235,17 @@ describe('SymbolTable', () => {
 
       table.defineSchema('User', schemaNode('User', loc(1, 1)));
       table.defineSchema('Product', schemaNode('Product', loc(10, 1)));
-      table.defineContext('TestContext', { kind: 'context', name: 'TestContext', location: loc(15, 1) });
-      table.defineProfile('TestProfile', { kind: 'profile', name: 'TestProfile', defaults: [], location: loc(20, 1) });
+      table.defineContext('TestContext', {
+        kind: 'context',
+        name: 'TestContext',
+        location: loc(15, 1),
+      });
+      table.defineProfile('TestProfile', {
+        kind: 'profile',
+        name: 'TestProfile',
+        defaults: [],
+        location: loc(20, 1),
+      });
 
       const symbols = table.getAllSymbols();
       expect(symbols.length).toBeGreaterThanOrEqual(4);

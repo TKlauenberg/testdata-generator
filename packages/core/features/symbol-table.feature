@@ -23,7 +23,7 @@ Feature: Symbol Table
     Given I define a schema "User" at line 5, column 1
     When I attempt to define a schema "User" at line 10, column 1
     Then the operation should fail with error code "analyzer.duplicateSchema"
-    And the error message should contain "User"
+    And the symbol table error message should contain "User"
     And the error location should be line 10, column 1
     And the error should reference the original definition at line 5, column 1
 
@@ -32,7 +32,7 @@ Feature: Symbol Table
     And I define a field "email" in schema "User" at line 2, column 3
     When I attempt to define a field "email" in schema "User" at line 5, column 3
     Then the operation should fail with error code "analyzer.duplicateField"
-    And the error message should contain "email"
+    And the symbol table error message should contain "email"
     And the error location should be line 5, column 3
     And the error should reference the original definition at line 2, column 3
 

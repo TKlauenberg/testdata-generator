@@ -21,5 +21,11 @@
   "typescript.tsdk": "node_modules/typescript/lib",
   "cucumber.glue": [
     "**/features/**/*.ts"
-  ]
+  ],
+  "chat.tools.terminal.autoApprove": {
+    "/^bun run format$/": {
+      "approve": true,
+      "matchCommandLine": true
+    }
+  }
 }
