@@ -1,6 +1,7 @@
 import { Actor, Cast } from '@serenity-js/core';
 import { PerformCalculations } from '../abilities/PerformCalculations.ts';
 import { WorkWithResults } from '../abilities/WorkWithResults.ts';
+import { ValidateSchemaAbility } from '../abilities/ValidateSchemaAbility';
 
 /**
  * TestCast configures how Actors are created for Screenplay tests.
@@ -26,6 +27,7 @@ export class TestCast implements Cast {
    * Current Abilities:
    * - PerformCalculations: Example demonstrating Screenplay pattern basics
    * - WorkWithResults: Example demonstrating Result<T, E> pattern integration
+   * - ValidateSchemaAbility: End-to-end validation testing
    *
    * Future stories will add real Abilities:
    * - ParseSchemas.usingCoreLibrary() (Story 2.x)
@@ -35,6 +37,10 @@ export class TestCast implements Cast {
    * @returns The prepared Actor with Abilities
    */
   prepare(actor: Actor): Actor {
-    return actor.whoCan(PerformCalculations.using(), WorkWithResults.using());
+    return actor.whoCan(
+      PerformCalculations.using(),
+      WorkWithResults.using(),
+      new ValidateSchemaAbility(),
+    );
   }
 }
