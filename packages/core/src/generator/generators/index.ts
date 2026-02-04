@@ -1,12 +1,3 @@
-/**
- * Generator Module
- *
- * Provides deterministic data generation capabilities.
- *
- * @module generator
- */
-
-export { createRNG, type RNG } from './rng';
 export {
   randomInt,
   randomFloat,
@@ -18,4 +9,4 @@ export {
   GENERATOR_REGISTRY,
   type GeneratorFunction,
   type GeneratorRegistry,
-} from './generators';
+} from './primitives';

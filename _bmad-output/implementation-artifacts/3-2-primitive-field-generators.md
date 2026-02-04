@@ -1,6 +1,6 @@
 # Story 3.2: Primitive Field Generators
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -29,103 +29,103 @@ So that **I can generate integers, floats, strings, and booleans in my schemas**
 
 ## Tasks / Subtasks
 
-- [ ] Create generator module structure (AC: 10)
-  - [ ] Create `packages/core/src/generator/generators/` directory
-  - [ ] Create `primitives.ts` in generators directory
-  - [ ] Create `index.ts` in generators directory for public exports
+- [x] Create generator module structure (AC: 10)
+  - [x] Create `packages/core/src/generator/generators/` directory
+  - [x] Create `primitives.ts` in generators directory
+  - [x] Create `index.ts` in generators directory for public exports
 
-- [ ] Implement randomInt generator (AC: 1, 5, 6)
-  - [ ] Create `randomInt(rng: RNG, min: number, max: number): number` function
-  - [ ] Validate min <= max, throw descriptive error if invalid
-  - [ ] Validate min and max are finite numbers
-  - [ ] Validate min and max are integers (no fractions)
-  - [ ] Delegate to `rng.nextIntRange(min, max)` for actual generation
-  - [ ] Add JSDoc comments explaining parameters and return value
-  - [ ] Export from primitives.ts
+- [x] Implement randomInt generator (AC: 1, 5, 6)
+  - [x] Create `randomInt(rng: RNG, min: number, max: number): number` function
+  - [x] Validate min <= max, throw descriptive error if invalid
+  - [x] Validate min and max are finite numbers
+  - [x] Validate min and max are integers (no fractions)
+  - [x] Delegate to `rng.nextIntRange(min, max)` for actual generation
+  - [x] Add JSDoc comments explaining parameters and return value
+  - [x] Export from primitives.ts
 
-- [ ] Implement randomFloat generator (AC: 2, 5, 6)
-  - [ ] Create `randomFloat(rng: RNG, min: number, max: number): number` function
-  - [ ] Validate min <= max, throw descriptive error if invalid
-  - [ ] Validate min and max are finite numbers
-  - [ ] Delegate to `rng.nextFloatRange(min, max)` for actual generation
-  - [ ] Add JSDoc comments explaining parameters and return value
-  - [ ] Export from primitives.ts
+- [x] Implement randomFloat generator (AC: 2, 5, 6)
+  - [x] Create `randomFloat(rng: RNG, min: number, max: number): number` function
+  - [x] Validate min <= max, throw descriptive error if invalid
+  - [x] Validate min and max are finite numbers
+  - [x] Delegate to `rng.nextFloatRange(min, max)` for actual generation
+  - [x] Add JSDoc comments explaining parameters and return value
+  - [x] Export from primitives.ts
 
-- [ ] Implement randomBoolean generator (AC: 4, 5)
-  - [ ] Create `randomBoolean(rng: RNG): boolean` function
-  - [ ] Use `rng.nextFloat() < 0.5` for fair 50/50 distribution
-  - [ ] Add JSDoc comments explaining behavior
-  - [ ] Export from primitives.ts
+- [x] Implement randomBoolean generator (AC: 4, 5)
+  - [x] Create `randomBoolean(rng: RNG): boolean` function
+  - [x] Use `rng.nextFloat() < 0.5` for fair 50/50 distribution
+  - [x] Add JSDoc comments explaining behavior
+  - [x] Export from primitives.ts
 
-- [ ] Implement randomString generator (AC: 3, 5, 6, 7, 8)
-  - [ ] Define character set constants:
-    - [ ] CHARSET_ALPHA: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
-    - [ ] CHARSET_NUMERIC: '0123456789'
-    - [ ] CHARSET_ALPHANUMERIC: CHARSET_ALPHA + CHARSET_NUMERIC (default)
-  - [ ] Create `randomString(rng: RNG, length: number, charset?: string): string` function
-  - [ ] Validate length is positive integer
-  - [ ] Use CHARSET_ALPHANUMERIC as default if charset not provided
-  - [ ] Validate charset is non-empty string
-  - [ ] Generate string by selecting random characters from charset
-  - [ ] Use `rng.nextIntRange(0, charset.length - 1)` to pick indices
-  - [ ] Build string efficiently (array join vs repeated concatenation)
-  - [ ] Add JSDoc comments explaining parameters, defaults, and examples
-  - [ ] Export from primitives.ts and export charset constants
+- [x] Implement randomString generator (AC: 3, 5, 6, 7, 8)
+  - [x] Define character set constants:
+    - [x] CHARSET_ALPHA: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    - [x] CHARSET_NUMERIC: '0123456789'
+    - [x] CHARSET_ALPHANUMERIC: CHARSET_ALPHA + CHARSET_NUMERIC (default)
+  - [x] Create `randomString(rng: RNG, length: number, charset?: string): string` function
+  - [x] Validate length is positive integer
+  - [x] Use CHARSET_ALPHANUMERIC as default if charset not provided
+  - [x] Validate charset is non-empty string
+  - [x] Generate string by selecting random characters from charset
+  - [x] Use `rng.nextIntRange(0, charset.length - 1)` to pick indices
+  - [x] Build string efficiently (array join vs repeated concatenation)
+  - [x] Add JSDoc comments explaining parameters, defaults, and examples
+  - [x] Export from primitives.ts and export charset constants
 
-- [ ] Implement generator registry (AC: 9)
-  - [ ] Create `GeneratorFunction` type definition
-  - [ ] Create `GeneratorRegistry` type as Map<string, GeneratorFunction>
-  - [ ] Create and export `GENERATOR_REGISTRY` constant with mappings:
-    - [ ] 'int' | 'integer' → randomInt
-    - [ ] 'float' | 'double' | 'number' → randomFloat
-    - [ ] 'string' | 'text' → randomString
-    - [ ] 'bool' | 'boolean' → randomBoolean
-  - [ ] Export registry and types
+- [x] Implement generator registry (AC: 9)
+  - [x] Create `GeneratorFunction` type definition
+  - [x] Create `GeneratorRegistry` type as Map<string, GeneratorFunction>
+  - [x] Create and export `GENERATOR_REGISTRY` constant with mappings:
+    - [x] 'int' | 'integer' → randomInt
+    - [x] 'float' | 'double' | 'number' → randomFloat
+    - [x] 'string' | 'text' → randomString
+    - [x] 'bool' | 'boolean' → randomBoolean
+  - [x] Export registry and types
 
-- [ ] Export through module index (AC: 10)
-  - [ ] Update `packages/core/src/generator/generators/index.ts`
-  - [ ] Export all generator functions
-  - [ ] Export character set constants
-  - [ ] Export registry and types
-  - [ ] Update `packages/core/src/generator/index.ts` to re-export generators
+- [x] Export through module index (AC: 10)
+  - [x] Update `packages/core/src/generator/generators/index.ts`
+  - [x] Export all generator functions
+  - [x] Export character set constants
+  - [x] Export registry and types
+  - [x] Update `packages/core/src/generator/index.ts` to re-export generators
 
-- [ ] Write comprehensive unit tests (AC: 11)
-  - [ ] Create `packages/core/src/generator/generators/primitives.test.ts`
-  - [ ] Test randomInt:
-    - [ ] Generates integers within specified range
-    - [ ] Same seed produces identical sequences
-    - [ ] Min equals max returns that value
-    - [ ] Invalid parameters throw errors (min > max, non-finite, non-integer)
-  - [ ] Test randomFloat:
-    - [ ] Generates floats within specified range
-    - [ ] Same seed produces identical sequences
-    - [ ] Min equals max returns that value
-    - [ ] Invalid parameters throw errors
-  - [ ] Test randomBoolean:
-    - [ ] Generates true and false values
-    - [ ] Same seed produces identical sequences
-    - [ ] Distribution is approximately 50/50 over large sample
-  - [ ] Test randomString:
-    - [ ] Generates strings of correct length
-    - [ ] Uses default alphanumeric charset when not specified
-    - [ ] Respects custom charset parameter
-    - [ ] All characters come from specified charset
-    - [ ] Same seed produces identical sequences
-    - [ ] Invalid parameters throw errors (negative length, empty charset)
-  - [ ] Test generator registry:
-    - [ ] All expected names map to correct functions
-    - [ ] Aliases work correctly
+- [x] Write comprehensive unit tests (AC: 11)
+  - [x] Create `packages/core/src/generator/generators/primitives.test.ts`
+  - [x] Test randomInt:
+    - [x] Generates integers within specified range
+    - [x] Same seed produces identical sequences
+    - [x] Min equals max returns that value
+    - [x] Invalid parameters throw errors (min > max, non-finite, non-integer)
+  - [x] Test randomFloat:
+    - [x] Generates floats within specified range
+    - [x] Same seed produces identical sequences
+    - [x] Min equals max returns that value
+    - [x] Invalid parameters throw errors
+  - [x] Test randomBoolean:
+    - [x] Generates true and false values
+    - [x] Same seed produces identical sequences
+    - [x] Distribution is approximately 50/50 over large sample
+  - [x] Test randomString:
+    - [x] Generates strings of correct length
+    - [x] Uses default alphanumeric charset when not specified
+    - [x] Respects custom charset parameter
+    - [x] All characters come from specified charset
+    - [x] Same seed produces identical sequences
+    - [x] Invalid parameters throw errors (negative length, empty charset)
+  - [x] Test generator registry:
+    - [x] All expected names map to correct functions
+    - [x] Aliases work correctly
 
-- [ ] Write Gherkin BDD tests (AC: 12)
-  - [ ] Create `packages/core/features/primitive-generators.feature`
-  - [ ] Scenario: Generate deterministic integers with seeded RNG
-  - [ ] Scenario: Generate deterministic floats with seeded RNG
-  - [ ] Scenario: Generate deterministic booleans with seeded RNG
-  - [ ] Scenario: Generate deterministic strings with seeded RNG
-  - [ ] Scenario: Custom character sets produce valid strings
-  - [ ] Scenario: Parameter validation prevents invalid inputs
-  - [ ] Implement step definitions using Screenplay pattern
-  - [ ] Create appropriate Abilities/Tasks/Questions components
+- [x] Write Gherkin BDD tests (AC: 12)
+  - [x] Create `packages/core/features/primitive-generators.feature`
+  - [x] Scenario: Generate deterministic integers with seeded RNG
+  - [x] Scenario: Generate deterministic floats with seeded RNG
+  - [x] Scenario: Generate deterministic booleans with seeded RNG
+  - [x] Scenario: Generate deterministic strings with seeded RNG
+  - [x] Scenario: Custom character sets produce valid strings
+  - [x] Scenario: Parameter validation prevents invalid inputs
+  - [x] Implement step definitions using Screenplay pattern
+  - [x] Create appropriate Abilities/Tasks/Questions components
 
 ## Dev Notes
 
@@ -845,16 +845,68 @@ packages/core/src/
 
 ### Agent Model Used
 
-_To be filled by dev agent_
+Claude Sonnet 4.5 (via GitHub Copilot)
 
 ### Debug Log References
 
-_To be filled by dev agent_
+N/A - Implementation proceeded smoothly with no blocking issues
 
 ### Completion Notes List
 
-_To be filled by dev agent_
+**Implementation Summary:**
+- ✅ Created `packages/core/src/generator/generators/` directory structure
+- ✅ Implemented all 4 primitive generators (`randomInt`, `randomFloat`, `randomBoolean`, `randomString`)
+- ✅ All generators follow pure function pattern with RNG as first parameter
+- ✅ Comprehensive parameter validation with descriptive error messages
+- ✅ Generator registry with 9 name mappings (including aliases)
+- ✅ Character set constants (ALPHA, NUMERIC, ALPHANUMERIC)
+- ✅ Efficient string generation using array join pattern
+- ✅ Complete module export hierarchy through index files
+
+**Testing:**
+- ✅ 24 unit tests in `primitives.test.ts` - all passing
+- ✅ 8 Gherkin scenarios with Screenplay pattern - all passing
+- ✅ Created UseGenerators ability, GeneratorTasks interactions, GeneratorQuestions
+- ✅ All 303 tests pass (no regressions)
+- ✅ 100% determinism verified with identical seed testing
+
+**Key Technical Decisions:**
+- Used `Array.from({ length })` for functional string generation pattern
+- Cast functions to `GeneratorFunction` type for registry to handle varying signatures (documented limitation)
+- Delegated all randomness to RNG methods (no Math.random() usage)
+- Parameter validation follows patterns established in Story 3.1
+- Enhanced error messages for better developer experience
+
+**Code Review Fixes Applied (2026-02-04):**
+- ✅ Added missing `GeneratorRegistry` type export to main index
+- ✅ Improved error message clarity in randomString validation
+- ✅ Refactored randomString to use Array.from pattern
+- ✅ Added comprehensive JSDoc with usage examples to GENERATOR_REGISTRY
+- ✅ Enhanced test documentation for randomFloat edge case behavior
+- ✅ Updated test assertions to match improved error messages
+- ✅ All 303 tests pass after fixes
+
+**Files Created:**
+- packages/core/src/generator/generators/primitives.ts
+- packages/core/src/generator/generators/primitives.test.ts
+- packages/core/src/generator/generators/index.ts
+- packages/core/features/primitive-generators.feature
+- packages/core/features/step_definitions/primitive-generators.steps.ts
+- packages/core/features/support/abilities/UseGenerators.ts
+- packages/core/features/support/tasks/GeneratorTasks.ts
+- packages/core/features/support/questions/GeneratorQuestions.ts
+
+**Files Modified:**
+- packages/core/src/generator/index.ts (added generator exports)
 
 ### File List
 
-_To be filled by dev agent_
+- packages/core/src/generator/generators/primitives.ts
+- packages/core/src/generator/generators/primitives.test.ts
+- packages/core/src/generator/generators/index.ts
+- packages/core/src/generator/index.ts
+- packages/core/features/primitive-generators.feature
+- packages/core/features/step_definitions/primitive-generators.steps.ts
+- packages/core/features/support/abilities/UseGenerators.ts
+- packages/core/features/support/tasks/GeneratorTasks.ts
+- packages/core/features/support/questions/GeneratorQuestions.ts
