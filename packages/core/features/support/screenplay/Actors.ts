@@ -2,6 +2,7 @@ import { Actor, Cast } from '@serenity-js/core';
 import { PerformCalculations } from '../abilities/PerformCalculations.ts';
 import { WorkWithResults } from '../abilities/WorkWithResults.ts';
 import { ValidateSchemaAbility } from '../abilities/ValidateSchemaAbility';
+import { UsePRNG } from '../abilities/UsePRNG';
 
 /**
  * TestCast configures how Actors are created for Screenplay tests.
@@ -28,6 +29,7 @@ export class TestCast implements Cast {
    * - PerformCalculations: Example demonstrating Screenplay pattern basics
    * - WorkWithResults: Example demonstrating Result<T, E> pattern integration
    * - ValidateSchemaAbility: End-to-end validation testing
+   * - UsePRNG: PRNG deterministic random number generation (Story 3.1)
    *
    * Future stories will add real Abilities:
    * - ParseSchemas.usingCoreLibrary() (Story 2.x)
@@ -41,6 +43,7 @@ export class TestCast implements Cast {
       PerformCalculations.using(),
       WorkWithResults.using(),
       new ValidateSchemaAbility(),
+      UsePRNG.withCoreLibrary(),
     );
   }
 }
