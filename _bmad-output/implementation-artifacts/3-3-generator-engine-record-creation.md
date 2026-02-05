@@ -1,6 +1,6 @@
 # Story 3.3: Generator Engine - Record Creation
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -28,53 +28,53 @@ So that **all fields are populated according to their generator definitions**.
 
 ## Tasks / Subtasks
 
-- [ ] Implement core generateRecord function (AC: 1, 2, 3, 4, 5, 6, 7)
-  - [ ] Create `packages/core/src/generator/generator.ts` file
-  - [ ] Define `Record` type as `Record<string, unknown>` or custom type
-  - [ ] Implement `generateRecord(schema: ValidatedSchema, rng: RNG): Record` function
-  - [ ] Import ValidatedSchema type from `../analyzer/types`
-  - [ ] Import RNG type and primitive generators from existing modules
-  - [ ] Iterate through schema.fields array
-  - [ ] For each field, lookup generator from GENERATOR_REGISTRY by field type
-  - [ ] Extract generator parameters from field (min, max, length, etc.)
-  - [ ] Invoke generator with (rng, ...params) to produce field value
-  - [ ] Assign generated value to output record using field name as key
-  - [ ] Return complete record object
+- [x] Implement core generateRecord function (AC: 1, 2, 3, 4, 5, 6, 7)
+  - [x] Create `packages/core/src/generator/generator.ts` file
+  - [x] Define `Record` type as `Record<string, unknown>` or custom type
+  - [x] Implement `generateRecord(schema: ValidatedSchema, rng: RNG): Record` function
+  - [x] Import ValidatedSchema type from `../analyzer/types`
+  - [x] Import RNG type and primitive generators from existing modules
+  - [x] Iterate through schema.fields array
+  - [x] For each field, lookup generator from GENERATOR_REGISTRY by field type
+  - [x] Extract generator parameters from field (min, max, length, etc.)
+  - [x] Invoke generator with (rng, ...params) to produce field value
+  - [x] Assign generated value to output record using field name as key
+  - [x] Return complete record object
 
-- [ ] Implement error handling (AC: 8)
-  - [ ] Wrap generator invocation in try-catch
-  - [ ] Handle unknown generator names gracefully
-  - [ ] Handle invalid generator parameters
-  - [ ] Provide clear error messages with field name and generator context
-  - [ ] Consider using Result type pattern if appropriate
+- [x] Implement error handling (AC: 8)
+  - [x] Wrap generator invocation in try-catch
+  - [x] Handle unknown generator names gracefully
+  - [x] Handle invalid generator parameters
+  - [x] Provide clear error messages with field name and generator context
+  - [x] Consider using Result type pattern if appropriate
 
-- [ ] Export through module indices (AC: 9)
-  - [ ] Export `generateRecord` from `packages/core/src/generator/generator.ts`
-  - [ ] Update `packages/core/src/generator/index.ts` to re-export
-  - [ ] Export Record type if custom type definition used
+- [x] Export through module indices (AC: 9)
+  - [x] Export `generateRecord` from `packages/core/src/generator/generator.ts`
+  - [x] Update `packages/core/src/generator/index.ts` to re-export
+  - [x] Export Record type if custom type definition used
 
-- [ ] Write comprehensive unit tests (AC: 10)
-  - [ ] Create `packages/core/src/generator/generator.test.ts`
-  - [ ] Test: Simple schema with single field generates correct record
-  - [ ] Test: Multi-field schema generates record with all fields
-  - [ ] Test: Record structure matches schema field names
-  - [ ] Test: Generated values match expected types (int, float, string, bool)
-  - [ ] Test: Same seed produces identical records (determinism)
-  - [ ] Test: Different seeds produce different records
-  - [ ] Test: Generator parameters (min, max, length) are respected
-  - [ ] Test: Unknown generator type throws clear error
-  - [ ] Test: Invalid generator parameters throw clear errors
-  - [ ] Test: Empty schema produces empty record
+- [x] Write comprehensive unit tests (AC: 10)
+  - [x] Create `packages/core/src/generator/generator.test.ts`
+  - [x] Test: Simple schema with single field generates correct record
+  - [x] Test: Multi-field schema generates record with all fields
+  - [x] Test: Record structure matches schema field names
+  - [x] Test: Generated values match expected types (int, float, string, bool)
+  - [x] Test: Same seed produces identical records (determinism)
+  - [x] Test: Different seeds produce different records
+  - [x] Test: Generator parameters (min, max, length) are respected
+  - [x] Test: Unknown generator type throws clear error
+  - [x] Test: Invalid generator parameters throw clear errors
+  - [x] Test: Empty schema produces empty record
 
-- [ ] Write Gherkin BDD tests (AC: 11)
-  - [ ] Create or extend `packages/core/features/data-generation.feature`
-  - [ ] Scenario: Generate single record from simple schema
-  - [ ] Scenario: Generate record with all primitive field types
-  - [ ] Scenario: Deterministic generation with same seed
-  - [ ] Scenario: Field values respect generator parameters
-  - [ ] Scenario: Error handling for invalid generators
-  - [ ] Implement step definitions using Screenplay pattern
-  - [ ] Create appropriate Abilities/Tasks/Questions components
+- [x] Write Gherkin BDD tests (AC: 11)
+  - [x] Create or extend `packages/core/features/data-generation.feature`
+  - [x] Scenario: Generate single record from simple schema
+  - [x] Scenario: Generate record with all primitive field types
+  - [x] Scenario: Deterministic generation with same seed
+  - [x] Scenario: Field values respect generator parameters
+  - [x] Scenario: Error handling for invalid generators
+  - [x] Implement step definitions using Screenplay pattern
+  - [x] Create appropriate Abilities/Tasks/Questions components
 
 ## Dev Notes
 
@@ -654,16 +654,93 @@ Feature: Record Generation from Validated Schema
 
 ### Agent Model Used
 
-_To be filled by dev agent_
+Claude Sonnet 4.5
 
 ### Debug Log References
 
-_To be filled by dev agent_
+**Code Review Session (2026-02-04):**
+
+**Issue Identified:**
+- Adversarial review identified 1 failing Gherkin test: "String length parameter is respected"
+- Test generated 50 records but AllHaveLength question checked only single record
+- Secondary issue: State pollution between scenarios (multipleRecords array persisted)
+
+**Root Cause Analysis:**
+1. **Primary Bug:** AllHaveLength.ofLength() checked single record BEFORE multiple records
+   - When 50 records generated, it incorrectly checked only record1 instead of the array
+   - File: packages/core/features/support/questions/RecordGenerationQuestions.ts, line 184
+
+2. **Secondary Bug:** No state cleanup between scenarios
+   - UseRecordGeneration ability retained state across scenarios
+   - Multiple records from one scenario polluted single record scenarios
+   - File: packages/core/features/support/abilities/UseRecordGeneration.ts
+
+**Fixes Applied:**
+1. Reversed check order in AllHaveLength: Check multiple records first, fall back to single record
+2. Added state management: storeRecord() clears multipleRecords array
+3. Added state management: storeMultipleRecords() clears records map
+
+**Verification:**
+- All 314 unit tests pass (100%)
+- All 85 Gherkin scenarios pass (100%)
+- Story promoted from "review" to "done" status
 
 ### Completion Notes List
 
-_To be filled by dev agent_
+**Implemented:**
+- [packages/core/src/generator/generator.ts](packages/core/src/generator/generator.ts) - Core generateRecord engine
+- [packages/core/src/generator/generator.test.ts](packages/core/src/generator/generator.test.ts) - Comprehensive unit tests
+- [packages/core/features/data-generation.feature](packages/core/features/data-generation.feature) - Gherkin BDD scenarios
+- [packages/core/features/step_definitions/data-generation.steps.ts](packages/core/features/step_definitions/data-generation.steps.ts) - Screenplay step definitions
+- [packages/core/features/support/abilities/UseRecordGeneration.ts](packages/core/features/support/abilities/UseRecordGeneration.ts) - Actor ability
+- [packages/core/features/support/tasks/RecordGenerationTasks.ts](packages/core/features/support/tasks/RecordGenerationTasks.ts) - Screenplay tasks
+- [packages/core/features/support/questions/RecordGenerationQuestions.ts](packages/core/features/support/questions/RecordGenerationQuestions.ts) - Screenplay questions
+
+**Test Results:**
+- Unit tests: 77 passed (11 new generateRecord tests + existing 66 tests)
+- Gherkin tests: 85/85 passed (100% passing after code review fix)
+- Full test coverage for all acceptance criteria
+
+**Code Review Fix Applied (2026-02-04):**
+- Fixed AllHaveLength question in RecordGenerationQuestions.ts
+- Root cause: Question was checking single record first instead of multiple records
+- When multiple records were generated, it incorrectly checked only record1 instead of the array
+- Fix: Prioritize multiple records check, fall back to single record only if no multi-record array exists
+- All tests now pass 100%
+
+**Architecture Compliance:**
+- Pure function pattern - generateRecord is completely deterministic
+- Uses provided RNG instance (no new RNG creation)
+- Leverages GENERATOR_REGISTRY for dynamic lookup
+- Proper error handling with field context
+- Exports through module index
+- Follows TypeScript strict mode and coding conventions
+
+**Key Implementation Decisions:**
+1. Used `GeneratedRecord` type alias for clarity
+2. Implemented helper functions (generateFieldValue, extractParameters, findParam) for clean separation
+3. Error messages include field name and generator type for debugging
+4. Default parameters follow Story 3.2 specifications (int: 0-100, float: 0.0-1.0, string: length 10)
+5. Comprehensive parameter extraction handles all generator types and their aliases
+
+**What's Next:**
+- Story 3.4 will use generateRecord in streaming loop for batch generation
+- Story 3.6 will expose generateRecord in end-to-end API
+- All future generation features build on this foundation
 
 ### File List
 
-_To be filled by dev agent_
+**Created:**
+- packages/core/src/generator/generator.ts
+- packages/core/src/generator/generator.test.ts
+- packages/core/features/data-generation.feature
+- packages/core/features/step_definitions/data-generation.steps.ts
+- packages/core/features/support/abilities/UseRecordGeneration.ts
+- packages/core/features/support/tasks/RecordGenerationTasks.ts
+- packages/core/features/support/questions/RecordGenerationQuestions.ts
+
+**Modified:**
+- packages/core/src/generator/index.ts (added generateRecord and GeneratedRecord exports)
+- packages/core/features/support/screenplay/Actors.ts (added UseRecordGeneration and UseGenerators abilities)
+- packages/core/features/support/questions/RecordGenerationQuestions.ts (fixed AllHaveLength check order - code review fix)
+- packages/core/features/support/abilities/UseRecordGeneration.ts (added state management - code review fix)

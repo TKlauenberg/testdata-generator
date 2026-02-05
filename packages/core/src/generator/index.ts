@@ -19,3 +19,4 @@ export {
   type GeneratorFunction,
   type GeneratorRegistry,
 } from './generators';
+export { generateRecord, type GeneratedRecord } from './generator';

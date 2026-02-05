@@ -3,6 +3,8 @@ import { PerformCalculations } from '../abilities/PerformCalculations.ts';
 import { WorkWithResults } from '../abilities/WorkWithResults.ts';
 import { ValidateSchemaAbility } from '../abilities/ValidateSchemaAbility';
 import { UsePRNG } from '../abilities/UsePRNG';
+import { UseGenerators } from '../abilities/UseGenerators';
+import { UseRecordGeneration } from '../abilities/UseRecordGeneration';
 
 /**
  * TestCast configures how Actors are created for Screenplay tests.
@@ -30,6 +32,8 @@ export class TestCast implements Cast {
    * - WorkWithResults: Example demonstrating Result<T, E> pattern integration
    * - ValidateSchemaAbility: End-to-end validation testing
    * - UsePRNG: PRNG deterministic random number generation (Story 3.1)
+   * - UseGenerators: Primitive field generators (Story 3.2)
+   * - UseRecordGeneration: Record generation from schemas (Story 3.3)
    *
    * Future stories will add real Abilities:
    * - ParseSchemas.usingCoreLibrary() (Story 2.x)
@@ -44,6 +48,8 @@ export class TestCast implements Cast {
       WorkWithResults.using(),
       new ValidateSchemaAbility(),
       UsePRNG.withCoreLibrary(),
+      UseGenerators.withDefaultCapabilities(),
+      UseRecordGeneration.withDefaultCapabilities(),
     );
   }
 }
