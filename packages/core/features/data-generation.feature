@@ -97,3 +97,73 @@ Feature: Record Generation from Validated Schema
     And the "defaultInt" value should be between 0 and 100 inclusive
     And the "defaultFloat" value should be between 0.0 and 1.0
     And the "defaultString" value should have length 10
+
+  Scenario: Generate small dataset with streaming
+    Given QA Tester has a validated program with schema "User"
+    And the "User" schema has fields:
+      | name | type   | params      |
+      | id   | int    | min=1,max=1000 |
+      | name | string | length=10   |
+    When QA Tester generates 10 records using streaming
+    Then exactly 10 records should be yielded
+    And each record should have field "id"
+    And each record should have field "name"
+
+  Scenario: Generate medium dataset efficiently
+    Given QA Tester has a validated program with schema "TestData"
+    And the "TestData" schema has fields:
+      | name  | type | params |
+      | value | int  |        |
+    When QA Tester generates 1000 records with seed 12345 using streaming
+    Then exactly 1000 records should be yielded
+    And generation should complete successfully
+
+  Scenario: Generate large dataset without memory issues
+    Given QA Tester has a validated program with schema "LargeData"
+    And the "LargeData" schema has fields:
+      | name | type   | params    |
+      | id   | int    |           |
+      | data | string | length=50 |
+    When QA Tester generates 100000 records using streaming
+    Then exactly 100000 records should be yielded
+    And the process should not run out of memory
+
+  Scenario: Deterministic streaming generation
+    Given QA Tester has a validated program with schema "Record"
+    And the "Record" schema has fields:
+      | name  | type | params |
+      | value | int  |        |
+    When QA Tester generates 50 records with seed 99999 using streaming
+    And QA Tester generates another 50 records with the same seed 99999 using streaming
+    Then both record sequences should be identical
+
+  Scenario: Multiple schemas in program
+    Given QA Tester has a validated program with 2 schemas
+    And schema "User" has fields:
+      | name | type | params |
+      | id   | int  |        |
+    And schema "Order" has fields:
+      | name    | type  | params |
+      | orderId | int   |        |
+      | total   | float |        |
+    When QA Tester generates 5 records using streaming
+    Then 10 records should be yielded total
+    And 5 records should have field "id"
+    And 5 records should have fields "orderId" and "total"
+
+  Scenario: Early termination of generation
+    Given QA Tester has a validated program with schema "Data"
+    And the "Data" schema has fields:
+      | name  | type | params |
+      | value | int  |        |
+    When QA Tester starts generating 1000 records using streaming
+    And QA Tester stops after 100 records
+    Then only 100 records should have been generated
+
+  Scenario: Zero count generates no records
+    Given QA Tester has a validated program with schema "Empty"
+    And the "Empty" schema has fields:
+      | name | type | params |
+      | id   | int  |        |
+    When QA Tester generates 0 records using streaming
+    Then no records should be yielded

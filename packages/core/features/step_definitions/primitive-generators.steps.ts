@@ -274,9 +274,9 @@ When('{word} tries to generate a string with empty charset', async (actorName: s
 Then(
   'an error should be thrown with message {string}',
   async (expectedMessage: string) => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+     
     const errorMsg: string = await actorCalled('Tester').answer(
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+       
       ErrorMessage.last(),
     );
     if (!errorMsg?.includes(expectedMessage)) {

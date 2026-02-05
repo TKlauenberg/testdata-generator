@@ -5,7 +5,6 @@
 import { Given, When, Then } from '@cucumber/cucumber';
 import { actorCalled } from '@serenity-js/core';
 import { Ensure, equals, isTrue } from '@serenity-js/assertions';
-import { UseRecordGeneration } from '../support/abilities/UseRecordGeneration';
 import {
   CreateSchema,
   CreateSchemaWithField,
@@ -13,6 +12,11 @@ import {
   GenerateRecord,
   GenerateMultipleRecords,
   TryGenerateRecord,
+  CreateProgramWithSchema,
+  GenerateRecordsStreaming,
+  GenerateRecordsStreamingWithSeed,
+  StartStreamingGeneration,
+  StopStreamingAfter,
 } from '../support/tasks/RecordGenerationTasks';
 import {
   RecordHasField,

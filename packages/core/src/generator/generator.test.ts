@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'bun:test';
 import { createRNG } from './rng';
-import { generateRecord } from './generator';
-import type { ValidatedSchema, ValidatedField } from '../analyzer/types';
+import { generateRecord, generate } from './generator';
+import type { ValidatedSchema, ValidatedField, ValidatedProgram } from '../analyzer/types';
 import type { FieldNode, GeneratorParameter, SchemaNode } from '../parser/ast';
 import type { SourceLocation } from '../common/diagnostic';
+import { SymbolTable } from '../analyzer/symbolTable';
 
 /**
  * Helper to create mock ValidatedSchema for testing
@@ -29,7 +30,7 @@ function createMockSchema(
       type: f.type,
       generator: {
         name: f.type,
-        parameters: (f.params || []) as GeneratorParameter[],
+        parameters: (f.params ?? []) as GeneratorParameter[],
       },
       location: mockLocation,
     })
@@ -221,3 +222,274 @@ describe('generateRecord', () => {
     expect(typeof record.defaultString).toBe('string');
   });
 });
+
+/**
+ * Helper to create mock ValidatedProgram for streaming tests
+ */
+function createMockProgram(
+  schemas: Array<{
+    name: string;
+    fields: Array<{
+      name: string;
+      type: string;
+      params?: Array<{ name: string; value: unknown }>;
+    }>;
+  }>
+): ValidatedProgram {
+  const mockLocation: SourceLocation = {
+    file: 'test.td',
+    line: 1,
+    column: 1,
+    length: 10,
+  };
+
+  const schemaMap = new Map<string, ValidatedSchema>();
+
+  for (const s of schemas) {
+    const schema = createMockSchema(s.fields);
+    schemaMap.set(s.name, schema);
+  }
+
+  return {
+    ast: {
+      kind: 'program',
+      declarations: [],
+      location: mockLocation,
+    },
+    symbolTable: new SymbolTable(),
+    schemas: schemaMap,
+    metadata: {
+      analyzedAt: new Date(),
+      schemaCount: schemas.length,
+      totalFields: schemas.reduce((sum, s) => sum + s.fields.length, 0),
+    },
+  };
+}
+
+describe('generate (streaming)', () => {
+  describe('basic streaming behavior', () => {
+    it('should yield exactly count records', async () => {
+      const program = createMockProgram([
+        {
+          name: 'TestSchema',
+          fields: [{ name: 'id', type: 'int', params: [] }],
+        },
+      ]);
+
+      const records = [];
+      for await (const record of generate(program, { count: 10 })) {
+        records.push(record);
+      }
+
+      expect(records).toHaveLength(10);
+    });
+
+    it('should yield records one at a time (lazy evaluation)', async () => {
+      const program = createMockProgram([
+        {
+          name: 'TestSchema',
+          fields: [{ name: 'value', type: 'int', params: [] }],
+        },
+      ]);
+
+      let yieldCount = 0;
+      for await (const record of generate(program, { count: 5 })) {
+        yieldCount++;
+        expect(record).toBeDefined();
+        expect(record).toHaveProperty('value');
+        if (yieldCount === 3) break; // Stop early to test laziness
+      }
+
+      expect(yieldCount).toBe(3); // Only 3 records generated, not all 5
+    });
+
+    it('should work with for-await-of loop', async () => {
+      const program = createMockProgram([
+        {
+          name: 'TestSchema',
+          fields: [{ name: 'id', type: 'int', params: [] }],
+        },
+      ]);
+
+      let count = 0;
+      for await (const record of generate(program, { count: 10 })) {
+        count++;
+        expect(record).toHaveProperty('id');
+      }
+
+      expect(count).toBe(10);
+    });
+
+    it('should handle zero count', async () => {
+      const program = createMockProgram([
+        {
+          name: 'TestSchema',
+          fields: [{ name: 'id', type: 'int', params: [] }],
+        },
+      ]);
+
+      const records = [];
+      for await (const record of generate(program, { count: 0 })) {
+        records.push(record);
+      }
+
+      expect(records).toHaveLength(0);
+    });
+  });
+
+  describe('determinism', () => {
+    it('should produce identical sequences with same seed', async () => {
+      const program = createMockProgram([
+        {
+          name: 'TestSchema',
+          fields: [
+            {
+              name: 'value',
+              type: 'int',
+              params: [
+                { name: 'min', value: 0 },
+                { name: 'max', value: 100 },
+              ],
+            },
+          ],
+        },
+      ]);
+
+      const records1 = [];
+      for await (const record of generate(program, {
+        count: 10,
+        seed: 12345,
+      })) {
+        records1.push(record);
+      }
+
+      const records2 = [];
+      for await (const record of generate(program, {
+        count: 10,
+        seed: 12345,
+      })) {
+        records2.push(record);
+      }
+
+      expect(records1).toEqual(records2);
+    });
+
+    it('should produce different sequences with different seeds', async () => {
+      const program = createMockProgram([
+        {
+          name: 'TestSchema',
+          fields: [{ name: 'value', type: 'int', params: [] }],
+        },
+      ]);
+
+      const records1 = [];
+      for await (const record of generate(program, { count: 10, seed: 111 })) {
+        records1.push(record);
+      }
+
+      const records2 = [];
+      for await (const record of generate(program, { count: 10, seed: 222 })) {
+        records2.push(record);
+      }
+
+      expect(records1).not.toEqual(records2);
+    });
+
+    it('should use random seed when seed not provided', async () => {
+      const program = createMockProgram([
+        {
+          name: 'TestSchema',
+          fields: [{ name: 'value', type: 'int', params: [] }],
+        },
+      ]);
+
+      // When no seed is provided, createRNG uses Date.now()
+      // This test verifies that omitting seed parameter works correctly
+      const records = [];
+      for await (const record of generate(program, { count: 10 })) {
+        records.push(record);
+      }
+
+      // Should generate 10 records successfully
+      expect(records).toHaveLength(10);
+
+      // All records should have the expected structure
+      for (const record of records) {
+        expect(record).toHaveProperty('value');
+        expect(typeof record.value).toBe('number');
+      }
+    });
+  });
+
+  describe('memory efficiency', () => {
+    it(
+      'should handle 1M+ records without memory issues (NFR3)',
+      async () => {
+        const program = createMockProgram([
+          {
+            name: 'TestSchema',
+            fields: [
+              { name: 'id', type: 'int', params: [] },
+              {
+                name: 'value',
+                type: 'string',
+                params: [{ name: 'length', value: 50 }],
+              },
+            ],
+          },
+        ]);
+
+        let count = 0;
+        for await (const record of generate(program, {
+          count: 1_000_000,
+          seed: 999,
+        })) {
+          count++;
+          // Only validate structure every 100k records to keep test fast
+          if (count % 100_000 === 0) {
+            expect(record).toHaveProperty('id');
+            expect(record).toHaveProperty('value');
+          }
+        }
+
+        expect(count).toBe(1_000_000);
+      },
+      { timeout: 60000 } // 60 second timeout for 1M records
+    );
+  });
+
+  describe('multiple schemas', () => {
+    it('should generate count records for each schema in program', async () => {
+      const program = createMockProgram([
+        {
+          name: 'User',
+          fields: [{ name: 'id', type: 'int', params: [] }],
+        },
+        {
+          name: 'Order',
+          fields: [{ name: 'orderId', type: 'int', params: [] }],
+        },
+      ]);
+
+      const records = [];
+      for await (const record of generate(program, { count: 5 })) {
+        records.push(record);
+      }
+
+      // Should have 5 User records + 5 Order records = 10 total
+      expect(records).toHaveLength(10);
+
+      // Verify fields from both schemas
+      const userRecords = records.slice(0, 5);
+      const orderRecords = records.slice(5);
+
+      for (const r of userRecords) {
+        expect(r).toHaveProperty('id');
+      }
+      for (const r of orderRecords) {
+        expect(r).toHaveProperty('orderId');
+      }
+    });
+  });
+});
+

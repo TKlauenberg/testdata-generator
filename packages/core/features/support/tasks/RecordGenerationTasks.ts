@@ -4,10 +4,11 @@
 
 import { Interaction, type UsesAbilities } from '@serenity-js/core';
 import { UseRecordGeneration } from '../abilities/UseRecordGeneration';
-import { generateRecord } from '../../../src/generator/generator';
-import type { ValidatedSchema, ValidatedField } from '../../../src/analyzer/types';
+import { generateRecord, generate } from '../../../src/generator/generator';
+import type { ValidatedSchema, ValidatedField, ValidatedProgram } from '../../../src/analyzer/types';
 import type { FieldNode, SchemaNode, GeneratorParameter } from '../../../src/parser/ast';
 import type { SourceLocation } from '../../../src/common/diagnostic';
+import { SymbolTable } from '../../../src/analyzer/symbolTable';
 
 // Mock location for testing
 const mockLocation: SourceLocation = {
@@ -16,6 +17,54 @@ const mockLocation: SourceLocation = {
   column: 1,
   length: 10,
 };
+
+/**
+ * Helper to create mock ValidatedSchema for testing
+ */
+function createMockSchema(
+  fields: Array<{
+    name: string;
+    type: string;
+    params?: Array<{ name: string; value: unknown }>;
+  }>
+): ValidatedSchema {
+  const fieldNodes: FieldNode[] = fields.map(
+    (f): FieldNode => ({
+      kind: 'field',
+      name: f.name,
+      type: f.type,
+      generator: {
+        name: f.type,
+        parameters: (f.params ?? []) as GeneratorParameter[],
+      },
+      location: mockLocation,
+    })
+  );
+
+  const schemaNode: SchemaNode = {
+    kind: 'schema',
+    name: 'TestSchema',
+    fields: fieldNodes,
+    location: mockLocation,
+  };
+
+  const validatedFields: ValidatedField[] = fields.map(
+    (f, idx): ValidatedField => ({
+      node: fieldNodes[idx],
+      resolvedType: f.type,
+      resolvedGenerator: f.type,
+      templateReferences: [],
+    })
+  );
+
+  return {
+    node: schemaNode,
+    fields: validatedFields,
+    dependencies: new Set(),
+    sortOrder: 0,
+  };
+}
+
 
 /**
  * Parse table row into field parameters
@@ -41,7 +90,7 @@ export class CreateSchema {
   public static fromTable(table: string[][]): Interaction {
     return Interaction.where(
       `#actor creates schema from table`,
-      async (actor) => {
+      (actor) => {
         const ability = UseRecordGeneration.as(actor);
 
         // Skip header row
@@ -293,5 +342,198 @@ export class TryGenerateRecord {
         ability.storeError(error as Error);
       }
     });
+  }
+}
+
+/**
+ * Create ValidatedProgram with schema(s) for streaming tests
+ */
+export class CreateProgramWithSchema {
+  public static named(schemaName: string): Interaction {
+    return Interaction.where(
+      `#actor creates program with schema "${schemaName}"`,
+      (actor) => {
+        const ability = UseRecordGeneration.as(actor);
+
+        // Create a simple schema with id and name fields
+        const schema = createMockSchema([
+          { name: 'id', type: 'int', params: [{ name: 'min', value: 1 }, { name: 'max', value: 1000 }] },
+          { name: 'name', type: 'string', params: [{ name: 'length', value: 10 }] },
+        ]);
+
+        const mockLocation: SourceLocation = {
+          file: 'test.td',
+          line: 1,
+          column: 1,
+          length: 10,
+        };
+
+        const program: ValidatedProgram = {
+          ast: {
+            kind: 'program',
+            declarations: [],
+            location: mockLocation,
+          },
+          symbolTable: new SymbolTable(),
+          schemas: new Map([[schemaName, schema]]),
+          metadata: {
+            analyzedAt: new Date(),
+            schemaCount: 1,
+            totalFields: 2,
+          },
+        };
+
+        ability.setProgram(program);
+      },
+    );
+  }
+
+  public static withCount(count: number): Interaction {
+    return Interaction.where(
+      `#actor creates program with ${count} schemas`,
+      (actor) => {
+        const ability = UseRecordGeneration.as(actor);
+
+        const schemas = new Map<string, ValidatedSchema>();
+
+        if (count >= 1) {
+          const userSchema = createMockSchema([
+            { name: 'id', type: 'int', params: [] },
+          ]);
+          schemas.set('User', userSchema);
+        }
+
+        if (count >= 2) {
+          const orderSchema = createMockSchema([
+            { name: 'orderId', type: 'int', params: [] },
+            { name: 'total', type: 'float', params: [] },
+          ]);
+          schemas.set('Order', orderSchema);
+        }
+
+        const mockLocation: SourceLocation = {
+          file: 'test.td',
+          line: 1,
+          column: 1,
+          length: 10,
+        };
+
+        const program: ValidatedProgram = {
+          ast: {
+            kind: 'program',
+            declarations: [],
+            location: mockLocation,
+          },
+          symbolTable: new SymbolTable(),
+          schemas,
+          metadata: {
+            analyzedAt: new Date(),
+            schemaCount: count,
+            totalFields: count === 1 ? 1 : 3,
+          },
+        };
+
+        ability.setProgram(program);
+      },
+    );
+  }
+}
+
+/**
+ * Generate records using streaming (AsyncIterable)
+ */
+export class GenerateRecordsStreaming {
+  public static withCount(count: number): Interaction {
+    return Interaction.where(
+      `#actor generates ${count} records using streaming`,
+      async (actor) => {
+        const ability = UseRecordGeneration.as(actor);
+        const program = ability.getProgram();
+
+        if (!program) throw new Error('No program set');
+
+        const records = [];
+        for await (const record of generate(program, { count })) {
+          records.push(record);
+        }
+
+        ability.storeStreamingRecords(records);
+      },
+    );
+  }
+}
+
+/**
+ * Generate records with seed using streaming
+ */
+export class GenerateRecordsStreamingWithSeed {
+  public static withCountAndSeed(
+    count: number,
+    seed: number,
+    storeName: string = 'records1'
+  ): Interaction {
+    return Interaction.where(
+      `#actor generates ${count} records with seed ${seed}`,
+      async (actor) => {
+        const ability = UseRecordGeneration.as(actor);
+        const program = ability.getProgram();
+
+        if (!program) throw new Error('No program set');
+
+        const records = [];
+        for await (const record of generate(program, { count, seed })) {
+          records.push(record);
+        }
+
+        ability.storeStreamingRecordsNamed(storeName, records);
+      },
+    );
+  }
+}
+
+/**
+ * Start streaming generation (for early termination test)
+ */
+export class StartStreamingGeneration {
+  public static withCount(count: number): Interaction {
+    return Interaction.where(
+      `#actor starts generating ${count} records`,
+      (actor) => {
+        const ability = UseRecordGeneration.as(actor);
+        const program = ability.getProgram();
+
+        if (!program) throw new Error('No program set');
+
+        // Store the generator for later use
+        ability.storeGenerator(generate(program, { count }));
+      },
+    );
+  }
+}
+
+/**
+ * Stop streaming after N records (test early termination)
+ */
+export class StopStreamingAfter {
+  public static count(stopCount: number): Interaction {
+    return Interaction.where(
+      `#actor stops after ${stopCount} records`,
+      async (actor) => {
+        const ability = UseRecordGeneration.as(actor);
+        const generator = ability.getGenerator();
+
+        if (!generator) throw new Error('No generator stored');
+
+        const records = [];
+        let count = 0;
+        for await (const record of generator) {
+          records.push(record);
+          count++;
+          if (count >= stopCount) break;
+        }
+
+        ability.storeStreamingRecords(records);
+      },
+    );
   }
 }

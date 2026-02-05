@@ -5,10 +5,14 @@
  * validated schemas into actual test data records. It connects the validated
  * schema structure from the analyzer with primitive generators to produce
  * complete records with all fields populated.
+ *
+ * Also provides streaming generation capabilities through async generators
+ * for memory-efficient creation of large datasets.
  */
 
 import type { RNG } from './rng';
-import type { ValidatedSchema, ValidatedField } from '../analyzer/types';
+import { createRNG } from './rng';
+import type { ValidatedSchema, ValidatedField, ValidatedProgram } from '../analyzer/types';
 import type { GeneratorParameter } from '../parser/ast';
 import { GENERATOR_REGISTRY } from './generators';
 
@@ -17,6 +21,85 @@ import { GENERATOR_REGISTRY } from './generators';
  * Values are generated according to their field types and parameters.
  */
 export type GeneratedRecord = Record<string, unknown>;
+
+/**
+ * Options for data generation.
+ *
+ * @property count - Number of records to generate per schema
+ * @property seed - Optional seed for deterministic generation.
+ *                  If omitted, generation is non-deterministic.
+ */
+export interface GenerateOptions {
+  readonly count: number;
+  readonly seed?: number;
+}
+
+/**
+ * Generate test data records from validated program using streaming.
+ *
+ * This is an async generator function that yields records one at a time.
+ * Records are generated lazily, so memory usage remains constant regardless
+ * of count value.
+ *
+ * CRITICAL: This is an ASYNC GENERATOR - use for-await-of to consume
+ * CRITICAL: Do NOT buffer results in array - defeats streaming purpose
+ * CRITICAL: Use same RNG instance throughout - do NOT create new RNG per record
+ *
+ * NOTE: Marked async for future extensibility (e.g., database lookups, API calls)
+ * even though current implementation is synchronous. This maintains consistent
+ * API for consumers and allows future enhancements without breaking changes.
+ *
+ * @param program - Validated program with one or more schemas
+ * @param options - Generation options (count, seed)
+ * @returns AsyncIterable that yields records one at a time
+ *
+ * @example
+ * ```typescript
+ * // Generate 1000 records
+ * for await (const record of generate(program, { count: 1000 })) {
+ *   console.log(record);  // Process each record as it's generated
+ * }
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Deterministic generation
+ * const records1 = [];
+ * for await (const record of generate(program, { count: 10, seed: 99 })) {
+ *   records1.push(record);
+ * }
+ * const records2 = [];
+ * for await (const record of generate(program, { count: 10, seed: 99 })) {
+ *   records2.push(record);
+ * }
+ * // records1 === records2 (identical data)
+ * ```
+ */
+// eslint-disable-next-line @typescript-eslint/require-await
+export async function* generate(
+  program: ValidatedProgram,
+  options: GenerateOptions
+): AsyncIterable<GeneratedRecord> {
+  // Step 1: Create RNG ONCE for entire generation session
+  // CRITICAL: Same RNG instance used for all records ensures determinism
+  const rng = createRNG(options.seed);
+
+  // Step 2: Iterate through each schema in the program
+  // ValidatedProgram contains multiple schemas in a Map
+  for (const schema of program.schemas.values()) {
+    // Step 3: Generate count records for this schema
+    for (let i = 0; i < options.count; i++) {
+      // Step 4: Generate single record using generateRecord
+      // This is where all field generation happens
+      const record = generateRecord(schema, rng);
+
+      // Step 5: Yield immediately - lazy evaluation!
+      // Record is produced and consumed before next record is generated
+      // This is what makes it memory-efficient
+      yield record;
+    }
+  }
+}
 
 /**
  * Generate a single record from a validated schema.
