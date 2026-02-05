@@ -167,3 +167,50 @@ Feature: Record Generation from Validated Schema
       | id   | int  |        |
     When QA Tester generates 0 records using streaming
     Then no records should be yielded
+
+  Scenario: Generate small dataset to JSON array format
+    Given QA Tester has a validated schema for User records
+    And QA Tester wants to generate 100 records
+    When QA Tester generates data to JSON file "users.json" in array format
+    Then QA Tester should see JSON file "users.json" created
+    And the JSON file should contain metadata
+    And the JSON file should contain 100 user records
+    And the JSON should be parsable by standard JSON parser
+
+  Scenario: Generate dataset to JSONL format
+    Given QA Tester has a validated schema for Product records
+    And QA Tester wants to generate 50 records
+    When QA Tester generates data to JSON file "products.jsonl" in JSONL format
+    Then QA Tester should see JSON file "products.jsonl" created
+    And the JSONL file should have metadata as first line
+    And the JSONL file should contain 50 product records as separate lines
+    And each line should be valid JSON
+
+  Scenario: Verify metadata in JSON output
+    Given QA Tester has a validated schema for Order records
+    And QA Tester specifies source pattern "Order.td"
+    And QA Tester specifies record count 25
+    And QA Tester specifies seed 12345
+    When QA Tester generates data to JSON file "orders.json" in array format
+    Then the JSON metadata should include timestamp
+    And the JSON metadata should include sourcePattern "Order.td"
+    And the JSON metadata should include count 25
+    And the JSON metadata should include seed 12345
+    And the JSON metadata should include version
+
+  Scenario: Large dataset written incrementally without memory issues
+    Given QA Tester has a validated schema for TestData records
+    And QA Tester wants to generate 10000 records
+    When QA Tester generates data to JSON file "large-dataset.json" in array format
+    Then QA Tester should see JSON file "large-dataset.json" created
+    And the JSON file should contain 10000 records
+    And the process should complete without memory errors
+    And the JSON should be parsable by standard JSON parser
+
+  Scenario: Output files can be parsed by standard JSON parsers
+    Given QA Tester has a validated schema for Sample records
+    And QA Tester wants to generate 10 records
+    When QA Tester generates data to JSON file "sample.json" in array format
+    Then the JSON file should be valid JSON
+    And parsing the JSON file should succeed
+    And the parsed data should match the generated records

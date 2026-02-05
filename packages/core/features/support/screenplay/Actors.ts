@@ -5,6 +5,7 @@ import { ValidateSchemaAbility } from '../abilities/ValidateSchemaAbility';
 import { UsePRNG } from '../abilities/UsePRNG';
 import { UseGenerators } from '../abilities/UseGenerators';
 import { UseRecordGeneration } from '../abilities/UseRecordGeneration';
+import { UseJsonAdapter } from '../abilities/UseJsonAdapter';
 
 /**
  * TestCast configures how Actors are created for Screenplay tests.
@@ -34,6 +35,7 @@ export class TestCast implements Cast {
    * - UsePRNG: PRNG deterministic random number generation (Story 3.1)
    * - UseGenerators: Primitive field generators (Story 3.2)
    * - UseRecordGeneration: Record generation from schemas (Story 3.3)
+   * - UseJsonAdapter: JSON output adapter for test data (Story 3.5)
    *
    * Future stories will add real Abilities:
    * - ParseSchemas.usingCoreLibrary() (Story 2.x)
@@ -50,6 +52,7 @@ export class TestCast implements Cast {
       UsePRNG.withCoreLibrary(),
       UseGenerators.withDefaultCapabilities(),
       UseRecordGeneration.withDefaultCapabilities(),
+      UseJsonAdapter.toWriteFiles(),
     );
   }
 }

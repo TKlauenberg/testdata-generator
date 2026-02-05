@@ -15,3 +15,6 @@ export * from './parser';
 
 // Analyzer (semantic analysis)
 export * from './analyzer';
+
+// Adapters (output formatting)
+export * from './adapters';

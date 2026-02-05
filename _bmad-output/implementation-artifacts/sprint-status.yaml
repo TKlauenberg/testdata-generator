@@ -62,7 +62,7 @@ development_status:
   3-2-primitive-field-generators: done
   3-3-generator-engine-record-creation: done
   3-4-streaming-generation-with-asynciterable: done
-  3-5-json-output-adapter: ready-for-dev
+  3-5-json-output-adapter: review
   3-6-end-to-end-generation-pipeline: backlog
   epic-3-retrospective: optional
 

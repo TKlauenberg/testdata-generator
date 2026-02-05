@@ -1,6 +1,6 @@
 # Story 3.5: JSON Output Adapter
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -28,57 +28,57 @@ So that **I can use the test data in my applications and test frameworks**.
 
 ## Tasks / Subtasks
 
-- [ ] Define adapter interface for all output formats (AC: 1)
-  - [ ] Create `IAdapter` interface in `adapters/types.ts`
-  - [ ] Define `write(records: AsyncIterable<Record>): Promise<void>` method
-  - [ ] Define metadata structure type
-  - [ ] Export interface from adapters/index.ts
+- [x] Define adapter interface for all output formats (AC: 1)
+  - [x] Create `IAdapter` interface in `adapters/types.ts`
+  - [x] Define `write(records: AsyncIterable<Record>): Promise<void>` method
+  - [x] Define metadata structure type
+  - [x] Export interface from adapters/index.ts
 
-- [ ] Implement JsonAdapter class for array format (AC: 1, 2, 3, 5, 7, 8)
-  - [ ] Create `JsonAdapter` class implementing `IAdapter`
-  - [ ] Add constructor accepting output file path and options
-  - [ ] Add `format?: 'array' | 'jsonl'` option (default: 'array')
-  - [ ] Implement metadata generation with timestamp, sourcePattern, count, seed
-  - [ ] Implement `write()` method consuming AsyncIterable
-  - [ ] Write JSON array incrementally (opening bracket, records with commas, closing bracket)
-  - [ ] Use Bun's file writing APIs for streaming output
-  - [ ] Handle JSON string escaping correctly
+- [x] Implement JsonAdapter class for array format (AC: 1, 2, 3, 5, 7, 8)
+  - [x] Create `JsonAdapter` class implementing `IAdapter`
+  - [x] Add constructor accepting output file path and options
+  - [x] Add `format?: 'array' | 'jsonl'` option (default: 'array')
+  - [x] Implement metadata generation with timestamp, sourcePattern, count, seed
+  - [x] Implement `write()` method consuming AsyncIterable
+  - [x] Write JSON array incrementally (opening bracket, records with commas, closing bracket)
+  - [x] Use Bun's file writing APIs for streaming output
+  - [x] Handle JSON string escaping correctly
 
-- [ ] Add JSONL format support (AC: 4)
-  - [ ] Check format option in write() method
-  - [ ] If 'jsonl', write each record as separate JSON line
-  - [ ] Include metadata as first line (special format or comment)
-  - [ ] No commas between records, newline-delimited only
+- [x] Add JSONL format support (AC: 4)
+  - [x] Check format option in write() method
+  - [x] If 'jsonl', write each record as separate JSON line
+  - [x] Include metadata as first line (special format or comment)
+  - [x] No commas between records, newline-delimited only
 
-- [ ] Ensure incremental writing to avoid memory issues (AC: 7)
-  - [ ] Write metadata header first
-  - [ ] For each record from AsyncIterable, write immediately
-  - [ ] Don't buffer all records in memory
-  - [ ] Flush writes periodically
+- [x] Ensure incremental writing to avoid memory issues (AC: 7)
+  - [x] Write metadata header first
+  - [x] For each record from AsyncIterable, write immediately
+  - [x] Don't buffer all records in memory
+  - [x] Flush writes periodically
 
-- [ ] Export through module index (AC: 9)
-  - [ ] Export `JsonAdapter` class from jsonAdapter.ts
-  - [ ] Export `IAdapter` interface and types
-  - [ ] Re-export from packages/core/src/adapters/index.ts
-  - [ ] Re-export from packages/core/src/index.ts (public API)
+- [x] Export through module index (AC: 9)
+  - [x] Export `JsonAdapter` class from jsonAdapter.ts
+  - [x] Export `IAdapter` interface and types
+  - [x] Re-export from packages/core/src/adapters/index.ts
+  - [x] Re-export from packages/core/src/index.ts (public API)
 
-- [ ] Write comprehensive unit tests (AC: 10)
-  - [ ] Test: Array format produces valid JSON array
-  - [ ] Test: JSONL format produces valid newline-delimited JSON
-  - [ ] Test: Metadata includes all required fields
-  - [ ] Test: Incremental writing works with large datasets
-  - [ ] Test: Special characters are properly escaped
-  - [ ] Test: Empty record set produces valid output
-  - [ ] Test: Records with nested objects/arrays work correctly
-  - [ ] Test: File is created if doesn't exist
-  - [ ] Test: Proper error handling for write failures
+- [x] Write comprehensive unit tests (AC: 10)
+  - [x] Test: Array format produces valid JSON array
+  - [x] Test: JSONL format produces valid newline-delimited JSON
+  - [x] Test: Metadata includes all required fields
+  - [x] Test: Incremental writing works with large datasets
+  - [x] Test: Special characters are properly escaped
+  - [x] Test: Empty record set produces valid output
+  - [x] Test: Records with nested objects/arrays work correctly
+  - [x] Test: File is created if doesn't exist
+  - [x] Test: Proper error handling for write failures
 
-- [ ] Write Gherkin BDD tests (AC: 11)
-  - [ ] Scenario: Generate small dataset to JSON array
-  - [ ] Scenario: Generate dataset to JSONL format
-  - [ ] Scenario: Verify metadata in output
-  - [ ] Scenario: Large dataset written incrementally without memory issues
-  - [ ] Scenario: Output can be parsed by standard JSON parsers
+- [x] Write Gherkin BDD tests (AC: 11)
+  - [x] Scenario: Generate small dataset to JSON array
+  - [x] Scenario: Generate dataset to JSONL format
+  - [x] Scenario: Verify metadata in output
+  - [x] Scenario: Large dataset written incrementally without memory issues
+  - [x] Scenario: Output can be parsed by standard JSON parsers
 
 ## Dev Notes
 
@@ -160,12 +160,12 @@ interface JsonAdapterOptions {
 // ✅ CORRECT - Incremental writing
 async write(records: AsyncIterable<Record<string, unknown>>): Promise<void> {
   const file = await Bun.file(this.outputPath).writer();
-  
+
   // Write opening for array format
   if (this.format === 'array') {
     await file.write('{"metadata":' + JSON.stringify(this.metadata) + ',"data":[');
   }
-  
+
   let isFirst = true;
   for await (const record of records) {
     if (this.format === 'array') {
@@ -177,12 +177,12 @@ async write(records: AsyncIterable<Record<string, unknown>>): Promise<void> {
       await file.write(JSON.stringify(record) + '\n');
     }
   }
-  
+
   // Write closing for array format
   if (this.format === 'array') {
     await file.write(']}');
   }
-  
+
   await file.end();
 }
 
@@ -448,16 +448,68 @@ Scenario: Generate test data to JSON file
 
 ### Agent Model Used
 
-_Will be filled by dev agent_
+Claude Sonnet 4.5
 
 ### Debug Log References
 
-_Will be filled by dev agent_
+- No critical issues encountered
+- All tests passing (17 new unit tests, 6 type tests)
+- Bun API usage corrected (file.write() not awaited, file.end() awaited)
 
 ### Completion Notes List
 
-_Will be filled by dev agent_
+**Task 1: Adapter Interface**
+✅ Created IAdapter interface with write() method accepting AsyncIterable<Record>
+✅ Defined AdapterMetadata type with timestamp, sourcePattern, count, seed, version
+✅ Defined JsonAdapterOptions type with outputPath, format, metadata
+✅ All types properly exported through adapters/index.ts
+
+**Task 2-4: JsonAdapter Implementation**
+✅ Implemented JsonAdapter class with both array and JSONL formats
+✅ Constructor with JsonAdapterOptions parameter, defaults to array format
+✅ Metadata generation with ISO timestamp and version
+✅ Incremental streaming write using Bun.file().writer() - NO memory buffering
+✅ Proper JSON escaping via JSON.stringify()
+✅ Array format: {"metadata":{...},"data":[...]} structure
+✅ JSONL format: Metadata first line, then one record per line
+
+**Task 5: Module Exports**
+✅ Exported through packages/core/src/adapters/index.ts
+✅ Re-exported through packages/core/src/index.ts (public API)
+
+**Task 6: Unit Tests**
+✅ 17 comprehensive unit tests covering:
+  - Array format validation
+  - JSONL format validation
+  - Metadata inclusion and structure
+  - Large dataset streaming (10k records)
+  - Special character escaping (quotes, newlines, backslashes)
+  - Empty datasets
+  - Nested objects and arrays
+  - Error handling
+✅ All tests passing
+
+**Task 7: Gherkin BDD Tests**
+✅ Added 5 scenarios to data-generation.feature
+✅ Created Screenplay pattern support:
+  - UseJsonAdapter ability
+  - WriteRecordsToJson, ConfigureGeneration tasks
+  - JsonFileExists, JsonFileContent, JsonMetadata, JsonIsParsable questions
+✅ Scenarios cover all AC requirements
 
 ### File List
 
-_Will be filled by dev agent_
+**Created Files:**
+- packages/core/src/adapters/types.ts
+- packages/core/src/adapters/types.test.ts
+- packages/core/src/adapters/jsonAdapter.ts
+- packages/core/src/adapters/jsonAdapter.test.ts
+- packages/core/src/adapters/index.ts
+- packages/core/features/support/abilities/UseJsonAdapter.ts
+- packages/core/features/support/tasks/JsonAdapterTasks.ts
+- packages/core/features/support/questions/JsonAdapterQuestions.ts
+
+**Modified Files:**
+- packages/core/src/index.ts (added adapters export)
+- packages/core/features/data-generation.feature (added 5 scenarios)
+- _bmad-output/implementation-artifacts/sprint-status.yaml (updated story status to review)
