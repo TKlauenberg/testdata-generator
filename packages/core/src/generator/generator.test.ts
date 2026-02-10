@@ -423,7 +423,7 @@ describe('generate (streaming)', () => {
 
   describe('memory efficiency', () => {
     it(
-      'should handle 1M+ records without memory issues (NFR3)',
+      '@slow @performance should handle 1M+ records without memory issues (NFR3)',
       async () => {
         const program = createMockProgram([
           {

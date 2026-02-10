@@ -378,7 +378,7 @@ describe('validateSchema()', () => {
   });
 
   describe('performance requirements', () => {
-    test('should validate small schema in reasonable time', () => {
+    test('@performance should validate small schema in reasonable time', () => {
       const source = generateSchema(5, 4); // 5 schemas, 4 fields each
       const start = performance.now();
       const result = validateSchema(source, 'perf-test.td');
@@ -388,7 +388,7 @@ describe('validateSchema()', () => {
       expect(duration).toBeLessThan(100); // Should be very fast for small schemas
     });
 
-    test('should validate medium schema in under 200ms', () => {
+    test('@performance should validate medium schema in under 200ms', () => {
       const source = generateSchema(20, 5); // 20 schemas, 5 fields each
       const start = performance.now();
       const result = validateSchema(source, 'perf-test.td');
@@ -398,7 +398,7 @@ describe('validateSchema()', () => {
       expect(duration).toBeLessThan(200);
     });
 
-    test('should validate large schema in under 1 second (NFR2)', () => {
+    test('@performance should validate large schema in under 1 second (NFR2)', () => {
       const source = generateSchema(50, 10); // 50 schemas, 10 fields each
       const start = performance.now();
       const result = validateSchema(source, 'perf-test.td');

@@ -254,7 +254,7 @@ describe('generateData()', () => {
       expect(count).toBe(0);
     });
 
-    test('handles large record count without memory issues', async () => {
+    test('@slow handles large record count without memory issues', async () => {
       const source = `
         schema User {
           id: number

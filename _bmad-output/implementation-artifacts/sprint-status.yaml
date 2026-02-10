@@ -66,6 +66,14 @@ development_status:
   3-6-end-to-end-generation-pipeline: done
   epic-3-retrospective: done
 
+  # Epic 4 Preparation Tasks (from Epic 3 Retrospective)
+  epic-4-prep-sprint: done
+  epic-4-dependency-review: done
+  epic-4-story-4-2-format-fix: done
+  epic-4-story-4-4-template-scope-fix: done
+  foundation-patterns-documentation: done
+  test-tagging-convention: done
+
   epic-4: backlog
   4-1-cli-foundation-with-commander-js: backlog
   4-2-generate-command-implementation: backlog

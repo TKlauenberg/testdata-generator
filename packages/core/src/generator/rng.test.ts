@@ -416,7 +416,7 @@ describe('RNG state transitions', () => {
     expect(sequence1).toEqual(sequence2);
   });
 
-  it('should handle large sequence generation', () => {
+  it('@slow should handle large sequence generation', () => {
     const rng = createRNG(88888);
 
     // Generate large sequence (test for memory/performance issues)

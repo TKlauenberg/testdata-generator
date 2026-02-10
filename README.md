@@ -95,6 +95,43 @@ bun test packages/core
 bun test packages/cli
 ```
 
+#### Test Tags and Selective Execution
+
+Tests are tagged to enable fast feedback loops during development:
+
+**Available Tags:**
+
+- `@slow` - Tests that take >1 second (e.g., 100k+ record generation, large sequences)
+- `@performance` - Tests that measure performance against requirements (e.g., validation speed, generation throughput)
+
+**Quick Test Run** (Default - excludes slow tests):
+```bash
+# Fast feedback: Run all tests except @slow
+bun test --exclude @slow
+
+# Fastest: Run only unit tests in specific file
+bun test packages/core/src/generator/rng.test.ts
+```
+
+**Full Test Suite** (Run before marking story/epic done):
+```bash
+# Run everything including slow and performance tests
+bun test
+```
+
+**When to Use:**
+
+- **Development loop:** Use `bun test --exclude @slow` for rapid iteration
+- **Pre-commit:** Run full suite or specific package tests
+- **CI/CD:** Always run full suite (no exclusions)
+- **Before "done":** Run full suite to validate all requirements
+
+**Tagged Tests:**
+
+- Memory efficiency tests (1M records): `@slow @performance`
+- Large sequence generation (100k): `@slow`
+- Performance validation tests: `@performance`
+
 ### Code Quality
 
 This project uses ESLint and Prettier to maintain code quality and consistent formatting.

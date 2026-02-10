@@ -34,7 +34,7 @@ So that **I can create datasets from my DSL schemas quickly**.
 **When** I implement `td generate` command in `packages/cli/src/commands/generate.ts`
 **Then** `td generate <file.td>` reads the file and generates data
 **And** `--count, -c <n>` option specifies number of records (default: 10)
-**And** `--format, -f <fmt>` option specifies output format: json|csv|sql (default: json)
+**And** `--format, -f <fmt>` option specifies output format: json (default: json) [Note: CSV/SQL formats will be added in Epic 10 Stories 10.1-10.2]
 **And** `--output, -o <path>` option specifies output file (default: stdout)
 **And** `--seed, -s <n>` option specifies random seed for reproducibility
 **And** the command validates the schema before generation
@@ -75,10 +75,8 @@ So that **I can learn DSL syntax through examples**.
 **Given** I want to create a new schema
 **When** I implement `td init` command in `packages/cli/src/commands/init.ts`
 **Then** `td init` creates a basic schema template in current directory
-**And** `td init [template]` accepts template names: `basic`, `with-relationships`, `with-context`
-**And** the basic template includes simple field types and generators
-**And** the with-relationships template demonstrates schema relationships
-**And** the with-context template shows context usage
+**And** `td init [template]` accepts template name: `basic` (default) [Note: Additional templates (with-relationships, with-context) will be added in Epic 6/8 when features are implemented]
+**And** the basic template includes simple field types and generators (int, float, string, boolean)
 **And** templates are stored in `packages/cli/templates/` directory
 **And** the command asks for confirmation before overwriting existing files
 **And** the command displays next steps after template creation
