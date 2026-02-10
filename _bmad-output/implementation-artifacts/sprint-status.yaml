@@ -74,8 +74,8 @@ development_status:
   foundation-patterns-documentation: done
   test-tagging-convention: done
 
-  epic-4: backlog
-  4-1-cli-foundation-with-commander-js: backlog
+  epic-4: in-progress
+  4-1-cli-foundation-with-commander-js: ready-for-dev
   4-2-generate-command-implementation: backlog
   4-3-validate-command-implementation: backlog
   4-4-init-command-implementation: backlog
