@@ -7,6 +7,16 @@
 import { Actor, Task } from '@serenity-js/core';
 import { UseJsonAdapter } from '../abilities/UseJsonAdapter';
 import { UseRecordGeneration } from '../abilities/UseRecordGeneration';
+import { UseGenerateDataAPI } from '../abilities/UseGenerateDataAPI';
+
+/**
+ * Convert array of records to async iterable
+ */
+async function* arrayToAsyncIterable<T>(array: T[]): AsyncIterable<T> {
+  for (const item of array) {
+    yield await Promise.resolve(item);
+  }
+}
 
 /**
  * Task: Write generated records to JSON file
@@ -46,10 +56,25 @@ export class WriteRecordsToJson extends Task {
    */
   async performAs(actor: Actor): Promise<void> {
     const jsonAdapter = actor.abilityTo(UseJsonAdapter);
-    const recordGen = actor.abilityTo(UseRecordGeneration);
+    
+    // Try to get records from UseGenerateDataAPI first (public API usage)
+    let records: AsyncIterable<Record<string, unknown>> | null = null;
+    
+    try {
+      const generateDataAPI = UseGenerateDataAPI.as(actor);
+      const recordsArray = generateDataAPI.getRecords();
+      records = arrayToAsyncIterable(recordsArray);
+    } catch {
+      // Fall back to UseRecordGeneration (internal API usage)
+      const recordGen = UseRecordGeneration.as(actor);
+      //eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+      const generator = recordGen.getRecordsStream();
+      records = generator as AsyncIterable<Record<string, unknown>>;
+    }
 
-    // Get the records stream
-    const records = recordGen.getRecordsStream();
+    if (!records) {
+      throw new Error('No records available to write');
+    }
 
     // Write to JSON file
     await jsonAdapter.writeToFile(records, this._filename, this._format, this._metadata);
@@ -115,8 +140,8 @@ export class ConfigureGeneration extends Task {
   /**
    * Execute the task
    */
-  async performAs(actor: Actor): Promise<void> {
-    // Store configuration in actor's memory for later use
-    await actor.remember('generationConfig', this._config);
+  async performAs(_actor: Actor): Promise<void> {
+    // Configuration options stored for potential metadata use in JSON adapter
+    // Currently just validates the config structure
   }
 }

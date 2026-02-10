@@ -117,4 +117,11 @@ export class UseRecordGeneration extends Ability {
   public getGenerator(): AsyncIterable<GeneratedRecord> | null {
     return this._state.generator;
   }
+
+  public getRecordsStream(): AsyncIterable<GeneratedRecord> {
+    if (!this._state.generator) {
+      throw new Error('No generator has been stored. Call storeGenerator() first.');
+    }
+    return this._state.generator;
+  }
 }

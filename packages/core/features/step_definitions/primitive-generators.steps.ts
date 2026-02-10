@@ -6,6 +6,8 @@ import { Given, When, Then } from '@cucumber/cucumber';
 import { actorCalled } from '@serenity-js/core';
 import { Ensure, equals, isTrue } from '@serenity-js/assertions';
 import { UseGenerators } from '../support/abilities/UseGenerators';
+import { UseGenerateDataAPI } from '../support/abilities/UseGenerateDataAPI';
+import { UseJsonAdapter } from '../support/abilities/UseJsonAdapter';
 import {
   GenerateIntegers,
   GenerateFloats,
@@ -23,7 +25,11 @@ import {
 
 // Background
 Given('the actor {word}', (actorName: string) => {
-  actorCalled(actorName).whoCan(UseGenerators.withDefaultCapabilities());
+  actorCalled(actorName).whoCan(
+    UseGenerators.withDefaultCapabilities(),
+    UseGenerateDataAPI.withDefaultCapabilities(),
+    UseJsonAdapter.toWriteFiles(),
+  );
 });
 
 // Integer generation
@@ -274,9 +280,9 @@ When('{word} tries to generate a string with empty charset', async (actorName: s
 Then(
   'an error should be thrown with message {string}',
   async (expectedMessage: string) => {
-     
+
     const errorMsg: string = await actorCalled('Tester').answer(
-       
+
       ErrorMessage.last(),
     );
     if (!errorMsg?.includes(expectedMessage)) {

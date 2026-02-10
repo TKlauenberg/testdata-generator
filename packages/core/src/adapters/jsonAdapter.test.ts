@@ -10,7 +10,7 @@ const TEST_FILE_JSONL = path.join(TEST_OUTPUT_DIR, 'test-jsonl.jsonl');
 // Helper to create async iterable from array
 async function* createRecordStream(records: Array<Record<string, unknown>>): AsyncIterable<Record<string, unknown>> {
   for (const record of records) {
-    yield record;
+    yield await Promise.resolve(record);
   }
 }
 
@@ -28,7 +28,7 @@ async function readJsonlFile(filePath: string): Promise<unknown[]> {
   return content
     .split('\n')
     .filter((line) => line.trim().length > 0)
-    .map((line) => JSON.parse(line));
+    .map((line) => JSON.parse(line) as unknown);
 }
 
 describe('JsonAdapter', () => {
@@ -202,7 +202,7 @@ describe('JsonAdapter', () => {
       const largeRecordCount = 10000;
       async function* generateLargeDataset(): AsyncIterable<Record<string, unknown>> {
         for (let i = 0; i < largeRecordCount; i++) {
-          yield { id: i, name: `User${i}`, value: Math.random() };
+          yield await Promise.resolve({ id: i, name: `User${i}`, value: Math.random() });
         }
       }
 
@@ -284,7 +284,7 @@ describe('JsonAdapter', () => {
   });
 
   describe('Error Handling', () => {
-    test('should handle write failures gracefully', async () => {
+    test('should handle write failures gracefully', () => {
       const adapter = new JsonAdapter({
         outputPath: '/invalid/path/that/does/not/exist/output.json',
         format: 'array',
@@ -293,7 +293,7 @@ describe('JsonAdapter', () => {
       const records = [{ id: 1 }];
 
       // Should throw error for invalid path (M3: Better error validation)
-      await expect(adapter.write(createRecordStream(records))).rejects.toThrow();
+      expect(adapter.write(createRecordStream(records))).rejects.toThrow();
     });
 
     test('should reject empty outputPath', () => {

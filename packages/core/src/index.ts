@@ -1,6 +1,12 @@
 // Public API exports - will be expanded in future stories
 export const version = '0.1.0';
 
+// Public API - Data Generation
+export { generateData, ValidationError } from './generateData';
+
+// Generator (for advanced usage)
+export * from './generator';
+
 // Validation (end-to-end pipeline)
 export { validateSchema } from './validate';
 

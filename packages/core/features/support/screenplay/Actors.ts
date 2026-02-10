@@ -6,6 +6,7 @@ import { UsePRNG } from '../abilities/UsePRNG';
 import { UseGenerators } from '../abilities/UseGenerators';
 import { UseRecordGeneration } from '../abilities/UseRecordGeneration';
 import { UseJsonAdapter } from '../abilities/UseJsonAdapter';
+import { UseGenerateDataAPI } from '../abilities/UseGenerateDataAPI';
 
 /**
  * TestCast configures how Actors are created for Screenplay tests.
@@ -53,6 +54,7 @@ export class TestCast implements Cast {
       UseGenerators.withDefaultCapabilities(),
       UseRecordGeneration.withDefaultCapabilities(),
       UseJsonAdapter.toWriteFiles(),
+      UseGenerateDataAPI.withDefaultCapabilities(),
     );
   }
 }
