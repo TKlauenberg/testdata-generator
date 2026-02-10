@@ -63,7 +63,7 @@ development_status:
   3-3-generator-engine-record-creation: done
   3-4-streaming-generation-with-asynciterable: done
   3-5-json-output-adapter: done
-  3-6-end-to-end-generation-pipeline: in-progress
+  3-6-end-to-end-generation-pipeline: done
   epic-3-retrospective: optional
 
   epic-4: backlog
