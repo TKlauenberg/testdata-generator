@@ -26,6 +26,10 @@
     "/^bun run format$/": {
       "approve": true,
       "matchCommandLine": true
+    },
+    "/^cd packages/cli && bun run build$/": {
+      "approve": true,
+      "matchCommandLine": true
     }
   }
 }

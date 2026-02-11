@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "type": "module",
   "bin": {
-    "td": "./bin/td.ts"
+    "td": "./dist/td.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "bun build ./bin/td.ts --outdir ./dist --target bun --format esm",
     "test": "bun test"
   },
   "dependencies": {

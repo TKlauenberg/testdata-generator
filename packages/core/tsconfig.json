@@ -2,9 +2,7 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "rootDir": ".",
-    "outDir": "./dist",
-    "allowImportingTsExtensions": true,
-    "noEmit": true
+    "outDir": "./dist"
   },
   "include": ["src/**/*", "features/**/*", "tests/**/*"],
   "exclude": ["node_modules", "dist"]

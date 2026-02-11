@@ -1,1 +1,10 @@
-bin
+# Build output
+dist/
+*.js
+*.d.ts
+*.js.map
+*.d.ts.map
+
+# Exclude source TypeScript files from ignore
+!bin/*.ts
+!src/**/*.ts
