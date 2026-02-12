@@ -13,6 +13,18 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 
 /**
+ * Progress display threshold - show progress for datasets larger than this.
+ */
+const PROGRESS_THRESHOLD = 100;
+
+/**
+ * Type guard to check if an error is a Node.js errno exception.
+ */
+function isNodeError(err: unknown): err is NodeJS.ErrnoException {
+  return err instanceof Error && 'code' in err;
+}
+
+/**
  * Generate command for creating test data from DSL schemas.
  *
  * Usage:
@@ -53,13 +65,16 @@ export const generateCommand = new Command('generate')
       try {
         source = await fs.readFile(file, 'utf-8');
       } catch (err: unknown) {
-        const error = err as NodeJS.ErrnoException;
-        if (error.code === 'ENOENT') {
-          console.error(`Error: File '${file}' not found`);
-        } else if (error.code === 'EACCES') {
-          console.error(`Error: Permission denied reading '${file}'`);
+        if (isNodeError(err)) {
+          if (err.code === 'ENOENT') {
+            console.error(`Error: File '${file}' not found`);
+          } else if (err.code === 'EACCES') {
+            console.error(`Error: Permission denied reading '${file}'`);
+          } else {
+            console.error(`Error reading file: ${err.message}`);
+          }
         } else {
-          console.error(`Error reading file: ${error.message}`);
+          console.error(`Error reading file: ${String(err)}`);
         }
         process.exit(3);
       }
@@ -76,7 +91,7 @@ export const generateCommand = new Command('generate')
       try {
         // Show progress for large datasets
         let recordCount = 0;
-        const showProgress = count > 100;
+        const showProgress = count > PROGRESS_THRESHOLD;
 
         for await (const record of generateData(source, genOptions)) {
           records.push(record);
@@ -108,8 +123,11 @@ export const generateCommand = new Command('generate')
             await fs.mkdir(outputDir, { recursive: true });
             await fs.writeFile(options.output, output);
           } catch (err: unknown) {
-            const error = err as NodeJS.ErrnoException;
-            console.error(`Error writing output file: ${error.message}`);
+            if (isNodeError(err)) {
+              console.error(`Error writing output file: ${err.message}`);
+            } else {
+              console.error(`Error writing output file: ${String(err)}`);
+            }
             process.exit(3);
           }
         } else {

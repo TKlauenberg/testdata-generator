@@ -63,6 +63,64 @@ describe('Generate Command - Validation Pipeline', () => {
   });
 });
 
+describe('Generate Command - Option Validation', () => {
+  test('exits with code 1 for invalid --count (zero)', async () => {
+    const proc = spawn([
+      'bun',
+      'bin/td.ts',
+      'generate',
+      'fixtures/valid-simple.td',
+      '--count',
+      '0',
+    ]);
+
+    const exitCode = await proc.exited;
+    expect(exitCode).toBe(1); // Invalid input
+  });
+
+  test('exits with code 1 for invalid --count (negative)', async () => {
+    const proc = spawn([
+      'bun',
+      'bin/td.ts',
+      'generate',
+      'fixtures/valid-simple.td',
+      '--count',
+      '-10',
+    ]);
+
+    const exitCode = await proc.exited;
+    expect(exitCode).toBe(1); // Invalid input
+  });
+
+  test('exits with code 1 for invalid --count (not a number)', async () => {
+    const proc = spawn([
+      'bun',
+      'bin/td.ts',
+      'generate',
+      'fixtures/valid-simple.td',
+      '--count',
+      'notanumber',
+    ]);
+
+    const exitCode = await proc.exited;
+    expect(exitCode).toBe(1); // Invalid input
+  });
+
+  test('exits with code 1 for invalid --seed (not a number)', async () => {
+    const proc = spawn([
+      'bun',
+      'bin/td.ts',
+      'generate',
+      'fixtures/valid-simple.td',
+      '--seed',
+      'notanumber',
+    ]);
+
+    const exitCode = await proc.exited;
+    expect(exitCode).toBe(1); // Invalid input
+  });
+});
+
 describe('Generate Command - Generation Options', () => {
   test('generates default 10 records', async () => {
     const proc = spawn([
