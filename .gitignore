@@ -48,6 +48,10 @@ lerna-debug.log*
 .temp
 .tmp
 
+# Test outputs
+**/__test-output__/
+**/test-output*/
+
 # Runtime data
 pids
 *.pid
