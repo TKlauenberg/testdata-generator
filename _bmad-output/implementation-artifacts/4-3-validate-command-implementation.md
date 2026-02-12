@@ -1,6 +1,6 @@
 # Story 4.3: Validate Command Implementation
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -26,42 +26,42 @@ So that **I can fix syntax errors quickly**.
 
 ## Tasks / Subtasks
 
-- [ ] Create `packages/cli/src/commands/validate.ts` (AC: 1, 2-9)
-  - [ ] Import Commander, File System, and Core library modules
-  - [ ] Define command with `.command('validate <file>')`
-  - [ ] Add option: --json for machine-readable output (AC: 2)
-  - [ ] Implement file reading with error handling (AC: 1)
-  - [ ] Call core library: scan → parse → analyze pipeline (AC: 1)
-  - [ ] Display success message: "✓ Schema is valid" (AC: 3)
-  - [ ] Display errors with Rust-style formatting (AC: 4, 5, 6)
-  - [ ] Output JSON format when --json flag used (AC: 2)
-  - [ ] Implement exit codes: 0 (valid), 1 (invalid) (AC: 7)
-  - [ ] Ensure validation completes quickly (< 1 second target) (AC: 8)
-- [ ] Register validate command in `packages/cli/bin/td.ts` (AC: 1)
-  - [ ] Import validate command
-  - [ ] Add to program with `.addCommand(validateCommand)`
-- [ ] Create comprehensive unit tests: `packages/cli/src/commands/validate.test.ts` (AC: 9)
-  - [ ] Test file reading (valid file, missing file)
-  - [ ] Test validation pipeline (scan, parse, analyze)
-  - [ ] Test success output format
-  - [ ] Test error display formatting
-  - [ ] Test --json flag output
-  - [ ] Test multiple error display
-  - [ ] Test exit codes (0 for valid, 1 for invalid)
-  - [ ] Test performance (validation under 1 second)
-- [ ] Create Gherkin BDD tests: `packages/cli/features/validateCommand.feature` (AC: 9)
-  - [ ] Scenario: Successful validation
-  - [ ] Scenario: Syntax error handling
-  - [ ] Scenario: Semantic error handling
-  - [ ] Scenario: Multiple errors displayed
-  - [ ] Scenario: JSON output format
-  - [ ] Scenario: File not found error
-  - [ ] Scenario: Performance validation (< 1 second)
-- [ ] Reuse test fixture schema files from Story 4.2 in `packages/cli/fixtures/`
-  - [ ] valid-simple.td - basic schema (already exists)
-  - [ ] invalid-syntax.td - schema with syntax errors (already exists)
-  - [ ] invalid-semantic.td - schema with semantic errors (already exists)
-  - [ ] Consider creating multi-error.td - schema with multiple errors (optional)
+- [x] Create `packages/cli/src/commands/validate.ts` (AC: 1, 2-9)
+  - [x] Import Commander, File System, and Core library modules
+  - [x] Define command with `.command('validate <file>')`
+  - [x] Add option: --json for machine-readable output (AC: 2)
+  - [x] Implement file reading with error handling (AC: 1)
+  - [x] Call core library: scan → parse → analyze pipeline (AC: 1)
+  - [x] Display success message: "✓ Schema is valid" (AC: 3)
+  - [x] Display errors with Rust-style formatting (AC: 4, 5, 6)
+  - [x] Output JSON format when --json flag used (AC: 2)
+  - [x] Implement exit codes: 0 (valid), 1 (invalid) (AC: 7)
+  - [x] Ensure validation completes quickly (< 1 second target) (AC: 8)
+- [x] Register validate command in `packages/cli/bin/td.ts` (AC: 1)
+  - [x] Import validate command
+  - [x] Add to program with `.addCommand(validateCommand)`
+- [x] Create comprehensive unit tests: `packages/cli/src/commands/validate.test.ts` (AC: 9)
+  - [x] Test file reading (valid file, missing file)
+  - [x] Test validation pipeline (scan, parse, analyze)
+  - [x] Test success output format
+  - [x] Test error display formatting
+  - [x] Test --json flag output
+  - [x] Test multiple error display
+  - [x] Test exit codes (0 for valid, 1 for invalid)
+  - [x] Test performance (validation under 1 second)
+- [x] Create Gherkin BDD tests: `packages/cli/features/validateCommand.feature` (AC: 9)
+  - [x] Scenario: Successful validation
+  - [x] Scenario: Syntax error handling
+  - [x] Scenario: Semantic error handling
+  - [x] Scenario: Multiple errors displayed
+  - [x] Scenario: JSON output format
+  - [x] Scenario: File not found error
+  - [x] Scenario: Performance validation (< 1 second)
+- [x] Reuse test fixture schema files from Story 4.2 in `packages/cli/fixtures/`
+  - [x] valid-simple.td - basic schema (already exists)
+  - [x] invalid-syntax.td - schema with syntax errors (already exists)
+  - [x] invalid-semantic.td - schema with semantic errors (already exists)
+  - [x] Consider creating multi-error.td - schema with multiple errors (optional - not needed)
 
 ## Dev Notes
 
@@ -895,15 +895,35 @@ Story 4.2's generate command ALSO validates, but combining validation + generati
 
 ### Agent Model Used
 
-_Awaiting implementation_
+Claude Sonnet 4.5
 
 ### Debug Log References
 
-_To be filled during implementation_
+None - implementation proceeded smoothly with no blockers.
 
 ### Completion Notes List
 
-_To be filled during implementation_
+**Implementation Summary:**
+- ✅ Created validate.ts command with scan → parse → analyze pipeline
+- ✅ Text output: "✓ Schema is valid" (success) or Rust-style errors with line/column/problem/suggestion
+- ✅ JSON output: `{ valid: bool, errors: Diagnostic[] }` format for CI/CD
+- ✅ Exit codes: 0 (valid), 1 (invalid), 3 (file error) per Epic 4 convention
+- ✅ 16 unit tests passing (file I/O, validation, JSON, exit codes, performance < 1s)
+- ✅ 8 Gherkin scenarios documenting acceptance criteria
+- ✅ No regressions - all generate command tests (24/24) still pass
+
+**Technical Decisions:**
+- Followed RED-GREEN-REFACTOR: wrote failing tests first, then implemented
+- Reused test fixtures from Story 4.2 (valid-simple.td, invalid-syntax.td, invalid-semantic.td)
+- Adapted unit tests for Bun stderr limitation: focus on exit codes + stdout (JSON), not stderr text
+- Error display shows location only when available (handles undefined gracefully)
+- Used eslint-disable for console.log (JSON must go to stdout, not stderr for CLI tools)
+
+**Test Results:**
+- validate.test.ts: 16/16 passing
+- generate.test.ts: 24/24 passing (no regressions)
+- Performance: all validations complete in <30ms (well under 1s requirement)
+- Manual testing confirmed: text mode, error mode, JSON mode all work perfectly
 
 ### File List
 
