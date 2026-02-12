@@ -13,7 +13,7 @@ export const validateCommand = new Command('validate')
       const source = await fs.readFile(file, 'utf-8');
 
       // 2. Validate (scan → parse → analyze)
-      const errors = validateSchema(source, file);
+      const errors = validateSchema(source);
 
       // 3. Display results
       if (errors.length === 0) {
@@ -29,7 +29,7 @@ export const validateCommand = new Command('validate')
     }
   });
 
-function validateSchema(source: string, _filename: string): Diagnostic[] {
+function validateSchema(source: string): Diagnostic[] {
   const errors: Diagnostic[] = [];
 
   // Scan

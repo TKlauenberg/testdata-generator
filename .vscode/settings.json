@@ -30,6 +30,10 @@
     "/^cd packages/cli && bun run build$/": {
       "approve": true,
       "matchCommandLine": true
+    },
+    "/^bun bin/td\\.ts validate .*$/": {
+      "approve": true,
+      "matchCommandLine": true
     }
   }
 }

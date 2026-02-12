@@ -25,11 +25,6 @@ describe('Validate Command - File Reading', () => {
     // Note: Error message goes to stderr, verified manually. Test checks exit code.
     expect(exitCode).toBe(3);
   });
-
-  test('exits with code 3 for permission denied', async () => {
-    // This test would require creating a file with no read permissions
-    // Skipping for now as it's platform-dependent
-  });
 });
 
 describe('Validate Command - Validation Success', () => {
@@ -130,13 +125,13 @@ describe('Validate Command - Validation Errors', () => {
       'bun',
       'bin/td.ts',
       'validate',
-      'fixtures/invalid-syntax.td',
+      'fixtures/multi-error.td',
     ]);
 
     const exitCode = await proc.exited;
 
-    // Note: Error summary goes to stderr, verified manually. Test checks exit code.
-    // Format: "Validation failed with N error(s)"
+    // Note: Error output goes to stderr, verified manually.
+    // multi-error.td has 3+ errors: semantic + syntax + semantic
     expect(exitCode).toBe(1);
   });
 
@@ -171,6 +166,28 @@ describe('Validate Command - Validation Errors', () => {
     expect(firstError).toHaveProperty('location');
     expect(firstError.location).toHaveProperty('line');
     expect(firstError.location).toHaveProperty('column');
+  });
+
+  test('outputs multiple errors in JSON format', async () => {
+    const proc = spawn([
+      'bun',
+      'bin/td.ts',
+      'validate',
+      'fixtures/multi-error.td',
+      '--json',
+    ]);
+
+    const output = await new Response(proc.stdout).text();
+    const exitCode = await proc.exited;
+
+    expect(exitCode).toBe(1);
+
+    const json = JSON.parse(output) as {
+      valid: boolean;
+      errors: unknown[];
+    };
+    expect(json.valid).toBe(false);
+    expect(json.errors.length).toBeGreaterThanOrEqual(2);
   });
 });
 
