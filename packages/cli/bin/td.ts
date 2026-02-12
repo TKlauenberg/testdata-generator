@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 import { Command } from 'commander';
 import { version } from '@testdata-ai/core';
+import { generateCommand } from '../src/commands/generate.js';
 
 const program = new Command();
 
@@ -9,6 +10,7 @@ program
   .description('testdata-ai - Declarative test data generation')
   .version(version as string);
 
-// Future commands will be added here in subsequent stories
+// Register commands
+program.addCommand(generateCommand);
 
 program.parse();
