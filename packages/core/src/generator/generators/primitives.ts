@@ -113,39 +113,3 @@ export function randomString(
 
   return chars.join('');
 }
-
-/**
- * Generator registry with name mappings and aliases
- *
- * Maps generator names (and their aliases) to generator functions for dynamic lookup.
- * Used by the generator engine to resolve generator names from DSL schemas.
- *
- * Note: Functions are cast to GeneratorFunction type to allow storage in a homogeneous Map.
- * Consumers should verify parameter types match the specific generator they're calling.
- *
- * @example
- * // Get generator by name
- * const intGen = GENERATOR_REGISTRY.get('int');
- * if (intGen) {
- *   const value = intGen(rng, 0, 100); // generates integer 0-100
- * }
- *
- * @example
- * // Using aliases
- * const numGen = GENERATOR_REGISTRY.get('number'); // same as 'float'
- * const textGen = GENERATOR_REGISTRY.get('text');   // same as 'string'
- */
-export const GENERATOR_REGISTRY: GeneratorRegistry = new Map<
-  string,
-  GeneratorFunction
->([
-  ['int', randomInt as GeneratorFunction],
-  ['integer', randomInt as GeneratorFunction],
-  ['float', randomFloat as GeneratorFunction],
-  ['double', randomFloat as GeneratorFunction],
-  ['number', randomFloat as GeneratorFunction],
-  ['string', randomString as GeneratorFunction],
-  ['text', randomString as GeneratorFunction],
-  ['bool', randomBoolean as GeneratorFunction],
-  ['boolean', randomBoolean as GeneratorFunction],
-]);

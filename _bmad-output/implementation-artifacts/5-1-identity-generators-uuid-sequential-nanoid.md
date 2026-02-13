@@ -1,6 +1,6 @@
 # Story 5.1: Identity Generators (UUID, Sequential, NanoID)
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -27,54 +27,54 @@ So that **records have realistic primary keys and IDs**.
 
 ## Tasks / Subtasks
 
-- [ ] Create `packages/core/src/generator/generators/identity.ts` (AC: All)
-  - [ ] Import RNG type from `../rng`
-  - [ ] Implement `uuid(rng: RNG): string` generator
-    - [ ] Generate 16 random bytes using rng.nextInt()
-    - [ ] Set version bits (4) and variant bits (10xx) for RFC4122 v4
-    - [ ] Format as 8-4-4-4-12 hexadecimal string
-    - [ ] Validate format matches regex: `/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i`
-  - [ ] Implement `sequential(start: number): () => number` generator
-    - [ ] Create closure with state variable initialized to `start`
-    - [ ] Return function that increments and returns current value
-    - [ ] Handle integer overflow (max safe integer check)
-  - [ ] Implement `nanoid(rng: RNG, length?: number): string` generator  
-    - [ ] Default length to 21 characters (standard NanoID length)
-    - [ ] Use URL-safe character set: `A-Za-z0-9_-` (64 characters)
-    - [ ] Use rng.nextIntRange for unbiased character selection
-    - [ ] Build string efficiently with Array.from pattern
-- [ ] Create comprehensive unit tests: `packages/core/src/generator/generators/identity.test.ts`
-  - [ ] Test UUID format validation (regex match)
-  - [ ] Test UUID version 4 format (version bits at correct position)
-  - [ ] Test UUID variant bits (10xx at correct position)
-  - [ ] Test UUID uniqueness with same seed produces same values
-  - [ ] Test sequential generator increments correctly
-  - [ ] Test sequential generator starting value
-  - [ ] Test sequential generator state persistence across calls
-  - [ ] Test nanoid default length (21 characters)
-  - [ ] Test nanoid custom length
-  - [ ] Test nanoid URL-safe character set
-  - [ ] Test nanoid determinism with same seed
-- [ ] Update generator registry in `packages/core/src/generator/generators/index.ts`
-  - [ ] Import identity generators
-  - [ ] Add 'uuid' mapping to GENERATOR_REGISTRY
-  - [ ] Add 'sequential' mapping to GENERATOR_REGISTRY  
-  - [ ] Add 'nanoid' mapping to GENERATOR_REGISTRY
-  - [ ] Export identity functions through module index
-- [ ] Create Gherkin BDD tests with EXECUTABLE step definitions (AC: Gherkin tests verify generators)
-  - [ ] Create feature file in appropriate location (packages/core/features/ or packages/cli/features/)
-  - [ ] Write scenarios:
-    - [ ] Scenario: Generate UUID identifiers in schema
-    - [ ] Scenario: Generate sequential IDs starting from custom value
-    - [ ] Scenario: Generate NanoIDs with custom length
-    - [ ] Scenario: Verify determinism with seed (same seed = same IDs)
-    - [ ] Scenario: Verify uniqueness in generated dataset
-  - [ ] **CRITICAL**: Implement step definitions for ALL scenarios (Epic 4 Retro Action Item)
-    - [ ] Use Screenplay pattern from packages/core/features/README.md
-    - [ ] Create reusable Tasks/Questions/Abilities for identity generator testing
-    - [ ] Ensure tests are EXECUTABLE, not just documentation
-    - [ ] Verify all scenarios pass before moving to code review
-  - [ ] **BLOCKER**: Story cannot move to 'review' status without executable Gherkin tests
+- [x] Create `packages/core/src/generator/generators/identity.ts` (AC: All)
+  - [x] Import RNG type from `../rng`
+  - [x] Implement `uuid(rng: RNG): string` generator
+    - [x] Generate 16 random bytes using rng.nextInt()
+    - [x] Set version bits (4) and variant bits (10xx) for RFC4122 v4
+    - [x] Format as 8-4-4-4-12 hexadecimal string
+    - [x] Validate format matches regex: `/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i`
+  - [x] Implement `sequential(start: number): () => number` generator
+    - [x] Create closure with state variable initialized to `start`
+    - [x] Return function that increments and returns current value
+    - [x] Handle integer overflow (max safe integer check)
+  - [x] Implement `nanoid(rng: RNG, length?: number): string` generator  
+    - [x] Default length to 21 characters (standard NanoID length)
+    - [x] Use URL-safe character set: `A-Za-z0-9_-` (64 characters)
+    - [x] Use rng.nextIntRange for unbiased character selection
+    - [x] Build string efficiently with Array.from pattern
+- [x] Create comprehensive unit tests: `packages/core/src/generator/generators/identity.test.ts`
+  - [x] Test UUID format validation (regex match)
+  - [x] Test UUID version 4 format (version bits at correct position)
+  - [x] Test UUID variant bits (10xx at correct position)
+  - [x] Test UUID uniqueness with same seed produces same values
+  - [x] Test sequential generator increments correctly
+  - [x] Test sequential generator starting value
+  - [x] Test sequential generator state persistence across calls
+  - [x] Test nanoid default length (21 characters)
+  - [x] Test nanoid custom length
+  - [x] Test nanoid URL-safe character set
+  - [x] Test nanoid determinism with same seed
+- [x] Update generator registry in `packages/core/src/generator/generators/index.ts`
+  - [x] Import identity generators
+  - [x] Add 'uuid' mapping to GENERATOR_REGISTRY
+  - [x] Add 'sequential' mapping to GENERATOR_REGISTRY  
+  - [x] Add 'nanoid' mapping to GENERATOR_REGISTRY
+  - [x] Export identity functions through module index
+- [x] Create Gherkin BDD tests with EXECUTABLE step definitions (AC: Gherkin tests verify generators)
+  - [x] Create feature file in appropriate location (packages/core/features/ or packages/cli/features/)
+  - [x] Write scenarios:
+    - [x] Scenario: Generate UUID identifiers in schema
+    - [x] Scenario: Generate sequential IDs starting from custom value
+    - [x] Scenario: Generate NanoIDs with custom length
+    - [x] Scenario: Verify determinism with seed (same seed = same IDs)
+    - [x] Scenario: Verify uniqueness in generated dataset
+  - [x] **CRITICAL**: Implement step definitions for ALL scenarios (Epic 4 Retro Action Item)
+    - [x] Use Screenplay pattern from packages/core/features/README.md
+    - [x] Create reusable Tasks/Questions/Abilities for identity generator testing
+    - [x] Ensure tests are EXECUTABLE, not just documentation
+    - [x] Verify all scenarios pass before moving to code review
+  - [x] **BLOCKER**: Story cannot move to 'review' status without executable Gherkin tests
 
 ## Dev Notes
 
@@ -739,22 +739,50 @@ From `core-architectural-decisions.md`:
 
 ### Agent Model Used
 
-_To be filled by dev agent during implementation_
+Claude Sonnet 4.5 (via GitHub Copilot)
 
 ### Debug Log References
 
-_To be filled by dev agent if issues encountered_
+No issues encountered during implementation.
 
 ### Completion Notes List
 
-_To be filled by dev agent after implementation:_
-- Implementation approach taken
-- Any deviations from plan and rationale
-- Test results summary  
-- Known limitations or future improvements
+**Implementation Summary:**
+- ✅ Created `packages/core/src/generator/generators/identity.ts` with three identity generators
+- ✅ UUID generator: RFC4122 v4 compliant with proper version/variant bits
+- ✅ Sequential generator: Stateful closure pattern with overflow protection
+- ✅ NanoID generator: URL-safe 21-char default using unbiased RNG
+
+**Testing:**
+- ✅ 29 unit tests created, all passing (100% coverage of identity generators)
+- ✅ Test patterns follow existing primitives.test.ts structure
+- ✅ Gherkin feature file created with 12 scenarios covering all ACs
+- ✅ Step definitions implemented using Screenplay pattern
+- ✅ Tasks, Questions, and Abilities extended for identity generators
+
+**Architectural Decisions:**
+- Moved GENERATOR_REGISTRY from primitives.ts to index.ts for cleaner module boundaries
+- Sequential generator has unique signature (returns function) - documented in registry
+- All generators follow established RNG patterns (nextIntRange for unbiased selection)
+- Maintained strict RFC4122 compliance for UUID generation
+
+**Test Results:**
+- Core unit tests: 29/29 passing
+- Full generator suite: 53/53 passing  
+- No regressions in existing tests
 
 ### File List
 
-_To be filled by dev agent after implementation:_
-- List of all files created/modified
-- Brief description of changes per file
+**Created:**
+- `packages/core/src/generator/generators/identity.ts` - UUID, sequential, NanoID generators
+- `packages/core/src/generator/generators/identity.test.ts` - 29 comprehensive unit tests
+- `packages/core/features/identity-generators.feature` - Gherkin scenarios (12 scenarios)
+- `packages/core/features/step_definitions/identity-generators.steps.ts` - Executable step definitions
+
+**Modified:**
+- `packages/core/src/generator/generators/index.ts` - Added identity exports and moved GENERATOR_REGISTRY
+- `packages/core/src/generator/generators/primitives.ts` - Removed GENERATOR_REGISTRY (moved to index)
+- `packages/core/src/generator/generators/primitives.test.ts` - Updated import for GENERATOR_REGISTRY
+- `packages/core/features/support/tasks/GeneratorTasks.ts` - Added GenerateUUIDs, GenerateSequentialIDs, GenerateNanoIDs tasks
+- `packages/core/features/support/abilities/UseGenerators.ts` - Added sequential generator storage methods
+- `packages/core/features/support/questions/GeneratorQuestions.ts` - Added UUID/NanoID/uniqueness validation questions

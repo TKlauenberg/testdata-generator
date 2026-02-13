@@ -9,12 +9,14 @@ import { createRNG, type RNG } from '../../../src/generator/rng';
 
 export interface GeneratorState {
   sequences: Map<string, unknown[]>;
+  sequentialGenerators: Map<string, () => number>;
   lastError: Error | null;
 }
 
 export class UseGenerators extends Ability {
   private readonly _state: GeneratorState = {
     sequences: new Map(),
+    sequentialGenerators: new Map(),
     lastError: null,
   };
 
@@ -36,6 +38,18 @@ export class UseGenerators extends Ability {
 
   public getSequence(name: string): unknown[] {
     return this._state.sequences.get(name) ?? [];
+  }
+
+  public storeSequentialGenerator(name: string, generator: () => number): void {
+    this._state.sequentialGenerators.set(name, generator);
+  }
+
+  public getSequentialGenerator(name: string): () => number {
+    const generator = this._state.sequentialGenerators.get(name);
+    if (!generator) {
+      throw new Error(`Sequential generator "${name}" not found`);
+    }
+    return generator;
   }
 
   public storeError(error: Error): void {

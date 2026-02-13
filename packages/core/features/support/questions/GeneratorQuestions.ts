@@ -197,6 +197,98 @@ export class GeneratedSequence {
       },
     );
   }
+
+  public static allMatchUUIDFormat(
+    seqName: string,
+  ): ReturnType<typeof Question.about<boolean>> {
+    return Question.about<boolean>(
+      `whether all values in ${seqName} match RFC4122 v4 UUID format`,
+      (actor: AnswersQuestions & UsesAbilities) => {
+        const generators = UseGenerators.as(actor);
+        const values = generators.getSequence(seqName) as string[];
+
+        const uuidRegex =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        return values.every((v) => uuidRegex.test(v));
+      },
+    );
+  }
+
+  public static allHaveLength(
+    seqName: string,
+    expectedLength: number,
+  ): ReturnType<typeof Question.about<boolean>> {
+    return Question.about<boolean>(
+      `whether all values in ${seqName} have length ${expectedLength}`,
+      (actor: AnswersQuestions & UsesAbilities) => {
+        const generators = UseGenerators.as(actor);
+        const values = generators.getSequence(seqName) as string[];
+
+        return values.every((v) => v.length === expectedLength);
+      },
+    );
+  }
+
+  public static allMatchURLSafeCharacters(
+    seqName: string,
+  ): ReturnType<typeof Question.about<boolean>> {
+    return Question.about<boolean>(
+      `whether all values in ${seqName} use only URL-safe characters`,
+      (actor: AnswersQuestions & UsesAbilities) => {
+        const generators = UseGenerators.as(actor);
+        const values = generators.getSequence(seqName) as string[];
+
+        const urlSafeRegex = /^[A-Za-z0-9_-]+$/;
+        return values.every((v) => urlSafeRegex.test(v));
+      },
+    );
+  }
+
+  public static areDifferent(
+    seq1Name: string,
+    seq2Name: string,
+  ): ReturnType<typeof Question.about<boolean>> {
+    return Question.about<boolean>(
+      `whether sequences ${seq1Name} and ${seq2Name} are different`,
+      (actor: AnswersQuestions & UsesAbilities) => {
+        const generators = UseGenerators.as(actor);
+        const seq1 = generators.getSequence(seq1Name);
+        const seq2 = generators.getSequence(seq2Name);
+
+        return JSON.stringify(seq1) !== JSON.stringify(seq2);
+      },
+    );
+  }
+
+  public static matchesExpectedValues(
+    seqName: string,
+    expectedValues: number[],
+  ): ReturnType<typeof Question.about<boolean>> {
+    return Question.about<boolean>(
+      `whether sequence ${seqName} matches expected values`,
+      (actor: AnswersQuestions & UsesAbilities) => {
+        const generators = UseGenerators.as(actor);
+        const values = generators.getSequence(seqName) as number[];
+
+        return JSON.stringify(values) === JSON.stringify(expectedValues);
+      },
+    );
+  }
+
+  public static allValuesAreUnique(
+    seqName: string,
+  ): ReturnType<typeof Question.about<boolean>> {
+    return Question.about<boolean>(
+      `whether all values in ${seqName} are unique`,
+      (actor: AnswersQuestions & UsesAbilities) => {
+        const generators = UseGenerators.as(actor);
+        const values = generators.getSequence(seqName);
+
+        const uniqueValues = new Set(values);
+        return uniqueValues.size === values.length;
+      },
+    );
+  }
 }
 
 export class ErrorMessage {

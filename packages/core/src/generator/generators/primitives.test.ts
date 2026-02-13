@@ -4,12 +4,12 @@ import {
   CHARSET_ALPHA,
   CHARSET_ALPHANUMERIC,
   CHARSET_NUMERIC,
-  GENERATOR_REGISTRY,
   randomBoolean,
   randomFloat,
   randomInt,
   randomString,
 } from './primitives';
+import { GENERATOR_REGISTRY } from './index';
 
 describe('randomInt', () => {
   it('should generate integers within specified range', () => {

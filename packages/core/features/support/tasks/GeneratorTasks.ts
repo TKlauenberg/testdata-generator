@@ -12,6 +12,9 @@ import {
   randomBoolean,
   randomString,
   CHARSET_ALPHA,
+  uuid,
+  sequential,
+  nanoid,
 } from '../../../src/generator/generators';
 
 export class GenerateIntegers {
@@ -182,6 +185,150 @@ export class TryGenerateStringWithEmptyCharset {
 
         try {
           randomString(rng, 10, '');
+        } catch (error) {
+          generators.storeError(error as Error);
+        }
+      },
+    );
+  }
+}
+
+// Identity Generators
+
+export class GenerateUUIDs {
+  public static count(count: number, seed: number, sequenceName: string): Interaction {
+    return Interaction.where(
+      `#actor generates ${count} UUIDs`,
+      (actor: UsesAbilities) => {
+        const generators = UseGenerators.as(actor);
+        const rng = generators.createRNG(seed);
+
+        const values: string[] = [];
+        for (let i = 0; i < count; i++) {
+          values.push(uuid(rng));
+        }
+
+        generators.storeSequence(sequenceName, values);
+      },
+    );
+  }
+}
+
+export class GenerateSequentialIDs {
+  public static count(
+    count: number,
+    startValue: number,
+    sequenceName: string,
+  ): Interaction {
+    return Interaction.where(
+      `#actor generates ${count} sequential IDs from ${startValue}`,
+      (actor: UsesAbilities) => {
+        const generators = UseGenerators.as(actor);
+        const gen = sequential(startValue);
+
+        const values: number[] = [];
+        for (let i = 0; i < count; i++) {
+          values.push(gen());
+        }
+
+        generators.storeSequence(sequenceName, values);
+      },
+    );
+  }
+}
+
+export class CreateSequentialGenerator {
+  public static withStart(
+    generatorName: string,
+    startValue: number,
+  ): Interaction {
+    return Interaction.where(
+      `#actor creates sequential generator ${generatorName} starting from ${startValue}`,
+      (actor: UsesAbilities) => {
+        const generators = UseGenerators.as(actor);
+        const gen = sequential(startValue);
+        generators.storeSequentialGenerator(generatorName, gen);
+      },
+    );
+  }
+}
+
+export class GenerateFromSequentialGenerator {
+  public static count(
+    generatorName: string,
+    count: number,
+    sequenceName: string,
+  ): Interaction {
+    return Interaction.where(
+      `#actor generates ${count} IDs from generator ${generatorName}`,
+      (actor: UsesAbilities) => {
+        const generators = UseGenerators.as(actor);
+        const gen = generators.getSequentialGenerator(generatorName);
+
+        const values: number[] = [];
+        for (let i = 0; i < count; i++) {
+          values.push(gen());
+        }
+
+        // Append to existing sequence or create new one
+        const existing = generators.getSequence(sequenceName) || [];
+        generators.storeSequence(sequenceName, [...existing, ...values]);
+      },
+    );
+  }
+}
+
+export class GenerateNanoIDs {
+  public static ofLength(
+    length: number,
+    count: number,
+    seed: number,
+    sequenceName: string,
+  ): Interaction {
+    return Interaction.where(
+      `#actor generates ${count} NanoIDs of length ${length}`,
+      (actor: UsesAbilities) => {
+        const generators = UseGenerators.as(actor);
+        const rng = generators.createRNG(seed);
+
+        const values: string[] = [];
+        for (let i = 0; i < count; i++) {
+          values.push(nanoid(rng, length));
+        }
+
+        generators.storeSequence(sequenceName, values);
+      },
+    );
+  }
+}
+
+export class TryCreateSequentialWithInvalidStart {
+  public static withStart(startValue: number): Interaction {
+    return Interaction.where(
+      '#actor tries to create sequential generator with invalid start',
+      (actor: UsesAbilities) => {
+        const generators = UseGenerators.as(actor);
+
+        try {
+          sequential(startValue);
+        } catch (error) {
+          generators.storeError(error as Error);
+        }
+      },
+    );
+  }
+}
+
+export class TryGenerateNanoIDWithInvalidLength {
+  public static withLength(length: number, seed: number): Interaction {
+    return Interaction.where(
+      '#actor tries to generate NanoID with invalid length',
+      (actor: UsesAbilities) => {
+        const generators = UseGenerators.as(actor);
+        const rng = generators.createRNG(seed);
+
+        try {
+          nanoid(rng, length);
         } catch (error) {
           generators.storeError(error as Error);
         }
