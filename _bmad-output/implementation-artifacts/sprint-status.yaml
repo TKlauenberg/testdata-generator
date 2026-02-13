@@ -74,13 +74,13 @@ development_status:
   foundation-patterns-documentation: done
   test-tagging-convention: done
 
-  epic-4: in-progress
+  epic-4: done
   4-1-cli-foundation-with-commander-js: done
   4-2-generate-command-implementation: done # Code review complete, 24 tests passing
   4-3-validate-command-implementation: done # Code review complete, 16 tests passing
   4-4-init-command-implementation: done
   4-5-rust-style-error-formatter: done # Code review complete, all ACs implemented, 17/17 tests passing
-  epic-4-retrospective: optional
+  epic-4-retrospective: done
 
   epic-5: backlog
   5-1-identity-generators-uuid-sequential-nanoid: backlog
