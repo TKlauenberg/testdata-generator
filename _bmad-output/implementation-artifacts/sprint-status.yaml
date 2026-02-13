@@ -82,8 +82,8 @@ development_status:
   4-5-rust-style-error-formatter: done # Code review complete, all ACs implemented, 17/17 tests passing
   epic-4-retrospective: done
 
-  epic-5: backlog
-  5-1-identity-generators-uuid-sequential-nanoid: backlog
+  epic-5: in-progress
+  5-1-identity-generators-uuid-sequential-nanoid: ready-for-dev
   5-2-personal-data-generators-names-emails: backlog
   5-3-temporal-generators-dates-timestamps-ranges: backlog
   5-4-text-generators-words-sentences-paragraphs: backlog
