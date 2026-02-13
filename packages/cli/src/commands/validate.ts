@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import * as fs from 'fs/promises';
 import { scan, parse, analyze } from '@testdata-ai/core';
 import type { Diagnostic } from '@testdata-ai/core';
+import { formatErrors } from '../formatters';
 
 export const validateCommand = new Command('validate')
   .description('Validate DSL schema file')
@@ -20,7 +21,7 @@ export const validateCommand = new Command('validate')
         displaySuccess(options.json);
         process.exit(0);
       } else {
-        displayErrors(errors, file, options.json);
+        displayErrors(errors, source, options.json);
         process.exit(1);
       }
     } catch (err) {
@@ -67,28 +68,16 @@ function displaySuccess(jsonMode?: boolean): void {
 
 function displayErrors(
   errors: Diagnostic[],
-  filename: string,
+  source: string,
   jsonMode?: boolean
 ): void {
   if (jsonMode) {
     // eslint-disable-next-line no-console -- JSON output must go to stdout
     console.log(JSON.stringify({ valid: false, errors }, null, 2));
   } else {
-    // Rust-style error formatting (simplified for MVP)
-    for (const error of errors) {
-      const location = error.location;
-      if (location) {
-        console.error(
-          `\nError in ${filename} at line ${location.line}, column ${location.column}:`
-        );
-      } else {
-        console.error(`\nError in ${filename}:`);
-      }
-      console.error(`  Problem: ${error.message}`);
-      if (error.suggestion) {
-        console.error(`  Suggestion: ${error.suggestion}`);
-      }
-    }
+    // Rust-style error formatting with errorFormatter
+    const formatted = formatErrors(errors, source);
+    console.error(formatted);
     console.error(
       `\nValidation failed with ${errors.length} error${
         errors.length > 1 ? 's' : ''

@@ -11,6 +11,7 @@ import { generateData, ValidationError } from '@testdata-ai/core';
 import type { Diagnostic, GenerateOptions } from '@testdata-ai/core';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { formatErrors } from '../formatters';
 
 /**
  * Progress display threshold - show progress for datasets larger than this.
@@ -144,7 +145,7 @@ export const generateCommand = new Command('generate')
         if (err instanceof ValidationError) {
           // Validation error - display diagnostics
           console.error('Validation failed:\n');
-          displayDiagnostics(err.diagnostics);
+          displayDiagnostics(err.diagnostics, source);
           process.exit(1);
         } else {
           // Generation error (should be rare)
@@ -162,29 +163,21 @@ export const generateCommand = new Command('generate')
   });
 
 /**
- * Display diagnostic messages in a readable format.
+ * Display diagnostic messages in a readable format using Rust-style formatting.
  *
  * @param diagnostics - Array of diagnostic messages from validation
+ * @param source - Source code for context display
  */
-function displayDiagnostics(diagnostics: Diagnostic[]): void {
-  for (const diagnostic of diagnostics) {
-    const severity = diagnostic.severity === 'error' ? 'Error' : 'Warning';
-
-    if (diagnostic.location) {
-      const location = `${diagnostic.location.file}:${diagnostic.location.line}:${diagnostic.location.column}`;
-      console.error(`${severity} in ${location}`);
-    } else {
-      console.error(`${severity}:`);
-    }
-
-    console.error(`  ${diagnostic.message}\n`);
-  }
+function displayDiagnostics(diagnostics: Diagnostic[], source: string): void {
+  // Use new Rust-style error formatter
+  const formatted = formatErrors(diagnostics, source);
+  console.error(formatted);
 
   const errorCount = diagnostics.filter((d) => d.severity === 'error').length;
   const warningCount = diagnostics.filter((d) => d.severity === 'warning').length;
 
   if (errorCount > 0) {
-    console.error(`Validation failed with ${errorCount} error(s) and ${warningCount} warning(s)`);
+    console.error(`\nValidation failed with ${errorCount} error(s) and ${warningCount} warning(s)`);
   }
 }
 
