@@ -3,11 +3,13 @@ import { spawn } from 'bun';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
+const CLI_PATH = path.join(process.cwd(), 'packages/cli/bin/td.ts');
+
 describe('Generate Command - File Reading', () => {
   test('reads and generates from valid .td file', async () => {
     const proc = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'generate',
       'fixtures/valid-simple.td',
     ]);
@@ -24,7 +26,7 @@ describe('Generate Command - File Reading', () => {
   });
 
   test('exits with code 3 for missing file', async () => {
-    const proc = spawn(['bun', 'bin/td.ts', 'generate', 'nonexistent.td']);
+    const proc = spawn(['bun', CLI_PATH, 'generate', 'nonexistent.td']);
 
     const exitCode = await proc.exited;
 
@@ -37,7 +39,7 @@ describe('Generate Command - Validation Pipeline', () => {
   test('exits with code 1 for syntax errors', async () => {
     const proc = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'generate',
       'fixtures/invalid-syntax.td',
     ]);
@@ -51,7 +53,7 @@ describe('Generate Command - Validation Pipeline', () => {
   test('exits with code 1 for semantic errors', async () => {
     const proc = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'generate',
       'fixtures/invalid-semantic.td',
     ]);
@@ -67,7 +69,7 @@ describe('Generate Command - Option Validation', () => {
   test('exits with code 1 for invalid --count (zero)', async () => {
     const proc = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'generate',
       'fixtures/valid-simple.td',
       '--count',
@@ -81,7 +83,7 @@ describe('Generate Command - Option Validation', () => {
   test('exits with code 1 for invalid --count (negative)', async () => {
     const proc = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'generate',
       'fixtures/valid-simple.td',
       '--count',
@@ -95,7 +97,7 @@ describe('Generate Command - Option Validation', () => {
   test('exits with code 1 for invalid --count (not a number)', async () => {
     const proc = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'generate',
       'fixtures/valid-simple.td',
       '--count',
@@ -109,7 +111,7 @@ describe('Generate Command - Option Validation', () => {
   test('exits with code 1 for invalid --seed (not a number)', async () => {
     const proc = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'generate',
       'fixtures/valid-simple.td',
       '--seed',
@@ -125,7 +127,7 @@ describe('Generate Command - Generation Options', () => {
   test('generates default 10 records', async () => {
     const proc = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'generate',
       'fixtures/valid-simple.td',
     ]);
@@ -139,7 +141,7 @@ describe('Generate Command - Generation Options', () => {
   test('respects --count option', async () => {
     const proc = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'generate',
       'fixtures/valid-simple.td',
       '--count',
@@ -155,7 +157,7 @@ describe('Generate Command - Generation Options', () => {
   test('respects -c shorthand', async () => {
     const proc = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'generate',
       'fixtures/valid-simple.td',
       '-c',
@@ -171,7 +173,7 @@ describe('Generate Command - Generation Options', () => {
   test('generates deterministic output with --seed', async () => {
     const proc1 = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'generate',
       'fixtures/valid-simple.td',
       '--seed',
@@ -184,7 +186,7 @@ describe('Generate Command - Generation Options', () => {
 
     const proc2 = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'generate',
       'fixtures/valid-simple.td',
       '--seed',
@@ -201,7 +203,7 @@ describe('Generate Command - Generation Options', () => {
   test('respects -s shorthand for seed', async () => {
     const proc = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'generate',
       'fixtures/valid-simple.td',
       '-s',
@@ -229,7 +231,7 @@ describe('Generate Command - Output Handling', () => {
   test('writes JSON to stdout by default', async () => {
     const proc = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'generate',
       'fixtures/valid-simple.td',
     ]);
@@ -242,7 +244,7 @@ describe('Generate Command - Output Handling', () => {
     const outputFile = path.join(outputDir, 'output.json');
     const proc = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'generate',
       'fixtures/valid-simple.td',
       '--output',
@@ -260,7 +262,7 @@ describe('Generate Command - Output Handling', () => {
     const outputFile = path.join(outputDir, 'output2.json');
     const proc = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'generate',
       'fixtures/valid-simple.td',
       '-o',
@@ -281,7 +283,7 @@ describe('Generate Command - Output Handling', () => {
     const outputFile = path.join(outputDir, 'nested/dir/output.json');
     const proc = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'generate',
       'fixtures/valid-simple.td',
       '--output',
@@ -303,7 +305,7 @@ describe('Generate Command - Progress Display', () => {
   test(  'shows progress for datasets > 100 records', async () => {
     const proc = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'generate',
       'fixtures/valid-simple.td',
       '--count',
@@ -319,7 +321,7 @@ describe('Generate Command - Progress Display', () => {
   test('does not show progress for small datasets', async () => {
     const proc = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'generate',
       'fixtures/valid-simple.td',
       '--count',
@@ -339,7 +341,7 @@ describe('Generate Command - Generation Summary', () => {
   test('displays generation summary on success', async () => {
     const proc = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'generate',
       'fixtures/valid-simple.td',
       '--count',
@@ -355,7 +357,7 @@ describe('Generate Command - Generation Summary', () => {
   test('shows correct record count in summary', async () => {
     const proc = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'generate',
       'fixtures/valid-simple.td',
       '--count',
@@ -373,7 +375,7 @@ describe('Generate Command - Exit Codes', () => {
   test('exits 0 on successful generation', async () => {
     const proc = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'generate',
       'fixtures/valid-simple.td',
     ]);
@@ -385,7 +387,7 @@ describe('Generate Command - Exit Codes', () => {
   test('exits 1 on validation error', async () => {
     const proc = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'generate',
       'fixtures/invalid-syntax.td',
     ]);
@@ -395,7 +397,7 @@ describe('Generate Command - Exit Codes', () => {
   });
 
   test('exits 3 on file not found', async () => {
-    const proc = spawn(['bun', 'bin/td.ts', 'generate', 'missing.td']);
+    const proc = spawn(['bun', CLI_PATH, 'generate', 'missing.td']);
 
     const exitCode = await proc.exited;
     expect(exitCode).toBe(3);

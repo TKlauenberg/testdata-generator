@@ -1,4 +1,5 @@
 import type { Diagnostic } from '@testdata-ai/core';
+import chalk from 'chalk';
 
 /**
  * Format a single diagnostic with Rust-style error display
@@ -6,37 +7,38 @@ import type { Diagnostic } from '@testdata-ai/core';
 export function formatError(diagnostic: Diagnostic, sourceContent: string): string {
   const { code, message, severity, location, suggestion } = diagnostic;
 
-  // Determine label based on severity (no colors since chalk isn't installed yet)
+  // Determine label and color based on severity
   const label = severity === 'error' ? 'Error' : severity === 'warning' ? 'Warning' : 'Info';
+  const errorColor = severity === 'error' ? chalk.red : severity === 'warning' ? chalk.yellow : chalk.blue;
 
-  // Start with error header
-  let output = `${label}: ${code}\n`;
+  // Start with error header (colored)
+  let output = errorColor.bold(`${label}: ${code}`) + '\n';
 
   // Add location information if available
   if (location) {
-    // Location line: --> file.td:5:15
-    output += `  --> ${location.file}:${location.line}:${location.column}\n`;
-    output += '   |\n';
+    // Location line: --> file.td:5:15 (blue)
+    output += chalk.blue(`  --> ${location.file}:${location.line}:${location.column}`) + '\n';
+    output += chalk.blue('   |') + '\n';
 
     // Extract and display source line
     const lineContent = _getSourceLine(sourceContent, location.line);
     if (lineContent !== null) {
       const lineNum = location.line.toString().padStart(2, ' ');
-      output += ` ${lineNum} | ${lineContent}\n`;
+      output += chalk.blue(` ${lineNum} | `) + lineContent + '\n';
 
-      // Generate visual pointer
+      // Generate visual pointer (colored)
       const pointer = _generatePointer(location.column, location.length);
-      output += `   | ${pointer} ${message}\n`;
+      output += chalk.blue('   | ') + errorColor(pointer) + ' ' + errorColor(message) + '\n';
     } else {
       // Line not found in source, just show message
-      output += `   | ${message}\n`;
+      output += chalk.blue('   | ') + errorColor(message) + '\n';
     }
 
-    output += '   |\n';
+    output += chalk.blue('   |') + '\n';
 
     // Add suggestion if present
     if (suggestion) {
-      output += `   = help: ${suggestion}\n`;
+      output += chalk.blue('   = ') + chalk.cyan(`help: ${suggestion}`) + '\n';
     }
   } else {
     // No location - just show message

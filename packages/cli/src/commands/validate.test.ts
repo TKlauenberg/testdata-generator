@@ -1,11 +1,14 @@
 import { describe, test, expect } from 'bun:test';
 import { spawn } from 'bun';
+import * as path from 'path';
+
+const CLI_PATH = path.join(process.cwd(), 'packages/cli/bin/td.ts');
 
 describe('Validate Command - File Reading', () => {
   test('reads and validates valid .td file', async () => {
     const proc = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'validate',
       'fixtures/valid-simple.td',
     ]);
@@ -18,7 +21,7 @@ describe('Validate Command - File Reading', () => {
   });
 
   test('exits with code 3 for missing file', async () => {
-    const proc = spawn(['bun', 'bin/td.ts', 'validate', 'nonexistent.td']);
+    const proc = spawn(['bun', CLI_PATH, 'validate', 'nonexistent.td']);
 
     const exitCode = await proc.exited;
 
@@ -31,7 +34,7 @@ describe('Validate Command - Validation Success', () => {
   test('displays success message for valid schema', async () => {
     const proc = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'validate',
       'fixtures/valid-simple.td',
     ]);
@@ -46,7 +49,7 @@ describe('Validate Command - Validation Success', () => {
   test('outputs JSON for valid schema with --json flag', async () => {
     const proc = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'validate',
       'fixtures/valid-simple.td',
       '--json',
@@ -67,7 +70,7 @@ describe('Validate Command - Validation Errors', () => {
   test('exits with code 1 for syntax errors', async () => {
     const proc = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'validate',
       'fixtures/invalid-syntax.td',
     ]);
@@ -80,7 +83,7 @@ describe('Validate Command - Validation Errors', () => {
   test('exits with code 1 for semantic errors', async () => {
     const proc = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'validate',
       'fixtures/invalid-semantic.td',
     ]);
@@ -93,7 +96,7 @@ describe('Validate Command - Validation Errors', () => {
   test('displays error location (file, line, column)', async () => {
     const proc = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'validate',
       'fixtures/invalid-syntax.td',
     ]);
@@ -108,7 +111,7 @@ describe('Validate Command - Validation Errors', () => {
   test('displays error message with Problem label', async () => {
     const proc = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'validate',
       'fixtures/invalid-semantic.td',
     ]);
@@ -123,7 +126,7 @@ describe('Validate Command - Validation Errors', () => {
   test('displays multiple errors together', async () => {
     const proc = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'validate',
       'fixtures/multi-error.td',
     ]);
@@ -138,7 +141,7 @@ describe('Validate Command - Validation Errors', () => {
   test('outputs JSON for errors with --json flag', async () => {
     const proc = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'validate',
       'fixtures/invalid-semantic.td',
       '--json',
@@ -171,7 +174,7 @@ describe('Validate Command - Validation Errors', () => {
   test('outputs multiple errors in JSON format', async () => {
     const proc = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'validate',
       'fixtures/multi-error.td',
       '--json',
@@ -197,7 +200,7 @@ describe('Validate Command - Performance', () => {
 
     const proc = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'validate',
       'fixtures/valid-simple.td',
     ]);
@@ -213,7 +216,7 @@ describe('Validate Command - Exit Codes', () => {
   test('exits 0 on valid schema', async () => {
     const proc = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'validate',
       'fixtures/valid-simple.td',
     ]);
@@ -225,7 +228,7 @@ describe('Validate Command - Exit Codes', () => {
   test('exits 1 on syntax error', async () => {
     const proc = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'validate',
       'fixtures/invalid-syntax.td',
     ]);
@@ -237,7 +240,7 @@ describe('Validate Command - Exit Codes', () => {
   test('exits 1 on semantic error', async () => {
     const proc = spawn([
       'bun',
-      'bin/td.ts',
+      CLI_PATH,
       'validate',
       'fixtures/invalid-semantic.td',
     ]);
@@ -247,7 +250,7 @@ describe('Validate Command - Exit Codes', () => {
   });
 
   test('exits 3 on file not found', async () => {
-    const proc = spawn(['bun', 'bin/td.ts', 'validate', 'missing.td']);
+    const proc = spawn(['bun', CLI_PATH, 'validate', 'missing.td']);
 
     const exitCode = await proc.exited;
     expect(exitCode).toBe(3);

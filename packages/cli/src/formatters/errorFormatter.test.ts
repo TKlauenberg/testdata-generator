@@ -362,15 +362,19 @@ describe('errorFormatter', () => {
 
       const source = '0123456789';
 
-      // Column 1, length 3 - should start immediately after "| "
+      // Column 1, length 3 - should start immediately (no leading spaces)
       const output1 = formatError(makeDiagnostic(1, 3), source);
       expect(output1).toContain('^^^');
-      expect(output1).toMatch(/\|\s+\^\^\^/); // At least 1 space before ^^^
+      // Strip ANSI codes to check structure: the line should have format  "   | ^^^ test"
+      const stripped1 = output1.replace(/\u001B\[\d+m/g, ''); // Remove ANSI escape codes
+      expect(stripped1).toMatch(/\|\s+\^\^\^/); // Pipe followed by space(s) then carets
 
-      // Column 5, length 2 - should have 4 spaces after "| " then ^^
+      // Column 5, length 2 - should have 4 leading spaces then ^^
       const output5 = formatError(makeDiagnostic(5, 2), source);
       expect(output5).toContain('^^');
-      expect(output5).toMatch(/\|\s{5}\^\^/); // 1 space (format) + 4 spaces (alignment) = 5
+      const stripped5 = output5.replace(/\u001B\[\d+m/g, '');
+      // Should be: "   |     ^^ test" (4 spaces between pipe and ^^)
+      expect(stripped5).toContain('|     ^^'); // Check exact spacing
     });
   });
 
