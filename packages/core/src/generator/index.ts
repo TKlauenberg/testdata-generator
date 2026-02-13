@@ -18,5 +18,8 @@ export {
   GENERATOR_REGISTRY,
   type GeneratorFunction,
   type GeneratorRegistry,
+  uuid,
+  sequential,
+  nanoid,
 } from './generators';
 export { generateRecord, type GeneratedRecord, generate, type GenerateOptions } from './generator';

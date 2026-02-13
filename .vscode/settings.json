@@ -34,6 +34,10 @@
     "/^bun bin/td\\.ts validate .*$/": {
       "approve": true,
       "matchCommandLine": true
+    },
+    "/^cd /run/media/tobi/Data/testdata/testdata-ai && bun run build$/": {
+      "approve": true,
+      "matchCommandLine": true
     }
   }
 }

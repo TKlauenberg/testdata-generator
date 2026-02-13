@@ -6,6 +6,7 @@ import { Given, When, Then } from '@cucumber/cucumber';
 import { actorCalled } from '@serenity-js/core';
 import { Ensure, equals, isTrue } from '@serenity-js/assertions';
 import { UseGenerators } from '../support/abilities/UseGenerators';
+import { uuid, nanoid } from '../../src/generator/generators';
 import {
   GenerateUUIDs,
   GenerateSequentialIDs,
@@ -227,7 +228,7 @@ Then('an error should be thrown with message {string}', async (expectedMessage: 
 // Integration scenarios (simplified - full DSL integration would be in separate stories)
 Given(
   '{word} has a schema with UUID field {string}',
-  async (actorName: string, fieldName: string) => {
+  (actorName: string, fieldName: string) => {
     // Simplified - store field info for validation
     const generators = UseGenerators.as(actorCalled(actorName));
     generators.storeSequence('fieldInfo', [{ name: fieldName, type: 'uuid' }]);
@@ -236,7 +237,7 @@ Given(
 
 Given(
   '{word} has a schema with NanoID field {string} of length {int}',
-  async (actorName: string, fieldName: string, length: number) => {
+  (actorName: string, fieldName: string, length: number) => {
     // Simplified - store field info for validation
     const generators = UseGenerators.as(actorCalled(actorName));
     generators.storeSequence('fieldInfo', [{ name: fieldName, type: 'nanoid', length }]);
@@ -245,7 +246,7 @@ Given(
 
 When(
   '{word} generates {int} records with seed {int}',
-  async (actorName: string, count: number, seed: number) => {
+  (actorName: string, count: number, seed: number) => {
     // Simplified - generate UUIDs or NanoIDs based on field type
     const generators = UseGenerators.as(actorCalled(actorName));
     const fieldInfo = generators.getSequence('fieldInfo')[0] as {
@@ -257,17 +258,15 @@ When(
     const rng = generators.createRNG(seed);
 
     if (fieldInfo.type === 'uuid') {
-      const { uuid } = await import('../../../src/generator/generators');
       const values: string[] = [];
       for (let i = 0; i < count; i++) {
         values.push(uuid(rng));
       }
       generators.storeSequence('records', values);
     } else if (fieldInfo.type === 'nanoid') {
-      const { nanoid } = await import('../../../src/generator/generators');
       const values: string[] = [];
       for (let i = 0; i < count; i++) {
-        values.push(nanoid(rng, fieldInfo.length || 21));
+        values.push(nanoid(rng, fieldInfo.length ?? 21));
       }
       generators.storeSequence('records', values);
     }
@@ -276,7 +275,7 @@ When(
 
 Then(
   'all records should have unique UUID values in {string} field',
-  async (fieldName: string) => {
+  async (_fieldName: string) => {
     await actorCalled('Tester').attemptsTo(
       Ensure.that(GeneratedSequence.allValuesAreUnique('records'), equals(true)),
     );
@@ -285,7 +284,7 @@ Then(
 
 Then(
   'all {string} values should match RFC4122 v4 format',
-  async (fieldName: string) => {
+  async (_fieldName: string) => {
     await actorCalled('Tester').attemptsTo(
       Ensure.that(GeneratedSequence.allMatchUUIDFormat('records'), isTrue()),
     );
@@ -301,7 +300,7 @@ Then(
   },
 );
 
-Then('all {string} values should be unique', async (fieldName: string) => {
+Then('all {string} values should be unique', async (_fieldName: string) => {
   await actorCalled('Tester').attemptsTo(
     Ensure.that(GeneratedSequence.allValuesAreUnique('records'), equals(true)),
   );
@@ -309,7 +308,7 @@ Then('all {string} values should be unique', async (fieldName: string) => {
 
 Then(
   'all {string} values should use only URL-safe characters',
-  async (fieldName: string) => {
+  async (_fieldName: string) => {
     await actorCalled('Tester').attemptsTo(
       Ensure.that(GeneratedSequence.allMatchURLSafeCharacters('records'), isTrue()),
     );

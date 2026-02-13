@@ -303,3 +303,15 @@ export class ErrorMessage {
     );
   }
 }
+
+export class ErrorWasThrown {
+  public static check(): ReturnType<typeof Question.about<boolean>> {
+    return Question.about<boolean>(
+      'whether an error was thrown',
+      (actor: AnswersQuestions & UsesAbilities) => {
+        const generators = UseGenerators.as(actor);
+        return generators.getLastError() !== null;
+      },
+    );
+  }
+}
