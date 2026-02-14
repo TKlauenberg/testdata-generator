@@ -12,6 +12,7 @@ import {
 
 import { uuid, sequential, nanoid } from './identity';
 import { firstName, lastName, fullName, email, phoneNumber } from './personal';
+import { date, timestamp, dateRange, time, datetime } from './temporal';
 import type { RNG } from '../rng';
 
 /**
@@ -73,6 +74,12 @@ export const GENERATOR_REGISTRY: GeneratorRegistry = new Map<
   ['email', email as GeneratorFunction],
   ['phoneNumber', phoneNumber as GeneratorFunction],
   ['phone', phoneNumber as GeneratorFunction],
+  // Temporal generators
+  ['date', date as GeneratorFunction],
+  ['timestamp', timestamp as GeneratorFunction],
+  ['dateRange', dateRange as GeneratorFunction],
+  ['time', time as GeneratorFunction],
+  ['datetime', datetime as GeneratorFunction],
 ]);
 
 // Export primitive generators
@@ -93,3 +100,6 @@ export { uuid, sequential, nanoid };
 
 // Export personal generators
 export { firstName, lastName, fullName, email, phoneNumber };
+
+// Export temporal generators
+export { date, timestamp, dateRange, time, datetime };

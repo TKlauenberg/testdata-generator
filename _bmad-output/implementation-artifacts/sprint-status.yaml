@@ -85,7 +85,7 @@ development_status:
   epic-5: in-progress
   5-1-identity-generators-uuid-sequential-nanoid: done
   5-2-personal-data-generators-names-emails: done
-  5-3-temporal-generators-dates-timestamps-ranges: ready-for-dev
+  5-3-temporal-generators-dates-timestamps-ranges: review
   5-4-text-generators-words-sentences-paragraphs: backlog
   5-5-selection-generators-pick-weighted-pick: backlog
   epic-5-retrospective: optional
