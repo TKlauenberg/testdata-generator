@@ -80,6 +80,10 @@ export function timestamp(
   const startDate = start ? parseDate(start) : defaults.start;
   const endDate = end ? parseDate(end) : defaults.end;
 
+  if (startDate.getTime() >= endDate.getTime()) {
+    throw new Error('start date must be before end date');
+  }
+
   const startMs = startDate.getTime();
   const endMs = endDate.getTime();
 

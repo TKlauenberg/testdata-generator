@@ -133,6 +133,14 @@ describe('Temporal Generators', () => {
 
       expect(isNaN(dateObj.getTime())).toBe(false);
     });
+
+    it('should validate start < end (throws error)', () => {
+      const rng = createRNG(42);
+      const start = new Date('2024-12-31');
+      const end = new Date('2024-01-01');
+
+      expect(() => timestamp(rng, start, end)).toThrow('start date must be before end date');
+    });
   });
 
   describe('dateRange()', () => {

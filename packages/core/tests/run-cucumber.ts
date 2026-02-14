@@ -10,6 +10,7 @@ const options: IRunOptions = {
     paths: [
       path.join(featuresPath, 'example.feature'),
       path.join(featuresPath, 'result-pattern.feature'),
+      path.join(featuresPath, 'temporal-generators.feature'),
     ],
     order: 'defined',
     defaultDialect: 'en',
@@ -21,6 +22,7 @@ const options: IRunOptions = {
     requirePaths: [
       path.join(featuresPath, 'step_definitions/example.steps.ts'),
       path.join(featuresPath, 'step_definitions/result-pattern.steps.ts'),
+      path.join(featuresPath, 'step_definitions/temporal-generators.steps.ts'),
       path.join(featuresPath, 'support/**/*.ts'),
     ],
     importPaths: [],
