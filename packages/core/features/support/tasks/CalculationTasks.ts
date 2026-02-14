@@ -1,5 +1,5 @@
 import { Interaction, type UsesAbilities } from '@serenity-js/core';
-import { PerformCalculations } from '../abilities/PerformCalculations.ts';
+import { PerformCalculations } from '../abilities/PerformCalculations';
 
 /**
  * SetNumbers is an example Task that demonstrates the Screenplay pattern.

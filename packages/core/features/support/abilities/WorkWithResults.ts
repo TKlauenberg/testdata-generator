@@ -1,6 +1,6 @@
 import { Ability } from '@serenity-js/core';
-import { ok, err, type Result } from '../../../src/common/result.ts';
-import type { Diagnostic } from '../../../src/common/diagnostic.ts';
+import { ok, err, type Result } from '../../../src/common/result';
+import type { Diagnostic } from '../../../src/common/diagnostic';
 
 /**
  * WorkWithResults demonstrates integration with the project's Result<T, E> pattern.

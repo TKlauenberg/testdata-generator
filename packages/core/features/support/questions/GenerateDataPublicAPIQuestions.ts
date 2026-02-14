@@ -53,6 +53,22 @@ export const RecordsHaveField = (fieldName: string): ReturnType<typeof Question.
 };
 
 /**
+ * Question: Count how many records have specific field(s)
+ */
+export const RecordCountWithFields = (...fieldNames: string[]): ReturnType<typeof Question.about<number>> => {
+  return Question.about<number>(
+    `count of records with fields ${fieldNames.join(', ')}`,
+    (actor: AnswersQuestions & UsesAbilities) => {
+      const api = UseGenerateDataAPI.as(actor);
+      const records = api.getRecords();
+      return records.filter(record =>
+        fieldNames.every(field => field in record)
+      ).length;
+    },
+  );
+};
+
+/**
  * Question: Get the type of a field across all records (assumes consistent type)
  */
 export const FieldHasType = (fieldName: string): ReturnType<typeof Question.about<string>> => {
@@ -61,16 +77,16 @@ export const FieldHasType = (fieldName: string): ReturnType<typeof Question.abou
     (actor: AnswersQuestions & UsesAbilities) => {
       const api = UseGenerateDataAPI.as(actor);
       const records = api.getRecords();
-      
+
       if (records.length === 0) {
         return 'undefined';
       }
-      
+
       const firstRecord = records[0];
       if (!(fieldName in firstRecord)) {
         return 'undefined';
       }
-      
+
       return typeof firstRecord[fieldName];
     },
   );
@@ -86,11 +102,11 @@ export const RecordsAreIdentical = (): ReturnType<typeof Question.about<boolean>
       const api = UseGenerateDataAPI.as(actor);
       const seq1 = api.getRecords();
       const seq2 = api.getRecordsSecondSequence();
-      
+
       if (seq1.length !== seq2.length) {
         return false;
       }
-      
+
       return JSON.stringify(seq1) === JSON.stringify(seq2);
     },
   );
@@ -106,7 +122,7 @@ export const RecordsAreDifferent = (): ReturnType<typeof Question.about<boolean>
       const api = UseGenerateDataAPI.as(actor);
       const seq1 = api.getRecords();
       const seq2 = api.getRecordsSecondSequence();
-      
+
       return JSON.stringify(seq1) !== JSON.stringify(seq2);
     },
   );
@@ -134,11 +150,11 @@ export const ErrorHasProperty = (propertyName: string): ReturnType<typeof Questi
     (actor: AnswersQuestions & UsesAbilities) => {
       const api = UseGenerateDataAPI.as(actor);
       const error = api.getLastError();
-      
+
       if (!error) {
         return false;
       }
-      
+
       return propertyName in error;
     },
   );
@@ -153,11 +169,11 @@ export const ErrorMessageContains = (text: string): ReturnType<typeof Question.a
     (actor: AnswersQuestions & UsesAbilities) => {
       const api = UseGenerateDataAPI.as(actor);
       const error = api.getLastError();
-      
+
       if (!error) {
         return false;
       }
-      
+
       return error.message.toLowerCase().includes(text.toLowerCase());
     },
   );

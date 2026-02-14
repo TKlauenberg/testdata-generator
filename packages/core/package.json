@@ -13,7 +13,7 @@
   "scripts": {
     "build": "tsc",
     "test": "bun test",
-    "test:bdd": "bun test tests/cucumber.runner.test.ts"
+    "test:bdd": "bun test ./tests/cucumber.runner.test.ts"
   },
   "devDependencies": {
     "@cucumber/cucumber": "^12.5.0",

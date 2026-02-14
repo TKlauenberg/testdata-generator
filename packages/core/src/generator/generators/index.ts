@@ -11,6 +11,28 @@ import {
 } from './primitives';
 
 import { uuid, sequential, nanoid } from './identity';
+import type { RNG } from '../rng';
+
+/**
+ * Wrapper for sequential generator to make it compatible with GeneratorFunction signature.
+ *
+ * WARNING: This creates a new generator instance on each call, which means state
+ * is NOT preserved across calls. This is a temporary solution until the generator
+ * engine adds special handling for stateful generators.
+ *
+ * For proper stateful behavior, use sequential() directly in programmatic API,
+ * not through the registry/DSL.
+ *
+ * @param _rng - Unused, sequential doesn't use RNG
+ * @param start - Starting value for the sequence (defaults to 1)
+ * @returns The next value in the sequence
+ */
+function sequentialWrapper(_rng: RNG, start: number = 1): number {
+  // WARNING: This creates a new generator each time, losing state.
+  // This is incompatible with how sequential is meant to work.
+  const gen = sequential(start);
+  return gen();
+}
 
 /**
  * Generator registry with name mappings and aliases
@@ -38,8 +60,8 @@ export const GENERATOR_REGISTRY: GeneratorRegistry = new Map<
   // Identity generators
   ['uuid', uuid as GeneratorFunction],
   ['nanoid', nanoid as GeneratorFunction],
-  // Note: sequential has different signature, may need special handling
-  ['sequential', sequential as GeneratorFunction],
+  // Note: sequential uses wrapper due to stateful nature (see warning above)
+  ['sequential', sequentialWrapper as GeneratorFunction],
 ]);
 
 // Export primitive generators

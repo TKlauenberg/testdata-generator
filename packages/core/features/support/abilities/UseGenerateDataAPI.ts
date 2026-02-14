@@ -5,7 +5,7 @@
  * This is the primary API for end-users (QA testers, developers) to generate test data.
  */
 
-import { Ability, type UsesAbilities } from '@serenity-js/core';
+import { Ability, type UsesAbilities, type AbilityType } from '@serenity-js/core';
 import { generateData, ValidationError } from '../../../src/generateData';
 
 /**
@@ -37,8 +37,8 @@ export class UseGenerateDataAPI extends Ability {
     return new UseGenerateDataAPI();
   }
 
-  public static as(actor: UsesAbilities): UseGenerateDataAPI {
-    return actor.abilityTo(UseGenerateDataAPI);
+  public static as<A extends Ability>(this: AbilityType<A>, actor: UsesAbilities): A {
+    return actor.abilityTo(this);
   }
 
   /**

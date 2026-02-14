@@ -13,8 +13,8 @@ export class ValidateSchemaAbility extends Ability {
   private _validationStartTime?: number;
   private _validationEndTime?: number;
 
-  static as(actor: UsesAbilities): ValidateSchemaAbility {
-    return actor.abilityTo(ValidateSchemaAbility as AbilityType<ValidateSchemaAbility>);
+  static as<A extends Ability>(this: AbilityType<A>, actor: UsesAbilities): A {
+    return actor.abilityTo(this);
   }
 
   setSchemaSource(source: string): void {

@@ -11,8 +11,9 @@ import { spawn } from 'bun';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-const TEST_DIR = path.join(process.cwd(), 'test-output-init');
-const CLI_PATH = path.join(process.cwd(), 'packages/cli/bin/td.ts');
+const CLI_ROOT = path.resolve(import.meta.dir, '../..');
+const TEST_DIR = path.join(CLI_ROOT, 'test-output-init');
+const CLI_PATH = path.join(CLI_ROOT, 'bin/td.ts');
 
 beforeEach(async () => {
   // Create clean test directory

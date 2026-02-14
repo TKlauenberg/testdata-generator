@@ -1,5 +1,5 @@
 import { Question, type AnswersQuestions, type UsesAbilities } from '@serenity-js/core';
-import { PerformCalculations } from '../abilities/PerformCalculations.ts';
+import { PerformCalculations } from '../abilities/PerformCalculations';
 
 /**
  * CalculationResult is an example Question that demonstrates the Screenplay pattern.

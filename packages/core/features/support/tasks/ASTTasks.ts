@@ -1,6 +1,6 @@
 import { Interaction, type UsesAbilities } from '@serenity-js/core';
 import { ConstructASTNodes } from '../abilities/ConstructASTNodes';
-import type { FieldNode } from '../../../src/parser/ast';
+import type { FieldNode, SchemaNode } from '../../../src/parser/ast';
 
 /**
  * Tasks for constructing AST nodes.
@@ -105,11 +105,12 @@ export const AddFieldImmutably = {
       if (originalSchema?.kind !== 'schema') {
         throw new Error('Current node is not a schema');
       }
+      const schemaNode = originalSchema as SchemaNode;
 
-      ability.setOriginalNode(originalSchema);
+      ability.setOriginalNode(schemaNode);
 
       const newField = ability.constructFieldNode('newField', 'string', 'uuid');
-      const newSchema = ability.addFieldImmutably(originalSchema, newField);
+      const newSchema = ability.addFieldImmutably(schemaNode, newField);
 
       ability.setNewNode(newSchema);
       ability.setCurrentNode(newSchema);

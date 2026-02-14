@@ -156,8 +156,8 @@ Then('the boolean sequence should contain both true and false values', async () 
   const sequence = await actorCalled('Tester').answer(
     GeneratedSequence.values('boolSeq1'),
   );
-  const hasTrue = sequence.some((v: boolean) => v === true);
-  const hasFalse = sequence.some((v: boolean) => v === false);
+  const hasTrue = sequence.some((v: unknown) => v === true);
+  const hasFalse = sequence.some((v: unknown) => v === false);
 
   if (!hasTrue || !hasFalse) {
     throw new Error('Sequence does not contain both true and false values');

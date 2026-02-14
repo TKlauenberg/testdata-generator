@@ -177,7 +177,7 @@ export interface Program extends ASTNode {
  * @param node - The node to check
  * @returns true if the node is a SchemaNode
  */
-export function isSchemaNode(node: Declaration): node is SchemaNode {
+export function isSchemaNode(node: ASTNode): node is SchemaNode {
   return node.kind === 'schema';
 }
 
@@ -195,7 +195,7 @@ export function isFieldNode(node: ASTNode): node is FieldNode {
  * @param node - The node to check
  * @returns true if the node is a ProfileNode
  */
-export function isProfileNode(node: Declaration): node is ProfileNode {
+export function isProfileNode(node: ASTNode): node is ProfileNode {
   return node.kind === 'profile';
 }
 
@@ -204,7 +204,7 @@ export function isProfileNode(node: Declaration): node is ProfileNode {
  * @param node - The node to check
  * @returns true if the node is a ContextNode
  */
-export function isContextNode(node: Declaration): node is ContextNode {
+export function isContextNode(node: ASTNode): node is ContextNode {
   return node.kind === 'context';
 }
 

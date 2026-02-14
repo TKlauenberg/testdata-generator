@@ -3,7 +3,9 @@ import { spawn } from 'bun';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-const CLI_PATH = path.join(process.cwd(), 'packages/cli/bin/td.ts');
+const CLI_ROOT = path.resolve(import.meta.dir, '../..');
+const CLI_PATH = path.join(CLI_ROOT, 'bin/td.ts');
+const fixture = (name: string) => path.join(CLI_ROOT, 'fixtures', name);
 
 describe('Generate Command - File Reading', () => {
   test('reads and generates from valid .td file', async () => {
@@ -11,7 +13,7 @@ describe('Generate Command - File Reading', () => {
       'bun',
       CLI_PATH,
       'generate',
-      'fixtures/valid-simple.td',
+      fixture('valid-simple.td'),
     ]);
 
     const output = await new Response(proc.stdout).text();
@@ -41,7 +43,7 @@ describe('Generate Command - Validation Pipeline', () => {
       'bun',
       CLI_PATH,
       'generate',
-      'fixtures/invalid-syntax.td',
+      fixture('invalid-syntax.td'),
     ]);
 
     const exitCode = await proc.exited;
@@ -55,7 +57,7 @@ describe('Generate Command - Validation Pipeline', () => {
       'bun',
       CLI_PATH,
       'generate',
-      'fixtures/invalid-semantic.td',
+      fixture('invalid-semantic.td'),
     ]);
 
     const exitCode = await proc.exited;
@@ -71,7 +73,7 @@ describe('Generate Command - Option Validation', () => {
       'bun',
       CLI_PATH,
       'generate',
-      'fixtures/valid-simple.td',
+      fixture('valid-simple.td'),
       '--count',
       '0',
     ]);
@@ -85,7 +87,7 @@ describe('Generate Command - Option Validation', () => {
       'bun',
       CLI_PATH,
       'generate',
-      'fixtures/valid-simple.td',
+      fixture('valid-simple.td'),
       '--count',
       '-10',
     ]);
@@ -99,7 +101,7 @@ describe('Generate Command - Option Validation', () => {
       'bun',
       CLI_PATH,
       'generate',
-      'fixtures/valid-simple.td',
+      fixture('valid-simple.td'),
       '--count',
       'notanumber',
     ]);
@@ -113,7 +115,7 @@ describe('Generate Command - Option Validation', () => {
       'bun',
       CLI_PATH,
       'generate',
-      'fixtures/valid-simple.td',
+      fixture('valid-simple.td'),
       '--seed',
       'notanumber',
     ]);
@@ -129,7 +131,7 @@ describe('Generate Command - Generation Options', () => {
       'bun',
       CLI_PATH,
       'generate',
-      'fixtures/valid-simple.td',
+      fixture('valid-simple.td'),
     ]);
 
     const output = await new Response(proc.stdout).text();
@@ -143,7 +145,7 @@ describe('Generate Command - Generation Options', () => {
       'bun',
       CLI_PATH,
       'generate',
-      'fixtures/valid-simple.td',
+      fixture('valid-simple.td'),
       '--count',
       '50',
     ]);
@@ -159,7 +161,7 @@ describe('Generate Command - Generation Options', () => {
       'bun',
       CLI_PATH,
       'generate',
-      'fixtures/valid-simple.td',
+      fixture('valid-simple.td'),
       '-c',
       '25',
     ]);
@@ -175,7 +177,7 @@ describe('Generate Command - Generation Options', () => {
       'bun',
       CLI_PATH,
       'generate',
-      'fixtures/valid-simple.td',
+      fixture('valid-simple.td'),
       '--seed',
       '12345',
       '--count',
@@ -188,7 +190,7 @@ describe('Generate Command - Generation Options', () => {
       'bun',
       CLI_PATH,
       'generate',
-      'fixtures/valid-simple.td',
+      fixture('valid-simple.td'),
       '--seed',
       '12345',
       '--count',
@@ -205,7 +207,7 @@ describe('Generate Command - Generation Options', () => {
       'bun',
       CLI_PATH,
       'generate',
-      'fixtures/valid-simple.td',
+      fixture('valid-simple.td'),
       '-s',
       '99999',
       '-c',
@@ -233,7 +235,7 @@ describe('Generate Command - Output Handling', () => {
       'bun',
       CLI_PATH,
       'generate',
-      'fixtures/valid-simple.td',
+      fixture('valid-simple.td'),
     ]);
 
     const output = await new Response(proc.stdout).text();
@@ -246,7 +248,7 @@ describe('Generate Command - Output Handling', () => {
       'bun',
       CLI_PATH,
       'generate',
-      'fixtures/valid-simple.td',
+      fixture('valid-simple.td'),
       '--output',
       outputFile,
     ]);
@@ -264,7 +266,7 @@ describe('Generate Command - Output Handling', () => {
       'bun',
       CLI_PATH,
       'generate',
-      'fixtures/valid-simple.td',
+      fixture('valid-simple.td'),
       '-o',
       outputFile,
     ]);
@@ -285,7 +287,7 @@ describe('Generate Command - Output Handling', () => {
       'bun',
       CLI_PATH,
       'generate',
-      'fixtures/valid-simple.td',
+      fixture('valid-simple.td'),
       '--output',
       outputFile,
     ]);
@@ -307,7 +309,7 @@ describe('Generate Command - Progress Display', () => {
       'bun',
       CLI_PATH,
       'generate',
-      'fixtures/valid-simple.td',
+      fixture('valid-simple.td'),
       '--count',
       '150',
     ]);
@@ -323,7 +325,7 @@ describe('Generate Command - Progress Display', () => {
       'bun',
       CLI_PATH,
       'generate',
-      'fixtures/valid-simple.td',
+      fixture('valid-simple.td'),
       '--count',
       '50',
     ]);
@@ -343,7 +345,7 @@ describe('Generate Command - Generation Summary', () => {
       'bun',
       CLI_PATH,
       'generate',
-      'fixtures/valid-simple.td',
+      fixture('valid-simple.td'),
       '--count',
       '100',
     ]);
@@ -359,7 +361,7 @@ describe('Generate Command - Generation Summary', () => {
       'bun',
       CLI_PATH,
       'generate',
-      'fixtures/valid-simple.td',
+      fixture('valid-simple.td'),
       '--count',
       '250',
     ]);
@@ -377,7 +379,7 @@ describe('Generate Command - Exit Codes', () => {
       'bun',
       CLI_PATH,
       'generate',
-      'fixtures/valid-simple.td',
+      fixture('valid-simple.td'),
     ]);
 
     const exitCode = await proc.exited;
@@ -389,7 +391,7 @@ describe('Generate Command - Exit Codes', () => {
       'bun',
       CLI_PATH,
       'generate',
-      'fixtures/invalid-syntax.td',
+      fixture('invalid-syntax.td'),
     ]);
 
     const exitCode = await proc.exited;

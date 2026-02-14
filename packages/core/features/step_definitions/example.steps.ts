@@ -6,11 +6,11 @@ import {
   AddNumbers,
   SubtractNumbers,
   MultiplyResult,
-} from '../support/tasks/CalculationTasks.ts';
+} from '../support/tasks/CalculationTasks';
 import {
   CalculationResult,
   ScreenplayKnowledge,
-} from '../support/questions/CalculationQuestions.ts';
+} from '../support/questions/CalculationQuestions';
 
 /**
  * Step definitions for the example.feature file.

@@ -1,9 +1,9 @@
 import { Given, Then } from '@cucumber/cucumber';
 import { actorCalled } from '@serenity-js/core';
 import { Ensure, equals, includes, isTrue } from '@serenity-js/assertions';
-import { PerformOperation } from '../support/tasks/ResultTasks.ts';
-import { OperationResult } from '../support/questions/ResultQuestions.ts';
-import { Diagnostic } from '../../src/common/diagnostic.ts';
+import { PerformOperation } from '../support/tasks/ResultTasks';
+import { OperationResult } from '../support/questions/ResultQuestions';
+import { Diagnostic } from '../../src/common/diagnostic';
 
 /**
  * Step definitions demonstrating Result<T, E> pattern integration with Screenplay.

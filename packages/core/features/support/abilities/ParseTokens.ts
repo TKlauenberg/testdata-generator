@@ -5,7 +5,7 @@
  * Stores the parser result for later inspection.
  */
 
-import { Ability, type UsesAbilities } from '@serenity-js/core';
+import { Ability, type UsesAbilities, type AbilityType } from '@serenity-js/core';
 import { parse } from '../../../src/parser/parser';
 import type { Token } from '../../../src/scanner/tokens';
 import type { Program } from '../../../src/parser/ast';
@@ -37,7 +37,7 @@ export class ParseTokens extends Ability {
   /**
    * Retrieves ParseTokens ability from an actor.
    */
-  static as(actor: UsesAbilities): ParseTokens {
-    return actor.abilityTo(ParseTokens);
+  static as<A extends Ability>(this: AbilityType<A>, actor: UsesAbilities): A {
+    return actor.abilityTo(this);
   }
 }

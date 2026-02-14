@@ -7,6 +7,16 @@
 
 import { describe, test, expect } from 'bun:test';
 import { scan, Scanner } from './scanner';
+import type { Token } from './tokens';
+
+type TokenWithValue = Exclude<Token, { kind: 'eof' }>;
+
+function tokenWithValueAt(tokens: Token[], index: number): TokenWithValue {
+  const token = tokens[index];
+  expect(token).toBeDefined();
+  expect(token.kind).not.toBe('eof');
+  return token as TokenWithValue;
+}
 
 describe('Scanner', () => {
   describe('empty and whitespace input', () => {
@@ -41,7 +51,7 @@ describe('Scanner', () => {
       if (result.ok) {
         expect(result.value).toHaveLength(2); // keyword + eof
         expect(result.value[0].kind).toBe('keyword');
-        expect(result.value[0].value).toBe('schema');
+        expect(tokenWithValueAt(result.value, 0).value).toBe('schema');
         expect(result.value[0].location.line).toBe(1);
         expect(result.value[0].location.column).toBe(1);
         expect(result.value[0].location.length).toBe(6);
@@ -56,15 +66,15 @@ describe('Scanner', () => {
       if (result.ok) {
         expect(result.value).toHaveLength(6); // 5 keywords + eof
         expect(result.value[0].kind).toBe('keyword');
-        expect(result.value[0].value).toBe('schema');
+        expect(tokenWithValueAt(result.value, 0).value).toBe('schema');
         expect(result.value[1].kind).toBe('keyword');
-        expect(result.value[1].value).toBe('profile');
+        expect(tokenWithValueAt(result.value, 1).value).toBe('profile');
         expect(result.value[2].kind).toBe('keyword');
-        expect(result.value[2].value).toBe('context');
+        expect(tokenWithValueAt(result.value, 2).value).toBe('context');
         expect(result.value[3].kind).toBe('keyword');
-        expect(result.value[3].value).toBe('unique');
+        expect(tokenWithValueAt(result.value, 3).value).toBe('unique');
         expect(result.value[4].kind).toBe('keyword');
-        expect(result.value[4].value).toBe('template');
+        expect(tokenWithValueAt(result.value, 4).value).toBe('template');
       }
     });
 
@@ -75,9 +85,9 @@ describe('Scanner', () => {
       if (result.ok) {
         expect(result.value).toHaveLength(3); // 2 identifiers + eof
         expect(result.value[0].kind).toBe('identifier');
-        expect(result.value[0].value).toBe('Schema');
+        expect(tokenWithValueAt(result.value, 0).value).toBe('Schema');
         expect(result.value[1].kind).toBe('identifier');
-        expect(result.value[1].value).toBe('SCHEMA');
+        expect(tokenWithValueAt(result.value, 1).value).toBe('SCHEMA');
       }
     });
   });
@@ -90,7 +100,7 @@ describe('Scanner', () => {
       if (result.ok) {
         expect(result.value).toHaveLength(2); // identifier + eof
         expect(result.value[0].kind).toBe('identifier');
-        expect(result.value[0].value).toBe('myField');
+        expect(tokenWithValueAt(result.value, 0).value).toBe('myField');
         expect(result.value[0].location.length).toBe(7);
       }
     });
@@ -101,7 +111,7 @@ describe('Scanner', () => {
       expect(result.ok).toBe(true);
       if (result.ok) {
         expect(result.value[0].kind).toBe('identifier');
-        expect(result.value[0].value).toBe('_private_field');
+        expect(tokenWithValueAt(result.value, 0).value).toBe('_private_field');
       }
     });
 
@@ -111,7 +121,7 @@ describe('Scanner', () => {
       expect(result.ok).toBe(true);
       if (result.ok) {
         expect(result.value[0].kind).toBe('identifier');
-        expect(result.value[0].value).toBe('field123');
+        expect(tokenWithValueAt(result.value, 0).value).toBe('field123');
       }
     });
   });
@@ -124,7 +134,7 @@ describe('Scanner', () => {
       if (result.ok) {
         expect(result.value).toHaveLength(2); // string + eof
         expect(result.value[0].kind).toBe('string');
-        expect(result.value[0].value).toBe('hello world');
+        expect(tokenWithValueAt(result.value, 0).value).toBe('hello world');
         expect(result.value[0].location.line).toBe(1);
         expect(result.value[0].location.column).toBe(1);
       }
@@ -136,7 +146,7 @@ describe('Scanner', () => {
       expect(result.ok).toBe(true);
       if (result.ok) {
         expect(result.value[0].kind).toBe('string');
-        expect(result.value[0].value).toBe('hello world');
+        expect(tokenWithValueAt(result.value, 0).value).toBe('hello world');
       }
     });
 
@@ -146,7 +156,7 @@ describe('Scanner', () => {
       expect(result.ok).toBe(true);
       if (result.ok) {
         expect(result.value[0].kind).toBe('string');
-        expect(result.value[0].value).toBe('line1\nline2\ttab\\backslash');
+        expect(tokenWithValueAt(result.value, 0).value).toBe('line1\nline2\ttab\\backslash');
       }
     });
 
@@ -156,7 +166,7 @@ describe('Scanner', () => {
       expect(result.ok).toBe(true);
       if (result.ok) {
         expect(result.value[0].kind).toBe('string');
-        expect(result.value[0].value).toBe('She said "hello"');
+        expect(tokenWithValueAt(result.value, 0).value).toBe('She said "hello"');
       }
     });
 
@@ -182,7 +192,7 @@ describe('Scanner', () => {
       if (result.ok) {
         expect(result.value).toHaveLength(2); // number + eof
         expect(result.value[0].kind).toBe('number');
-        expect(result.value[0].value).toBe(42);
+        expect(tokenWithValueAt(result.value, 0).value).toBe(42);
         expect(result.value[0].location.length).toBe(2);
       }
     });
@@ -193,7 +203,7 @@ describe('Scanner', () => {
       expect(result.ok).toBe(true);
       if (result.ok) {
         expect(result.value[0].kind).toBe('number');
-        expect(result.value[0].value).toBe(123.45);
+        expect(tokenWithValueAt(result.value, 0).value).toBe(123.45);
         expect(result.value[0].location.length).toBe(6);
       }
     });
@@ -204,7 +214,7 @@ describe('Scanner', () => {
       expect(result.ok).toBe(true);
       if (result.ok) {
         expect(result.value[0].kind).toBe('number');
-        expect(result.value[0].value).toBe(0);
+        expect(tokenWithValueAt(result.value, 0).value).toBe(0);
       }
     });
 
@@ -214,7 +224,7 @@ describe('Scanner', () => {
       expect(result.ok).toBe(true);
       if (result.ok) {
         expect(result.value[0].kind).toBe('number');
-        expect(result.value[0].value).toBe(0.5);
+        expect(tokenWithValueAt(result.value, 0).value).toBe(0.5);
       }
     });
   });
@@ -227,11 +237,11 @@ describe('Scanner', () => {
       if (result.ok) {
         expect(result.value).toHaveLength(10); // 9 operators + eof
         expect(result.value[0].kind).toBe('operator');
-        expect(result.value[0].value).toBe(':');
+        expect(tokenWithValueAt(result.value, 0).value).toBe(':');
         expect(result.value[1].kind).toBe('operator');
-        expect(result.value[1].value).toBe(',');
+        expect(tokenWithValueAt(result.value, 1).value).toBe(',');
         expect(result.value[2].kind).toBe('operator');
-        expect(result.value[2].value).toBe('{');
+        expect(tokenWithValueAt(result.value, 2).value).toBe('{');
       }
     });
 
@@ -242,7 +252,7 @@ describe('Scanner', () => {
       if (result.ok) {
         expect(result.value).toHaveLength(2); // operator + eof
         expect(result.value[0].kind).toBe('operator');
-        expect(result.value[0].value).toBe('->');
+        expect(tokenWithValueAt(result.value, 0).value).toBe('->');
         expect(result.value[0].location.length).toBe(2);
       }
     });
@@ -256,11 +266,11 @@ describe('Scanner', () => {
       expect(result.ok).toBe(true);
       if (result.ok) {
         expect(result.value[0].kind).toBe('keyword'); // schema
-        expect(result.value[0].value).toBe('schema');
+        expect(tokenWithValueAt(result.value, 0).value).toBe('schema');
         expect(result.value[1].kind).toBe('identifier'); // User
-        expect(result.value[1].value).toBe('User');
+        expect(tokenWithValueAt(result.value, 1).value).toBe('User');
         expect(result.value[2].kind).toBe('operator'); // {
-        expect(result.value[2].value).toBe('{');
+        expect(tokenWithValueAt(result.value, 2).value).toBe('{');
         expect(result.value[3].kind).toBe('identifier'); // name
         expect(result.value[4].kind).toBe('operator'); // :
         expect(result.value[5].kind).toBe('identifier'); // string

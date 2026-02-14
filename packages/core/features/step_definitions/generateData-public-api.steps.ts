@@ -15,6 +15,7 @@ import {
   GeneratedRecords,
   GeneratedRecordsCount,
   RecordsHaveField,
+  RecordCountWithFields,
   FieldHasType,
   RecordsAreIdentical,
   RecordsAreDifferent,
@@ -215,13 +216,13 @@ Then('exactly {int} records should be generated total', async (count: number, { 
 });
 
 Then('{int} records should have field {string}', async (count: number, fieldName: string, { actor }: { actor: string }) => {
-  await actorCalled(actor).attemptsTo(Ensure.that(RecordsHaveField(fieldName), equals(count)));
+  await actorCalled(actor).attemptsTo(Ensure.that(RecordCountWithFields(fieldName), equals(count)));
 });
 
 Then(
   '{int} records should have fields {string} and {string}',
   async (count: number, field1: string, field2: string, { actor }: { actor: string }) => {
-    await actorCalled(actor).attemptsTo(Ensure.that(RecordsHaveField(field1, field2), equals(count)));
+    await actorCalled(actor).attemptsTo(Ensure.that(RecordCountWithFields(field1, field2), equals(count)));
   },
 );
 

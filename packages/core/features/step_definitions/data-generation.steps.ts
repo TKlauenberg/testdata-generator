@@ -28,6 +28,13 @@ import {
   AllValuesInRange,
   AllHaveLength,
   ErrorWasThrown,
+  RecordCount,
+  RecordsWithField,
+  RecordsWithFields,
+  AllRecordsHaveField,
+  StreamingSuccessful,
+  MemoryUsageAcceptable,
+  StreamSequencesIdentical,
 } from '../support/questions/RecordGenerationQuestions';
 import {
   WriteRecordsToJson,
@@ -36,6 +43,9 @@ import {
 import {
   JsonFileExists,
   JsonIsParsable,
+  JsonMetadata,
+  JsonlLinesValid,
+  JsonDataMatchesGenerated,
 } from '../support/questions/JsonAdapterQuestions';
 import { expect } from 'bun:test';
 
@@ -553,7 +563,7 @@ Then(
 Then(
   'the JSONL file should have metadata as first line',
   async () => {
-    const JsonlHasMetadata = await import('../support/questions/JsonAdapterQuestions').then(m => m.JsonlHasMetadata);
+    const JsonlHasMetadata = await import('../support/questions/JsonAdapterQuestions').then(m => m.JsonMetadata);
     await actorCalled('QA Tester').attemptsTo(
       Ensure.that(JsonlHasMetadata.check(), isTrue()),
     );
@@ -573,7 +583,6 @@ Then(
 Then(
   'each line should be valid JSON',
   async () => {
-    const JsonlLinesValid = await import('../support/questions/JsonAdapterQuestions').then(m => m.JsonlLinesValid);
     await actorCalled('QA Tester').attemptsTo(
       Ensure.that(JsonlLinesValid.check(), isTrue()),
     );
@@ -583,7 +592,6 @@ Then(
 Then(
   'the JSON metadata should include timestamp',
   async () => {
-    const JsonMetadata = await import('../support/questions/JsonAdapterQuestions').then(m => m.JsonMetadata);
     const metadata = await actorCalled('QA Tester').answer(JsonMetadata.from('current'));
     expect(metadata.timestamp).toBeDefined();
     expect(metadata.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T/);
@@ -668,7 +676,7 @@ Then(
 Then(
   'the parsed data should match the generated records',
   async () => {
-    const JsonDataMatchesGenerated = await import('../support/questions/JsonAdapterQuestions').then(m => m.JsonDataMatchesGenerated);
+
     await actorCalled('QA Tester').attemptsTo(
       Ensure.that(JsonDataMatchesGenerated.check(), isTrue()),
     );

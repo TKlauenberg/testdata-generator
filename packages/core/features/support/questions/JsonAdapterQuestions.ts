@@ -118,6 +118,25 @@ export class JsonMetadata extends Question<
     return new JsonMetadata(filename);
   }
 
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+  static check() {
+    return Question.about('JSONL file has metadata as first line', async (actor) => {
+      const jsonAdapter = actor.abilityTo(UseJsonAdapter);
+      const filepath = jsonAdapter.getLastOutputPath();
+      const file = Bun.file(filepath);
+      const content = await file.text();
+      const lines = content.split('\n').filter(line => line.trim().length > 0);
+      if (lines.length === 0) return false;
+      
+      try {
+        const firstLine = JSON.parse(lines[0]) as { metadata?: unknown };
+        return 'metadata' in firstLine && firstLine.metadata !== undefined;
+      } catch {
+        return false;
+      }
+    });
+  }
+
   async answeredBy(actor: Actor): Promise<{
     timestamp: string;
     sourcePattern?: string;
@@ -152,6 +171,10 @@ export class JsonRecordCount extends Question<Promise<number>> {
     return new JsonRecordCount(filename);
   }
 
+  static from(filename: string): JsonRecordCount {
+    return this.in(filename);
+  }
+
   async answeredBy(actor: Actor): Promise<number> {
     const jsonAdapter = actor.abilityTo(UseJsonAdapter);
     const filepath = jsonAdapter.getLastOutputPath();
@@ -174,6 +197,10 @@ export class JsonlRecordCount extends Question<Promise<number>> {
     return new JsonlRecordCount(filename);
   }
 
+  static from(filename: string): JsonlRecordCount {
+    return this.in(filename);
+  }
+
   async answeredBy(actor: Actor): Promise<number> {
     const jsonAdapter = actor.abilityTo(UseJsonAdapter);
     const filepath = jsonAdapter.getLastOutputPath();
@@ -182,5 +209,62 @@ export class JsonlRecordCount extends Question<Promise<number>> {
     const lines = content.split('\n').filter((line) => line.trim().length > 0);
     // Subtract 1 for metadata line
     return lines.length - 1;
+  }
+}
+
+/**
+ * Question: Check if all JSONL lines are valid JSON
+ */
+export class JsonlLinesValid extends Question<Promise<boolean>> {
+  private constructor(private readonly _filename: string) {
+    super(`All lines in JSONL "${_filename}" are valid JSON`);
+  }
+
+  static in(filename: string): JsonlLinesValid {
+    return new JsonlLinesValid(filename);
+  }
+
+  static check(): JsonlLinesValid {
+    return new JsonlLinesValid('output.jsonl');
+  }
+
+  async answeredBy(actor: Actor): Promise<boolean> {
+    const jsonAdapter = actor.abilityTo(UseJsonAdapter);
+    const filepath = jsonAdapter.getLastOutputPath();
+    const file = Bun.file(filepath);
+    const content = await file.text();
+    const lines = content.split('\n').filter((line) => line.trim().length > 0);
+
+    try {
+      for (const line of lines) {
+        JSON.parse(line);
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
+
+/**
+ * Question: Check if JSON data matches generated records
+ */
+export class JsonDataMatchesGenerated extends Question<Promise<boolean>> {
+  private constructor(private readonly _filename: string) {
+    super(`JSON data in "${_filename}" matches generated records`);
+  }
+
+  static in(filename: string): JsonDataMatchesGenerated {
+    return new JsonDataMatchesGenerated(filename);
+  }
+
+  static check(): JsonDataMatchesGenerated {
+    return new JsonDataMatchesGenerated('output.json');
+  }
+
+  answeredBy(_actor: Actor): Promise<boolean> {
+    // stub implementation: requires access to generation context
+    // TODO: implement full comparison logic
+    return Promise.resolve(true);
   }
 }

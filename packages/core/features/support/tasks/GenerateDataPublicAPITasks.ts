@@ -5,7 +5,7 @@
  * validation and generation into a single call.
  */
 
-import { Interaction, type UsesAbilities } from '@serenity-js/core';
+import { Interaction, Task, Actor, type UsesAbilities } from '@serenity-js/core';
 import { UseGenerateDataAPI } from '../abilities/UseGenerateDataAPI';
 
 /**
@@ -46,30 +46,31 @@ export class GenerateRecordsUsingPublicAPI {
  *
  * Supports storing multiple sequences for comparison (e.g., same seed = same data)
  */
-export class GenerateRecordsUsingPublicAPIWithSeed {
+export class GenerateRecordsUsingPublicAPIWithSeed extends Task {
   private _count: number = 1;
   private _seed: number = 0;
   private _storeAsSecond = false;
 
-  private constructor() {}
+  private constructor() {
+    super('Generate records using public API with specific seed');
+  }
 
   public static withCount(count: number): GenerateRecordsUsingPublicAPIWithSeed {
     const instance = new GenerateRecordsUsingPublicAPIWithSeed();
     instance._count = count;
-    return instance;
-  }
+    return instance;  }
 
   public andSeed(seed: number): GenerateRecordsUsingPublicAPIWithSeed {
     this._seed = seed;
     return this;
   }
 
-  public storeAsSecondSequence(): GenerateRecordsUsingPublicAPIWithSeed {
+  public storeAsSecondSequence(): Interaction {
     this._storeAsSecond = true;
-    return this;
+    return this.build();
   }
 
-  public build(): Interaction {
+public build(): Interaction {
     const count = this._count;
     const seed = this._seed;
     const storeAsSecond = this._storeAsSecond;
@@ -83,9 +84,10 @@ export class GenerateRecordsUsingPublicAPIWithSeed {
     );
   }
 
-  // Make this class directly usable as an Interaction
-  public performAs(actor: UsesAbilities): Promise<void> {
-    return this.build().performAs(actor);
+  // Implement performAs from Task
+  public async performAs(actor: Actor): Promise<void> {
+    const api = UseGenerateDataAPI.as(actor);
+    await api.generateRecordsWithSeed(this._count, this._seed, this._storeAsSecond);
   }
 }
 

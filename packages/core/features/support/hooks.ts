@@ -1,7 +1,7 @@
 import { Before, setDefaultTimeout } from '@cucumber/cucumber';
 import { configure, Duration } from '@serenity-js/core';
 import { SerenityBDDReporter } from '@serenity-js/serenity-bdd';
-import { TestCast } from './screenplay/Actors.ts';
+import { TestCast } from './screenplay/Actors';
 
 // Configure Cucumber timeout (in milliseconds)
 setDefaultTimeout(Duration.ofSeconds(10).inMilliseconds());

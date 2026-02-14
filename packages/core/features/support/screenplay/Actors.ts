@@ -1,6 +1,6 @@
 import { Actor, Cast } from '@serenity-js/core';
-import { PerformCalculations } from '../abilities/PerformCalculations.ts';
-import { WorkWithResults } from '../abilities/WorkWithResults.ts';
+import { PerformCalculations } from '../abilities/PerformCalculations';
+import { WorkWithResults } from '../abilities/WorkWithResults';
 import { ValidateSchemaAbility } from '../abilities/ValidateSchemaAbility';
 import { UsePRNG } from '../abilities/UsePRNG';
 import { UseGenerators } from '../abilities/UseGenerators';

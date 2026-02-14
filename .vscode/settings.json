@@ -38,6 +38,10 @@
     "/^cd /run/media/tobi/Data/testdata/testdata-ai && bun run build$/": {
       "approve": true,
       "matchCommandLine": true
+    },
+    "/^bun run build$/": {
+      "approve": true,
+      "matchCommandLine": true
     }
   }
 }

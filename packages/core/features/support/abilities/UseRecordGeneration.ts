@@ -4,7 +4,7 @@
  * Enables an actor to generate records from validated schemas
  */
 
-import { Ability, type UsesAbilities } from '@serenity-js/core';
+import { Ability, type UsesAbilities, type AbilityType } from '@serenity-js/core';
 import { createRNG, type RNG } from '../../../src/generator/rng';
 import type { ValidatedSchema, ValidatedProgram } from '../../../src/analyzer/types';
 import type { GeneratedRecord } from '../../../src/generator/generator';
@@ -36,8 +36,8 @@ export class UseRecordGeneration extends Ability {
     return new UseRecordGeneration();
   }
 
-  public static as(actor: UsesAbilities): UseRecordGeneration {
-    return actor.abilityTo(UseRecordGeneration);
+  public static as<A extends Ability>(this: AbilityType<A>, actor: UsesAbilities): A {
+    return actor.abilityTo(this);
   }
 
   public setSchema(schema: ValidatedSchema): void {

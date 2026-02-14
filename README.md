@@ -93,7 +93,14 @@ bun test
 # Run tests for specific package
 bun test packages/core
 bun test packages/cli
+
+# Run via root scripts (workspace-stable paths)
+bun run test:core
+bun run test:cli
+bun run test:bdd
 ```
+
+CLI command tests and BDD test scripts use workspace-stable paths so they run correctly from the repository root.
 
 #### Test Tags and Selective Execution
 

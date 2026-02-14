@@ -2,7 +2,9 @@ import { describe, test, expect } from 'bun:test';
 import { spawn } from 'bun';
 import * as path from 'path';
 
-const CLI_PATH = path.join(process.cwd(), 'packages/cli/bin/td.ts');
+const CLI_ROOT = path.resolve(import.meta.dir, '../..');
+const CLI_PATH = path.join(CLI_ROOT, 'bin/td.ts');
+const fixture = (name: string) => path.join(CLI_ROOT, 'fixtures', name);
 
 describe('Validate Command - File Reading', () => {
   test('reads and validates valid .td file', async () => {
@@ -10,7 +12,7 @@ describe('Validate Command - File Reading', () => {
       'bun',
       CLI_PATH,
       'validate',
-      'fixtures/valid-simple.td',
+      fixture('valid-simple.td'),
     ]);
 
     const output = await new Response(proc.stdout).text();
@@ -36,7 +38,7 @@ describe('Validate Command - Validation Success', () => {
       'bun',
       CLI_PATH,
       'validate',
-      'fixtures/valid-simple.td',
+      fixture('valid-simple.td'),
     ]);
 
     const output = await new Response(proc.stdout).text();
@@ -51,7 +53,7 @@ describe('Validate Command - Validation Success', () => {
       'bun',
       CLI_PATH,
       'validate',
-      'fixtures/valid-simple.td',
+      fixture('valid-simple.td'),
       '--json',
     ]);
 
@@ -72,7 +74,7 @@ describe('Validate Command - Validation Errors', () => {
       'bun',
       CLI_PATH,
       'validate',
-      'fixtures/invalid-syntax.td',
+      fixture('invalid-syntax.td'),
     ]);
 
     const exitCode = await proc.exited;
@@ -85,7 +87,7 @@ describe('Validate Command - Validation Errors', () => {
       'bun',
       CLI_PATH,
       'validate',
-      'fixtures/invalid-semantic.td',
+      fixture('invalid-semantic.td'),
     ]);
 
     const exitCode = await proc.exited;
@@ -98,7 +100,7 @@ describe('Validate Command - Validation Errors', () => {
       'bun',
       CLI_PATH,
       'validate',
-      'fixtures/invalid-syntax.td',
+      fixture('invalid-syntax.td'),
     ]);
 
     const exitCode = await proc.exited;
@@ -113,7 +115,7 @@ describe('Validate Command - Validation Errors', () => {
       'bun',
       CLI_PATH,
       'validate',
-      'fixtures/invalid-semantic.td',
+      fixture('invalid-semantic.td'),
     ]);
 
     const exitCode = await proc.exited;
@@ -128,7 +130,7 @@ describe('Validate Command - Validation Errors', () => {
       'bun',
       CLI_PATH,
       'validate',
-      'fixtures/multi-error.td',
+      fixture('multi-error.td'),
     ]);
 
     const exitCode = await proc.exited;
@@ -143,7 +145,7 @@ describe('Validate Command - Validation Errors', () => {
       'bun',
       CLI_PATH,
       'validate',
-      'fixtures/invalid-semantic.td',
+      fixture('invalid-semantic.td'),
       '--json',
     ]);
 
@@ -176,7 +178,7 @@ describe('Validate Command - Validation Errors', () => {
       'bun',
       CLI_PATH,
       'validate',
-      'fixtures/multi-error.td',
+      fixture('multi-error.td'),
       '--json',
     ]);
 
@@ -202,7 +204,7 @@ describe('Validate Command - Performance', () => {
       'bun',
       CLI_PATH,
       'validate',
-      'fixtures/valid-simple.td',
+      fixture('valid-simple.td'),
     ]);
 
     await proc.exited;
@@ -218,7 +220,7 @@ describe('Validate Command - Exit Codes', () => {
       'bun',
       CLI_PATH,
       'validate',
-      'fixtures/valid-simple.td',
+      fixture('valid-simple.td'),
     ]);
 
     const exitCode = await proc.exited;
@@ -230,7 +232,7 @@ describe('Validate Command - Exit Codes', () => {
       'bun',
       CLI_PATH,
       'validate',
-      'fixtures/invalid-syntax.td',
+      fixture('invalid-syntax.td'),
     ]);
 
     const exitCode = await proc.exited;
@@ -242,7 +244,7 @@ describe('Validate Command - Exit Codes', () => {
       'bun',
       CLI_PATH,
       'validate',
-      'fixtures/invalid-semantic.td',
+      fixture('invalid-semantic.td'),
     ]);
 
     const exitCode = await proc.exited;

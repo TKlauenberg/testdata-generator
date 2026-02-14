@@ -4,7 +4,7 @@
  * Enables an actor to generate random data using primitive generators
  */
 
-import { Ability, type UsesAbilities } from '@serenity-js/core';
+import { Ability, type UsesAbilities, type AbilityType } from '@serenity-js/core';
 import { createRNG, type RNG } from '../../../src/generator/rng';
 
 export interface GeneratorState {
@@ -24,8 +24,8 @@ export class UseGenerators extends Ability {
     return new UseGenerators();
   }
 
-  public static as(actor: UsesAbilities): UseGenerators {
-    return actor.abilityTo(UseGenerators);
+  public static as<A extends Ability>(this: AbilityType<A>, actor: UsesAbilities): A {
+    return actor.abilityTo(this);
   }
 
   public createRNG(seed: number): RNG {

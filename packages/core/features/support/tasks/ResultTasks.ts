@@ -1,5 +1,5 @@
 import { Interaction, type UsesAbilities } from '@serenity-js/core';
-import { WorkWithResults } from '../abilities/WorkWithResults.ts';
+import { WorkWithResults } from '../abilities/WorkWithResults';
 import type { Diagnostic } from '../../../src/common/diagnostic';
 
 /**

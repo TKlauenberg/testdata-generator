@@ -1,57 +1,28 @@
 import { test } from 'bun:test';
-import { runCucumber, type IRunOptions } from '@cucumber/cucumber/api';
+import { spawn } from 'bun';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const featuresPath = path.resolve(__dirname, '../features');
+const runnerPath = path.resolve(__dirname, './run-cucumber.ts');
 
 test(
   'Run Cucumber BDD tests with Screenplay pattern',
   async () => {
-    const options: IRunOptions = {
-      sources: {
-        paths: [path.join(featuresPath, '**/*.feature')],
-        order: 'defined',
-        defaultDialect: 'en',
-        names: [],
-        tagExpression: '',
-      },
-      support: {
-        requireModules: [],
-        requirePaths: [
-          path.join(featuresPath, 'step_definitions/**/*.ts'),
-          path.join(featuresPath, 'support/**/*.ts'),
-        ],
-        importPaths: [],
-      },
-      formats: {
-        options: {},
-        publish: false,
-        stdout: 'progress',
-        files: {},
-      },
-      runtime: {
-        parallel: 0,
-        dryRun: false,
-        failFast: false,
-        filterStacktraces: true,
-        retry: 0,
-        retryTagFilter: '',
-        strict: false,
-        worldParameters: {},
-      },
-    };
-
-    const result = await runCucumber(options, {
+    const proc = spawn(['bun', runnerPath], {
       cwd: path.resolve(__dirname, '..'),
-      stdout: process.stdout,
-      stderr: process.stderr,
-      env: process.env,
+      stdout: 'pipe',
+      stderr: 'pipe',
     });
 
-    if (!result.success) {
-      throw new Error('Cucumber tests failed');
+    const [stdout, stderr, exitCode] = await Promise.all([
+      new Response(proc.stdout).text(),
+      new Response(proc.stderr).text(),
+      proc.exited,
+    ]);
+
+    if (exitCode !== 0) {
+      throw new Error(`Cucumber tests failed\n${stdout}\n${stderr}`);
     }
   },
   { timeout: 30000 },
