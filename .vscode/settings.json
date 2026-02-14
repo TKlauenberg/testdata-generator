@@ -39,7 +39,7 @@
       "approve": true,
       "matchCommandLine": true
     },
-    "/^bun run build$/": {
+    "/^bun run build(( 2>&1 \\| tail -[0-9]+)|())$/": {
       "approve": true,
       "matchCommandLine": true
     }

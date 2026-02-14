@@ -179,5 +179,10 @@ describe('Personal Generators', () => {
       const format = '###-###-####';
       expect(phoneNumber(rng1, format)).toBe(phoneNumber(rng2, format));
     });
+
+    it('should throw error if format has no # placeholders', () => {
+      const rng = createRNG(12345);
+      expect(() => phoneNumber(rng, 'INVALID')).toThrow('Phone number format must contain at least one # placeholder');
+    });
   });
 });

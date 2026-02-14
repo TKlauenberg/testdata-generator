@@ -213,8 +213,13 @@ export function email(rng: RNG, domain: string = 'example.com'): string {
  * @param rng - Random number generator for deterministic digit generation
  * @param format - Phone number format pattern where '#' represents a digit (defaults to "(###) ###-####")
  * @returns A phone number matching the format pattern
+ * @throws Error if format does not contain at least one '#' placeholder
  */
 export function phoneNumber(rng: RNG, format: string = '(###) ###-####'): string {
+  if (!format.includes('#')) {
+    throw new Error('Phone number format must contain at least one # placeholder');
+  }
+
   let result = '';
   for (const char of format) {
     if (char === '#') {

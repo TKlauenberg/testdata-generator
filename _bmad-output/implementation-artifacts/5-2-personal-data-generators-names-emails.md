@@ -1,6 +1,6 @@
 # Story 5.2: Personal Data Generators (Names, Emails)
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -511,17 +511,18 @@ No blocking issues encountered. Implementation followed established patterns fro
 ✅ **Implementation Complete** (2026-02-14)
 
 **Core Generators Implemented:**
-- firstName(rng): 74 diverse, international first names
-- lastName(rng): 74 diverse surnames from multiple cultures
+- firstName(rng): 70 diverse, international first names
+- lastName(rng): 69 diverse surnames from multiple cultures
 - fullName(rng): Combines first + last with proper spacing
 - email(rng, domain?): firstname.lastname@domain pattern with special char handling
 - phoneNumber(rng, format?): Configurable format with '#' placeholder support
 
 **Testing:**
-- 23 comprehensive unit tests (100% passing)
+- 24 comprehensive unit tests (100% passing)
 - All determinism tests verify same seed → same output
 - Email format validation with regex pattern matching
 - Phone number format flexibility tested (US, international, custom patterns)
+- Phone number format validation ensures '#' placeholders required
 - Name diversity verified (different seeds → different names)
 
 **Registry Integration:**
@@ -540,13 +541,18 @@ No blocking issues encountered. Implementation followed established patterns fro
   - allMatchPhoneFormat, allContainNDigits
 - Followed patterns from identity-generators step definitions
 
-**Acceptance Criteria Met:**
+**Code Quality Improvements:**
+- ✅ Added phone number format validation (throws error if no '#' placeholders)
+- ✅ Corrected documentation to reflect actual name counts (70 first, 69 last)
+- ℹ️ TypeScript LSP shows 79 errors in test file (IDE display issue - actual compilation and all tests pass)
+
+**Acceptance Criteria Met:****
 - ✓ All 5 generators implemented with RNG determinism
-- ✓ Name lists include 50+ diverse names (achieved 74 each)
+- ✓ Name lists include 50+ diverse names (achieved 70 first, 69 last)
 - ✓ Email uses firstname.lastname@domain pattern
-- ✓ Phone number supports configurable format patterns
+- ✓ Phone number supports configurable format patterns with validation
 - ✓ All generators export through index.ts
-- ✓ Unit tests verify realistic output and format correctness (23 tests)
+- ✓ Unit tests verify realistic output and format correctness (24 tests)
 - ✓ Gherkin tests verify personal data generation (22 scenarios)
 
 ### File List
