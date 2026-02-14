@@ -1,6 +1,6 @@
 # Story 5.2: Personal Data Generators (Names, Emails)
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -29,86 +29,86 @@ So that **my test datasets look like production data**.
 
 ## Tasks / Subtasks
 
-- [ ] Create `packages/core/src/generator/generators/personal.ts` (AC: All)
-  - [ ] Import RNG type from `../rng`
-  - [ ] Define curated name lists (50+ each)
-    - [ ] Create FIRST_NAMES constant array with diverse, international names
+- [x] Create `packages/core/src/generator/generators/personal.ts` (AC: All)
+  - [x] Import RNG type from `../rng`
+  - [x] Define curated name lists (50+ each)
+    - [x] Create FIRST_NAMES constant array with diverse, international names
       - Include Western names: James, Mary, John, Patricia, Robert, Jennifer, etc.
       - Include international names: Wei, Aisha, Carlos, Yuki, Sofia, Raj, etc.
       - Aim for 60-80 names for good variety
-    - [ ] Create LAST_NAMES constant array with diverse surnames
+    - [x] Create LAST_NAMES constant array with diverse surnames
       - Include common surnames: Smith, Johnson, Williams, Brown, Jones, etc.
       - Include international surnames: Zhang, Garcia, Rodriguez, Patel, Kim, etc.
       - Aim for 60-80 surnames for good variety
-  - [ ] Implement `firstName(rng: RNG): string` generator
-    - [ ] Use rng.nextIntRange(0, FIRST_NAMES.length - 1) for unbiased selection
-    - [ ] Return selected name from FIRST_NAMES array
-  - [ ] Implement `lastName(rng: RNG): string` generator
-    - [ ] Use rng.nextIntRange(0, LAST_NAMES.length - 1) for unbiased selection
-    - [ ] Return selected name from LAST_NAMES array
-  - [ ] Implement `fullName(rng: RNG): string` generator
-    - [ ] Call firstName(rng) and lastName(rng)
-    - [ ] Combine with space: `${first} ${last}`
-    - [ ] Return combined full name
-  - [ ] Implement `email(rng: RNG, domain?: string): string` generator
-    - [ ] Generate first and last names using firstName/lastName
-    - [ ] Normalize to lowercase
-    - [ ] Create pattern: `${first}.${last}@${domain}`
-    - [ ] Default domain to 'example.com' if not provided
-    - [ ] Handle special characters in names (strip or replace with -)
-    - [ ] Validate email format matches regex: `/^[a-z0-9.-]+@[a-z0-9.-]+\.[a-z]{2,}$/`
-  - [ ] Implement `phoneNumber(rng: RNG, format?: string): string` generator
-    - [ ] Default format to "(###) ###-####" (US format) if not provided
-    - [ ] Replace each '#' with random digit using rng.nextIntRange(0, 9)
-    - [ ] Support multiple format patterns:
+  - [x] Implement `firstName(rng: RNG): string` generator
+    - [x] Use rng.nextIntRange(0, FIRST_NAMES.length - 1) for unbiased selection
+    - [x] Return selected name from FIRST_NAMES array
+  - [x] Implement `lastName(rng: RNG): string` generator
+    - [x] Use rng.nextIntRange(0, LAST_NAMES.length - 1) for unbiased selection
+    - [x] Return selected name from LAST_NAMES array
+  - [x] Implement `fullName(rng: RNG): string` generator
+    - [x] Call firstName(rng) and lastName(rng)
+    - [x] Combine with space: `${first} ${last}`
+    - [x] Return combined full name
+  - [x] Implement `email(rng: RNG, domain?: string): string` generator
+    - [x] Generate first and last names using firstName/lastName
+    - [x] Normalize to lowercase
+    - [x] Create pattern: `${first}.${last}@${domain}`
+    - [x] Default domain to 'example.com' if not provided
+    - [x] Handle special characters in names (strip or replace with -)
+    - [x] Validate email format matches regex: `/^[a-z0-9.-]+@[a-z0-9.-]+\.[a-z]{2,}$/`
+  - [x] Implement `phoneNumber(rng: RNG, format?: string): string` generator
+    - [x] Default format to "(###) ###-####" (US format) if not provided
+    - [x] Replace each '#' with random digit using rng.nextIntRange(0, 9)
+    - [x] Support multiple format patterns:
       - US: "(###) ###-####"
       - International: "+## ### ### ####"
       - Simple: "###-###-####"
-    - [ ] Validate generated phone matches format structure
-- [ ] Create comprehensive unit tests: `packages/core/src/generator/generators/personal.test.ts`
-  - [ ] Test firstName returns value from FIRST_NAMES array
-  - [ ] Test firstName determinism with same seed produces same name
-  - [ ] Test lastName returns value from LAST_NAMES array
-  - [ ] Test lastName determinism with same seed
-  - [ ] Test fullName combines firstName and lastName correctly
-  - [ ] Test fullName format (single space between names)
-  - [ ] Test fullName determinism
-  - [ ] Test email default domain is 'example.com'
-  - [ ] Test email custom domain parameter
-  - [ ] Test email format pattern (firstname.lastname@domain.com)
-  - [ ] Test email lowercase normalization
-  - [ ] Test email special character handling
-  - [ ] Test email determinism with same seed
-  - [ ] Test phoneNumber default format "(###) ###-####"
-  - [ ] Test phoneNumber custom format patterns
-  - [ ] Test phoneNumber all digits are 0-9
-  - [ ] Test phoneNumber preserves format structure (parentheses, spaces, dashes)
-  - [ ] Test phoneNumber determinism with same seed
-- [ ] Update generator registry in `packages/core/src/generator/generators/index.ts`
-  - [ ] Import personal generators
-  - [ ] Add 'firstName' mapping to GENERATOR_REGISTRY
-  - [ ] Add 'lastName' mapping to GENERATOR_REGISTRY
-  - [ ] Add 'fullName' mapping to GENERATOR_REGISTRY
-  - [ ] Add 'email' mapping to GENERATOR_REGISTRY
-  - [ ] Add 'phoneNumber' mapping to GENERATOR_REGISTRY
-  - [ ] Export personal functions through module index
-- [ ] Create Gherkin BDD tests with EXECUTABLE step definitions (AC: Gherkin tests verify generators)
-  - [ ] Create feature file: `packages/core/features/personal-generators.feature`
-  - [ ] Write scenarios:
-    - [ ] Scenario: Generate user records with first and last names
-    - [ ] Scenario: Generate full names for display fields
-    - [ ] Scenario: Generate emails with default domain
-    - [ ] Scenario: Generate emails with custom company domain
-    - [ ] Scenario: Generate phone numbers with default US format
-    - [ ] Scenario: Generate phone numbers with custom format
-    - [ ] Scenario: Verify determinism - same seed produces identical personal data
-    - [ ] Scenario: Verify name diversity - multiple records have different names
-  - [ ] **CRITICAL**: Implement step definitions using Screenplay pattern
-    - [ ] Follow patterns from packages/core/features/README.md
-    - [ ] Reuse existing Abilities: UseGenerators, CreateProgramWithSchema, UseRecordGeneration
-    - [ ] Create Tasks/Questions specific to personal data validation
-    - [ ] Ensure all scenarios are EXECUTABLE and pass
-    - [ ] **BLOCKER**: Story cannot move to 'review' status without executable Gherkin tests
+    - [x] Validate generated phone matches format structure
+- [x] Create comprehensive unit tests: `packages/core/src/generator/generators/personal.test.ts`
+  - [x] Test firstName returns value from FIRST_NAMES array
+  - [x] Test firstName determinism with same seed produces same name
+  - [x] Test lastName returns value from LAST_NAMES array
+  - [x] Test lastName determinism with same seed
+  - [x] Test fullName combines firstName and lastName correctly
+  - [x] Test fullName format (single space between names)
+  - [x] Test fullName determinism
+  - [x] Test email default domain is 'example.com'
+  - [x] Test email custom domain parameter
+  - [x] Test email format pattern (firstname.lastname@domain.com)
+  - [x] Test email lowercase normalization
+  - [x] Test email special character handling
+  - [x] Test email determinism with same seed
+  - [x] Test phoneNumber default format "(###) ###-####"
+  - [x] Test phoneNumber custom format patterns
+  - [x] Test phoneNumber all digits are 0-9
+  - [x] Test phoneNumber preserves format structure (parentheses, spaces, dashes)
+  - [x] Test phoneNumber determinism with same seed
+- [x] Update generator registry in `packages/core/src/generator/generators/index.ts`
+  - [x] Import personal generators
+  - [x] Add 'firstName' mapping to GENERATOR_REGISTRY
+  - [x] Add 'lastName' mapping to GENERATOR_REGISTRY
+  - [x] Add 'fullName' mapping to GENERATOR_REGISTRY
+  - [x] Add 'email' mapping to GENERATOR_REGISTRY
+  - [x] Add 'phoneNumber' mapping to GENERATOR_REGISTRY
+  - [x] Export personal functions through module index
+- [x] Create Gherkin BDD tests with EXECUTABLE step definitions (AC: Gherkin tests verify generators)
+  - [x] Create feature file: `packages/core/features/personal-generators.feature`
+  - [x] Write scenarios:
+    - [x] Scenario: Generate user records with first and last names
+    - [x] Scenario: Generate full names for display fields
+    - [x] Scenario: Generate emails with default domain
+    - [x] Scenario: Generate emails with custom company domain
+    - [x] Scenario: Generate phone numbers with default US format
+    - [x] Scenario: Generate phone numbers with custom format
+    - [x] Scenario: Verify determinism - same seed produces identical personal data
+    - [x] Scenario: Verify name diversity - multiple records have different names
+  - [x] **CRITICAL**: Implement step definitions using Screenplay pattern
+    - [x] Follow patterns from packages/core/features/README.md
+    - [x] Reuse existing Abilities: UseGenerators, CreateProgramWithSchema, UseRecordGeneration
+    - [x] Create Tasks/Questions specific to personal data validation
+    - [x] Ensure all scenarios are EXECUTABLE and pass
+    - [x] **BLOCKER**: Story cannot move to 'review' status without executable Gherkin tests
 
 ## Dev Notes
 
@@ -120,7 +120,7 @@ So that **my test datasets look like production data**.
 
 **Business Value**: QA testers need realistic personal data (names, emails, phone numbers) for user profile testing, form validation testing, and realistic UI screenshots. Generic strings like "test123" harm testing credibility.
 
-**Dependencies**: 
+**Dependencies**:
 - Uses PRNG system from Epic 3 (Story 3.1: Xoshiro256** RNG)
 - Follows generator patterns from Story 3.2 (Primitive Generators) and Story 5.1 (Identity Generators)
 - Integrates with generator registry established in Story 3.2
@@ -129,7 +129,7 @@ So that **my test datasets look like production data**.
 
 **What Worked Well:**
 - ✅ Simple, focused generator functions with RNG as first parameter
-- ✅ Co-located test files (personal.test.ts alongside personal.ts) 
+- ✅ Co-located test files (personal.test.ts alongside personal.ts)
 - ✅ Deterministic testing with fixed seeds
 - ✅ Export pattern through index.ts with GENERATOR_REGISTRY
 - ✅ Clear acceptance criteria mapped directly to test cases
@@ -283,11 +283,11 @@ export function fullName(rng: RNG): string {
 export function email(rng: RNG, domain: string = 'example.com'): string {
   const first = firstName(rng).toLowerCase();
   const last = lastName(rng).toLowerCase();
-  
+
   // Handle special characters (replace non-alphanumeric with dash)
   const cleanFirst = first.replace(/[^a-z0-9]/g, '-');
   const cleanLast = last.replace(/[^a-z0-9]/g, '-');
-  
+
   return `${cleanFirst}.${cleanLast}@${domain}`;
 }
 ```
@@ -462,19 +462,19 @@ export const GENERATOR_REGISTRY: GeneratorRegistry = new Map([
 
 Before marking story as 'review':
 
-- [ ] All generators implemented in personal.ts
-- [ ] All unit tests written and passing (18+ test cases)
-- [ ] Generators registered in index.ts
-- [ ] Module exports updated in index.ts
-- [ ] Name lists have 50+ entries each
-- [ ] Email format validation implemented
-- [ ] Phone format flexibility tested
-- [ ] Determinism tests pass (same seed → same data)
-- [ ] TypeScript compiles with no errors in personal.ts and personal.test.ts
-- [ ] Gherkin feature file created with 8+ scenarios
-- [ ] Gherkin step definitions implemented using Screenplay pattern
-- [ ] All Gherkin scenarios executable and passing
-- [ ] Code follows project patterns (camelCase.ts, co-located tests, Result types where applicable)
+- [x] All generators implemented in personal.ts
+- [x] All unit tests written and passing (23 test cases - exceeded target)
+- [x] Generators registered in index.ts
+- [x] Module exports updated in index.ts
+- [x] Name lists have 50+ entries each (74 first names, 74 last names)
+- [x] Email format validation implemented
+- [x] Phone format flexibility tested
+- [x] Determinism tests pass (same seed → same data)
+- [x] TypeScript compiles with no errors in personal.ts and personal.test.ts
+- [x] Gherkin feature file created with 22 scenarios (exceeded 8+ requirement)
+- [x] Gherkin step definitions implemented using Screenplay pattern
+- [x] All Gherkin scenarios executable and passing
+- [x] Code follows project patterns (camelCase.ts, co-located tests, Result types where applicable)
 
 ### References
 
@@ -500,16 +500,64 @@ Before marking story as 'review':
 
 ### Agent Model Used
 
-_To be filled by dev agent_
+Claude Sonnet 4.5
 
 ### Debug Log References
 
-_To be filled by dev agent_
+No blocking issues encountered. Implementation followed established patterns from Story 5.1.
 
 ### Completion Notes List
 
-_To be filled by dev agent_
+✅ **Implementation Complete** (2026-02-14)
+
+**Core Generators Implemented:**
+- firstName(rng): 74 diverse, international first names
+- lastName(rng): 74 diverse surnames from multiple cultures
+- fullName(rng): Combines first + last with proper spacing
+- email(rng, domain?): firstname.lastname@domain pattern with special char handling
+- phoneNumber(rng, format?): Configurable format with '#' placeholder support
+
+**Testing:**
+- 23 comprehensive unit tests (100% passing)
+- All determinism tests verify same seed → same output
+- Email format validation with regex pattern matching
+- Phone number format flexibility tested (US, international, custom patterns)
+- Name diversity verified (different seeds → different names)
+
+**Registry Integration:**
+- Added 5 primary mappings to GENERATOR_REGISTRY
+- Added 4 friendly aliases (first, last, name, phone)
+- Exports updated in index.ts
+
+**BDD Tests:**
+- Created personal-generators.feature with 22 scenarios
+- Implemented step definitions using Screenplay pattern
+- Added GenerateFirstNames, GenerateLastNames, GenerateFullNames, GenerateEmails, GeneratePhoneNumbers tasks
+- Extended GeneratorQuestions with personal data validators:
+  - allNonEmptyStrings, atLeastNUniqueValues
+  - allContainOneSpace, allHaveTwoParts
+  - allMatchEmailFormat, allEndWithDomain, allAreLowercase
+  - allMatchPhoneFormat, allContainNDigits
+- Followed patterns from identity-generators step definitions
+
+**Acceptance Criteria Met:**
+- ✓ All 5 generators implemented with RNG determinism
+- ✓ Name lists include 50+ diverse names (achieved 74 each)
+- ✓ Email uses firstname.lastname@domain pattern
+- ✓ Phone number supports configurable format patterns
+- ✓ All generators export through index.ts
+- ✓ Unit tests verify realistic output and format correctness (23 tests)
+- ✓ Gherkin tests verify personal data generation (22 scenarios)
 
 ### File List
 
-_To be filled by dev agent_
+**New Files Created:**
+- packages/core/src/generator/generators/personal.ts
+- packages/core/src/generator/generators/personal.test.ts
+- packages/core/features/personal-generators.feature
+- packages/core/features/step_definitions/personal-generators.steps.ts
+
+**Modified Files:**
+- packages/core/src/generator/generators/index.ts (imports, registry, exports)
+- packages/core/features/support/tasks/GeneratorTasks.ts (added personal generator tasks)
+- packages/core/features/support/questions/GeneratorQuestions.ts (added personal validators)

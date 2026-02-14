@@ -15,6 +15,11 @@ import {
   uuid,
   sequential,
   nanoid,
+  firstName,
+  lastName,
+  fullName,
+  email,
+  phoneNumber,
 } from '../../../src/generator/generators';
 
 export class GenerateIntegers {
@@ -332,6 +337,155 @@ export class TryGenerateNanoIDWithInvalidLength {
         } catch (error) {
           generators.storeError(error as Error);
         }
+      },
+    );
+  }
+}
+
+// Personal Data Generators
+
+export class GenerateFirstNames {
+  public static count(count: number, seed: number, sequenceName: string): Interaction {
+    return Interaction.where(
+      `#actor generates ${count} first names`,
+      (actor: UsesAbilities) => {
+        const generators = UseGenerators.as(actor);
+        const rng = generators.createRNG(seed);
+
+        const values: string[] = [];
+        for (let i = 0; i < count; i++) {
+          values.push(firstName(rng));
+        }
+
+        generators.storeSequence(sequenceName, values);
+      },
+    );
+  }
+}
+
+export class GenerateLastNames {
+  public static count(count: number, seed: number, sequenceName: string): Interaction {
+    return Interaction.where(
+      `#actor generates ${count} last names`,
+      (actor: UsesAbilities) => {
+        const generators = UseGenerators.as(actor);
+        const rng = generators.createRNG(seed);
+
+        const values: string[] = [];
+        for (let i = 0; i < count; i++) {
+          values.push(lastName(rng));
+        }
+
+        generators.storeSequence(sequenceName, values);
+      },
+    );
+  }
+}
+
+export class GenerateFullNames {
+  public static count(count: number, seed: number, sequenceName: string): Interaction {
+    return Interaction.where(
+      `#actor generates ${count} full names`,
+      (actor: UsesAbilities) => {
+        const generators = UseGenerators.as(actor);
+        const rng = generators.createRNG(seed);
+
+        const values: string[] = [];
+        for (let i = 0; i < count; i++) {
+          values.push(fullName(rng));
+        }
+
+        generators.storeSequence(sequenceName, values);
+      },
+    );
+  }
+}
+
+export class GenerateEmails {
+  public static withDefaultDomain(
+    count: number,
+    seed: number,
+    sequenceName: string,
+  ): Interaction {
+    return Interaction.where(
+      `#actor generates ${count} emails with default domain`,
+      (actor: UsesAbilities) => {
+        const generators = UseGenerators.as(actor);
+        const rng = generators.createRNG(seed);
+
+        const values: string[] = [];
+        for (let i = 0; i < count; i++) {
+          values.push(email(rng));
+        }
+
+        generators.storeSequence(sequenceName, values);
+      },
+    );
+  }
+
+  public static withDomain(
+    domain: string,
+    count: number,
+    seed: number,
+    sequenceName: string,
+  ): Interaction {
+    return Interaction.where(
+      `#actor generates ${count} emails with domain ${domain}`,
+      (actor: UsesAbilities) => {
+        const generators = UseGenerators.as(actor);
+        const rng = generators.createRNG(seed);
+
+        const values: string[] = [];
+        for (let i = 0; i < count; i++) {
+          values.push(email(rng, domain));
+        }
+
+        generators.storeSequence(sequenceName, values);
+      },
+    );
+  }
+}
+
+export class GeneratePhoneNumbers {
+  public static withDefaultFormat(
+    count: number,
+    seed: number,
+    sequenceName: string,
+  ): Interaction {
+    return Interaction.where(
+      `#actor generates ${count} phone numbers with default format`,
+      (actor: UsesAbilities) => {
+        const generators = UseGenerators.as(actor);
+        const rng = generators.createRNG(seed);
+
+        const values: string[] = [];
+        for (let i = 0; i < count; i++) {
+          values.push(phoneNumber(rng));
+        }
+
+        generators.storeSequence(sequenceName, values);
+      },
+    );
+  }
+
+  public static withFormat(
+    format: string,
+    count: number,
+    seed: number,
+    sequenceName: string,
+  ): Interaction {
+    return Interaction.where(
+      `#actor generates ${count} phone numbers with format ${format}`,
+      (actor: UsesAbilities) => {
+        const generators = UseGenerators.as(actor);
+        const rng = generators.createRNG(seed);
+
+        const values: string[] = [];
+        for (let i = 0; i < count; i++) {
+          values.push(phoneNumber(rng, format));
+        }
+
+        generators.storeSequence(sequenceName, values);
       },
     );
   }

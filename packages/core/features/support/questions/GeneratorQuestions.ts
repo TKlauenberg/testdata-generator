@@ -289,7 +289,168 @@ export class GeneratedSequence {
       },
     );
   }
+
+  // Personal data validators
+
+  public static allNonEmptyStrings(
+    seqName: string,
+  ): ReturnType<typeof Question.about<boolean>> {
+    return Question.about<boolean>(
+      `whether all values in ${seqName} are non-empty strings`,
+      (actor: AnswersQuestions & UsesAbilities) => {
+        const generators = UseGenerators.as(actor);
+        const values = generators.getSequence(seqName) as string[];
+
+        return values.every((v) => typeof v === 'string' && v.length > 0);
+      },
+    );
+  }
+
+  public static atLeastNUniqueValues(
+    seqName: string,
+    minUnique: number,
+  ): ReturnType<typeof Question.about<boolean>> {
+    return Question.about<boolean>(
+      `whether ${seqName} has at least ${minUnique} unique values`,
+      (actor: AnswersQuestions & UsesAbilities) => {
+        const generators = UseGenerators.as(actor);
+        const values = generators.getSequence(seqName);
+
+        const uniqueValues = new Set(values);
+        return uniqueValues.size >= minUnique;
+      },
+    );
+  }
+
+  public static allContainOneSpace(
+    seqName: string,
+  ): ReturnType<typeof Question.about<boolean>> {
+    return Question.about<boolean>(
+      `whether all values in ${seqName} contain exactly one space`,
+      (actor: AnswersQuestions & UsesAbilities) => {
+        const generators = UseGenerators.as(actor);
+        const values = generators.getSequence(seqName) as string[];
+
+        return values.every((v) => {
+          const spaceCount = (v.match(/ /g) || []).length;
+          return spaceCount === 1;
+        });
+      },
+    );
+  }
+
+  public static allHaveTwoParts(
+    seqName: string,
+  ): ReturnType<typeof Question.about<boolean>> {
+    return Question.about<boolean>(
+      `whether all values in ${seqName} have at least two parts`,
+      (actor: AnswersQuestions & UsesAbilities) => {
+        const generators = UseGenerators.as(actor);
+        const values = generators.getSequence(seqName) as string[];
+
+        return values.every((v) => v.split(' ').length === 2);
+      },
+    );
+  }
+
+  public static allMatchEmailFormat(
+    seqName: string,
+  ): ReturnType<typeof Question.about<boolean>> {
+    return Question.about<boolean>(
+      `whether all values in ${seqName} match valid email format`,
+      (actor: AnswersQuestions & UsesAbilities) => {
+        const generators = UseGenerators.as(actor);
+        const values = generators.getSequence(seqName) as string[];
+
+        const emailRegex = /^[a-z0-9.-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
+        return values.every((v) => emailRegex.test(v));
+      },
+    );
+  }
+
+  public static allEndWithDomain(
+    seqName: string,
+    domain: string,
+  ): ReturnType<typeof Question.about<boolean>> {
+    return Question.about<boolean>(
+      `whether all values in ${seqName} end with @${domain}`,
+      (actor: AnswersQuestions & UsesAbilities) => {
+        const generators = UseGenerators.as(actor);
+        const values = generators.getSequence(seqName) as string[];
+
+        return values.every((v) => v.endsWith(`@${domain}`));
+      },
+    );
+  }
+
+  public static allAreLowercase(
+    seqName: string,
+  ): ReturnType<typeof Question.about<boolean>> {
+    return Question.about<boolean>(
+      `whether all values in ${seqName} are lowercase`,
+      (actor: AnswersQuestions & UsesAbilities) => {
+        const generators = UseGenerators.as(actor);
+        const values = generators.getSequence(seqName) as string[];
+
+        return values.every((v) => v === v.toLowerCase());
+      },
+    );
+  }
+
+  public static allMatchFirstnameLastnamePattern(
+    seqName: string,
+  ): ReturnType<typeof Question.about<boolean>> {
+    return Question.about<boolean>(
+      `whether all values in ${seqName} use firstname.lastname pattern`,
+      (actor: AnswersQuestions & UsesAbilities) => {
+        const generators = UseGenerators.as(actor);
+        const values = generators.getSequence(seqName) as string[];
+
+        // Pattern: word.word@domain (before @ symbol)
+        const pattern = /^[a-z0-9.-]+\.[a-z0-9.-]+@/;
+        return values.every((v) => pattern.test(v));
+      },
+    );
+  }
+
+  public static allMatchPhoneFormat(
+    seqName: string,
+    format: string,
+  ): ReturnType<typeof Question.about<boolean>> {
+    return Question.about<boolean>(
+      `whether all values in ${seqName} match format ${format}`,
+      (actor: AnswersQuestions & UsesAbilities) => {
+        const generators = UseGenerators.as(actor);
+        const values = generators.getSequence(seqName) as string[];
+
+        // Convert format to regex by replacing # with \d
+        const regexPattern = format.replace(/#/g, '\\d').replace(/[()]/g, '\\$&');
+        const regex = new RegExp(`^${regexPattern}$`);
+
+        return values.every((v) => regex.test(v));
+      },
+    );
+  }
+
+  public static allContainNDigits(
+    seqName: string,
+    expectedDigitCount: number,
+  ): ReturnType<typeof Question.about<boolean>> {
+    return Question.about<boolean>(
+      `whether all values in ${seqName} contain exactly ${expectedDigitCount} digits`,
+      (actor: AnswersQuestions & UsesAbilities) => {
+        const generators = UseGenerators.as(actor);
+        const values = generators.getSequence(seqName) as string[];
+
+        return values.every((v) => {
+          const digits = v.replace(/\D/g, '');
+          return digits.length === expectedDigitCount;
+        });
+      },
+    );
+  }
 }
+
 
 export class ErrorMessage {
   public static last(): ReturnType<typeof Question.about<string>> {

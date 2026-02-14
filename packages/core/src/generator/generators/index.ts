@@ -11,6 +11,7 @@ import {
 } from './primitives';
 
 import { uuid, sequential, nanoid } from './identity';
+import { firstName, lastName, fullName, email, phoneNumber } from './personal';
 import type { RNG } from '../rng';
 
 /**
@@ -62,6 +63,16 @@ export const GENERATOR_REGISTRY: GeneratorRegistry = new Map<
   ['nanoid', nanoid as GeneratorFunction],
   // Note: sequential uses wrapper due to stateful nature (see warning above)
   ['sequential', sequentialWrapper as GeneratorFunction],
+  // Personal data generators
+  ['firstName', firstName as GeneratorFunction],
+  ['first', firstName as GeneratorFunction],
+  ['lastName', lastName as GeneratorFunction],
+  ['last', lastName as GeneratorFunction],
+  ['fullName', fullName as GeneratorFunction],
+  ['name', fullName as GeneratorFunction],
+  ['email', email as GeneratorFunction],
+  ['phoneNumber', phoneNumber as GeneratorFunction],
+  ['phone', phoneNumber as GeneratorFunction],
 ]);
 
 // Export primitive generators
@@ -79,3 +90,6 @@ export {
 
 // Export identity generators
 export { uuid, sequential, nanoid };
+
+// Export personal generators
+export { firstName, lastName, fullName, email, phoneNumber };
