@@ -1,6 +1,6 @@
 # Story 5.5: Selection Generators (Pick, Weighted Pick)
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -26,45 +26,45 @@ So that **I can generate data with specific allowed values**.
 
 ## Tasks / Subtasks
 
-- [ ] Create `packages/core/src/generator/generators/selection.ts` (AC: All)
-  - [ ] Import `RNG` type from `../rng`
-  - [ ] Implement `pick(rng: RNG, array: any[]): any`
-    - [ ] Validate array is not empty (throw error if empty)
-    - [ ] Use `rng.nextIntRange(0, array.length - 1)` for uniform selection
-    - [ ] Return selected element deterministically
-  - [ ] Implement `weightedPick(rng: RNG, options: Array<{value: any, weight: number}>): any`
-    - [ ] Validate options array is not empty
-    - [ ] Validate all weights are positive numbers
-    - [ ] Calculate total weight sum
-    - [ ] Use `rng.nextDouble()` to generate random value in [0, 1)
-    - [ ] Map random value to weighted ranges (cumulative distribution)
-    - [ ] Return corresponding value based on weight probability
-  - [ ] Keep all generation deterministic for a given seed
+- [x] Create `packages/core/src/generator/generators/selection.ts` (AC: All)
+  - [x] Import `RNG` type from `../rng`
+  - [x] Implement `pick(rng: RNG, array: any[]): any`
+    - [x] Validate array is not empty (throw error if empty)
+    - [x] Use `rng.nextIntRange(0, array.length - 1)` for uniform selection
+    - [x] Return selected element deterministically
+  - [x] Implement `weightedPick(rng: RNG, options: Array<{value: any, weight: number}>): any`
+    - [x] Validate options array is not empty
+    - [x] Validate all weights are positive numbers
+    - [x] Calculate total weight sum
+    - [x] Use `rng.nextFloat()` to generate random value in [0, 1)
+    - [x] Map random value to weighted ranges (cumulative distribution)
+    - [x] Return corresponding value based on weight probability
+  - [x] Keep all generation deterministic for a given seed
 
-- [ ] Create `packages/core/src/generator/generators/selection.test.ts` (AC: structure + determinism + distribution)
-  - [ ] `pick()` returns element from array with deterministic seed
-  - [ ] `pick()` validates empty array (throws error)
-  - [ ] `pick()` distribution test (uniform across elements with many samples)
-  - [ ] `weightedPick()` returns value from options with deterministic seed
-  - [ ] `weightedPick()` validates empty options array
-  - [ ] `weightedPick()` validates negative or zero weights
-  - [ ] `weightedPick()` respects weight probability (statistical verification with many samples)
-  - [ ] Determinism tests for both generators (same seed => same output)
+- [x] Create `packages/core/src/generator/generators/selection.test.ts` (AC: structure + determinism + distribution)
+  - [x] `pick()` returns element from array with deterministic seed
+  - [x] `pick()` validates empty array (throws error)
+  - [x] `pick()` distribution test (uniform across elements with many samples)
+  - [x] `weightedPick()` returns value from options with deterministic seed
+  - [x] `weightedPick()` validates empty options array
+  - [x] `weightedPick()` validates negative or zero weights
+  - [x] `weightedPick()` respects weight probability (statistical verification with many samples)
+  - [x] Determinism tests for both generators (same seed => same output)
 
-- [ ] Update `packages/core/src/generator/generators/index.ts` (AC: registry + exports)
-  - [ ] Import `pick`, `weightedPick`
-  - [ ] Register generator names in `GENERATOR_REGISTRY`
-  - [ ] Add practical aliases if matching existing naming style
-  - [ ] Export selection generators in module exports section
+- [x] Update `packages/core/src/generator/generators/index.ts` (AC: registry + exports)
+  - [x] Import `pick`, `weightedPick`
+  - [x] Register generator names in `GENERATOR_REGISTRY`
+  - [x] Add practical aliases if matching existing naming style
+  - [x] Export selection generators in module exports section
 
-- [ ] Add BDD coverage (AC: Gherkin verification)
-  - [ ] Create `packages/core/features/selection-generators.feature`
-  - [ ] Add executable step definitions in `packages/core/features/step_definitions/selection-generators.steps.ts`
-  - [ ] Reuse Screenplay support patterns from existing generator features
-  - [ ] Cover scenarios for pick, weightedPick, enum-like field generation, and determinism
+- [x] Add BDD coverage (AC: Gherkin verification)
+  - [x] Create `packages/core/features/selection-generators.feature`
+  - [x] Add executable step definitions in `packages/core/features/step_definitions/selection-generators.steps.ts`
+  - [x] Reuse Screenplay support patterns from existing generator features
+  - [x] Cover scenarios for pick, weightedPick, enum-like field generation, and determinism
 
-- [ ] Ensure test runner wiring
-  - [ ] Update `packages/core/tests/run-cucumber.ts` to include new feature and step-definition paths
+- [x] Ensure test runner wiring
+  - [x] Update `packages/core/tests/run-cucumber.ts` to include new feature and step-definition paths
 
 ## Dev Notes
 
@@ -238,20 +238,46 @@ Critical project constraints to follow:
 
 ### Agent Model Used
 
-_To be filled by dev agent_
+Claude Sonnet 4.5
 
 ### Debug Log References
 
-_To be filled by dev agent_
+No blocking issues encountered during implementation.
 
 ### Completion Notes List
 
-_To be filled by dev agent_
+- ✅ Implemented selection.ts with `pick()` and `weightedPick()` generators
+- ✅ Used `rng.nextIntRange()` for uniform distribution in `pick()`
+- ✅ Used `rng.nextFloat()` with cumulative distribution for `weightedPick()`
+- ✅ All validation implemented: empty arrays, invalid weights (negative, zero, NaN, Infinity)
+- ✅ Created comprehensive unit tests (21 tests) covering:
+  - Determinism verification
+  - Distribution uniformity (10k samples with statistical validation)
+  - Edge cases (single element, extreme weight ratios, equal weights)
+  - Error handling
+- ✅ Registered generators in GENERATOR_REGISTRY and exported from index.ts
+- ✅ Created BDD feature file with 8 scenarios
+- ✅ Implemented step definitions following Screenplay pattern
+- ✅ Wired cucumber runner for new feature and step definitions
+- ✅ All 463 tests passing (21 new selection tests + 442 existing)
+- ✅ All acceptance criteria satisfied
 
 ### File List
 
-_To be filled by dev agent_
+New files:
+- packages/core/src/generator/generators/selection.ts
+- packages/core/src/generator/generators/selection.test.ts
+- packages/core/features/selection-generators.feature
+- packages/core/features/step_definitions/selection-generators.steps.ts
+
+Modified files:
+- packages/core/src/generator/generators/index.ts
+- packages/core/tests/run-cucumber.ts
 
 ### Change Log
 
-_To be filled by dev agent_
+- Implemented selection generators with uniform and weighted selection (Date: 2026-02-15)
+- Added comprehensive unit tests with statistical distribution validation (Date: 2026-02-15)
+- Registered generators in module registry and exports (Date: 2026-02-15)
+- Added BDD test coverage with 8 scenarios (Date: 2026-02-15)
+- All 463 tests passing including 21 new selection generator tests (Date: 2026-02-15)

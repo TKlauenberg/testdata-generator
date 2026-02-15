@@ -14,6 +14,7 @@ import { uuid, sequential, nanoid } from './identity';
 import { firstName, lastName, fullName, email, phoneNumber } from './personal';
 import { date, timestamp, dateRange, time, datetime } from './temporal';
 import { word, words, sentence, paragraph } from './text';
+import { pick, weightedPick } from './selection';
 import type { RNG } from '../rng';
 
 /**
@@ -86,6 +87,9 @@ export const GENERATOR_REGISTRY: GeneratorRegistry = new Map<
   ['words', words as GeneratorFunction],
   ['sentence', sentence as GeneratorFunction],
   ['paragraph', paragraph as GeneratorFunction],
+  // Selection generators
+  ['pick', pick as GeneratorFunction],
+  ['weightedPick', weightedPick as GeneratorFunction],
 ]);
 
 // Export primitive generators
@@ -112,3 +116,6 @@ export { date, timestamp, dateRange, time, datetime };
 
 // Export text generators
 export { word, words, sentence, paragraph };
+
+// Export selection generators
+export { pick, weightedPick, type WeightedOption } from './selection';
