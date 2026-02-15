@@ -17,6 +17,7 @@ Feature: Temporal Data Generation
       }
       """
     When QA Tester generates 10 records with seed 12345
+    And QA Tester generates another 10 records with seed 12345
     Then all records should have eventDate field
     And all eventDate values should be between 1 year ago and now
     And repeated generation with seed 12345 produces identical dates

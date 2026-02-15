@@ -13,6 +13,7 @@ import {
 import { uuid, sequential, nanoid } from './identity';
 import { firstName, lastName, fullName, email, phoneNumber } from './personal';
 import { date, timestamp, dateRange, time, datetime } from './temporal';
+import { word, words, sentence, paragraph } from './text';
 import type { RNG } from '../rng';
 
 /**
@@ -80,6 +81,11 @@ export const GENERATOR_REGISTRY: GeneratorRegistry = new Map<
   ['dateRange', dateRange as GeneratorFunction],
   ['time', time as GeneratorFunction],
   ['datetime', datetime as GeneratorFunction],
+  // Text generators
+  ['word', word as GeneratorFunction],
+  ['words', words as GeneratorFunction],
+  ['sentence', sentence as GeneratorFunction],
+  ['paragraph', paragraph as GeneratorFunction],
 ]);
 
 // Export primitive generators
@@ -103,3 +109,6 @@ export { firstName, lastName, fullName, email, phoneNumber };
 
 // Export temporal generators
 export { date, timestamp, dateRange, time, datetime };
+
+// Export text generators
+export { word, words, sentence, paragraph };

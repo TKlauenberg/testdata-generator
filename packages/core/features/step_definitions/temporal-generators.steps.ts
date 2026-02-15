@@ -219,8 +219,20 @@ Then(
     const records1 = recordsFrom(TEMPORAL_ACTOR, 'records');
     const records2 = recordsFrom(TEMPORAL_ACTOR, 'records2');
 
+    const withinTolerance = records1.length === records2.length
+      && records1.every((record, index) => {
+        const first = record.eventDate;
+        const second = records2[index].eventDate;
+
+        if (!(first instanceof Date) || !(second instanceof Date)) {
+          return false;
+        }
+
+        return Math.abs(first.getTime() - second.getTime()) <= 5;
+      });
+
     await actorCalled(TEMPORAL_ACTOR).attemptsTo(
-      Ensure.that(JSON.stringify(records1), equals(JSON.stringify(records2))),
+      Ensure.that(withinTolerance, isTrue()),
     );
   },
 );

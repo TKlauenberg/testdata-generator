@@ -86,7 +86,7 @@ development_status:
   5-1-identity-generators-uuid-sequential-nanoid: done
   5-2-personal-data-generators-names-emails: done
   5-3-temporal-generators-dates-timestamps-ranges: done
-  5-4-text-generators-words-sentences-paragraphs: ready-for-dev
+  5-4-text-generators-words-sentences-paragraphs: review
   5-5-selection-generators-pick-weighted-pick: backlog
   epic-5-retrospective: optional
 
