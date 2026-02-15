@@ -8,14 +8,14 @@ Feature: Selection Generators
 
   @selection @pick
   Scenario: Generate uniform selections deterministically
-    When QATester picks from array ["active", "inactive", "pending"] with seed 11111
-    And QATester picks from array ["active", "inactive", "pending"] with seed 11111 again
+    When QATester picks from array "[\"active\", \"inactive\", \"pending\"]" with seed 11111
+    And QATester picks from array "[\"active\", \"inactive\", \"pending\"]" with seed 11111 again
     Then both pick sequences should be identical
     And all picked values should be from the original array
 
   @selection @pick @distribution
   Scenario: Verify uniform distribution for pick
-    When QATester picks from array ["A", "B", "C", "D"] 1000 times with seed 22222
+    When QATester picks from array "[\"A\", \"B\", \"C\", \"D\"]" 1000 times with seed 22222
     Then each element should be selected approximately 25% of the time
 
   @selection @weightedPick
@@ -49,27 +49,27 @@ Feature: Selection Generators
     Given a schema with fields:
       """
       schema User {
-        id: uuid
-        status: pick(["active", "inactive", "pending", "suspended"])
+        id: string generator=uuid
+        status: string generator=pick(array=["active", "inactive", "pending", "suspended"])
       }
       """
-    When QATester generates 20 records with seed 55555
-    Then all "status" values should be one of ["active", "inactive", "pending", "suspended"]
+    When QATester generates 20 selection records with seed 55555
+    Then all "status" values should be one of "[\"active\", \"inactive\", \"pending\", \"suspended\"]"
 
   @selection @schema @weighted
   Scenario: Generate schema with weighted field for realistic distributions
     Given a schema with fields:
       """
       schema User {
-        id: uuid
-        accountType: weightedPick([
-          {value: "free", weight: 70},
-          {value: "premium", weight: 25},
-          {value: "enterprise", weight: 5}
+        id: string generator=uuid
+        accountType: string generator=weightedPick(options=[
+          {value="free", weight=70},
+          {value="premium", weight=25},
+          {value="enterprise", weight=5}
         ])
       }
       """
-    When QATester generates 100 records with seed 66666
+    When QATester generates 100 selection records with seed 66666
     Then approximately 70% of records should have accountType "free"
     And approximately 25% of records should have accountType "premium"
     And approximately 5% of records should have accountType "enterprise"

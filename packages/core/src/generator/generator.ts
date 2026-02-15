@@ -163,7 +163,7 @@ export function generateRecord(
  * @throws {Error} If generator type is unknown
  */
 function generateFieldValue(field: ValidatedField, rng: RNG): unknown {
-  const generatorType = field.resolvedType;
+  const generatorType = field.resolvedGenerator ?? field.resolvedType;
 
   // Lookup generator by type
   const generator = GENERATOR_REGISTRY.get(generatorType);
@@ -175,7 +175,7 @@ function generateFieldValue(field: ValidatedField, rng: RNG): unknown {
   }
 
   // Extract parameters and invoke
-  const params = extractParameters(field);
+  const params = extractParameters(field, generatorType);
   return generator(rng, ...params);
 }
 
@@ -191,13 +191,19 @@ function generateFieldValue(field: ValidatedField, rng: RNG): unknown {
  * @param field - Validated field with parameter information
  * @returns Array of positional parameters for generator function
  */
-function extractParameters(field: ValidatedField): unknown[] {
+function extractParameters(field: ValidatedField, generatorType: string): unknown[] {
   const params = field.node.generator?.parameters ?? [];
 
-  switch (field.resolvedType) {
+  switch (generatorType) {
     case 'int':
     case 'integer': {
       // randomInt(rng, min, max)
+      const min = findParam(params, 'min')?.value ?? 0;
+      const max = findParam(params, 'max')?.value ?? 100;
+      return [min, max];
+    }
+
+    case 'randomInt': {
       const min = findParam(params, 'min')?.value ?? 0;
       const max = findParam(params, 'max')?.value ?? 100;
       return [min, max];
@@ -212,9 +218,21 @@ function extractParameters(field: ValidatedField): unknown[] {
       return [min, max];
     }
 
+    case 'randomFloat': {
+      const min = findParam(params, 'min')?.value ?? 0.0;
+      const max = findParam(params, 'max')?.value ?? 1.0;
+      return [min, max];
+    }
+
     case 'string':
     case 'text': {
       // randomString(rng, length, charset?)
+      const length = findParam(params, 'length')?.value ?? 10;
+      const charset = findParam(params, 'charset')?.value;
+      return charset ? [length, charset] : [length];
+    }
+
+    case 'randomString': {
       const length = findParam(params, 'length')?.value ?? 10;
       const charset = findParam(params, 'charset')?.value;
       return charset ? [length, charset] : [length];
@@ -226,8 +244,24 @@ function extractParameters(field: ValidatedField): unknown[] {
       return [];
     }
 
+    case 'pick': {
+      const arrayParam = findParam(params, 'array')?.value ?? findParam(params, 'values')?.value;
+      if (!Array.isArray(arrayParam)) {
+        throw new Error(`Generator 'pick' requires parameter 'array' as an array`);
+      }
+      return [arrayParam];
+    }
+
+    case 'weightedPick': {
+      const optionsParam = findParam(params, 'options')?.value;
+      if (!Array.isArray(optionsParam)) {
+        throw new Error(`Generator 'weightedPick' requires parameter 'options' as an array`);
+      }
+      return [optionsParam];
+    }
+
     default:
-      throw new Error(`Unsupported generator type: ${field.resolvedType}`);
+      return params.map((parameter) => parameter.value);
   }
 }
 

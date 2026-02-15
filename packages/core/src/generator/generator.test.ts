@@ -221,6 +221,67 @@ describe('generateRecord', () => {
     expect(typeof record.defaultFloat).toBe('number');
     expect(typeof record.defaultString).toBe('string');
   });
+
+  it('should generate pick values from array parameter', () => {
+    const schema: ValidatedSchema = createMockSchema([
+      {
+        name: 'status',
+        type: 'pick',
+        params: [
+          { name: 'array', value: ['active', 'inactive', 'pending'] },
+        ],
+      },
+    ]);
+
+    const rng = createRNG(4242);
+    const record = generateRecord(schema, rng);
+
+    expect(['active', 'inactive', 'pending']).toContain(record.status);
+  });
+
+  it('should generate weightedPick values from options parameter', () => {
+    const schema: ValidatedSchema = createMockSchema([
+      {
+        name: 'accountType',
+        type: 'weightedPick',
+        params: [
+          {
+            name: 'options',
+            value: [
+              { value: 'free', weight: 70 },
+              { value: 'premium', weight: 25 },
+              { value: 'enterprise', weight: 5 },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    const rng = createRNG(4343);
+    const record = generateRecord(schema, rng);
+
+    expect(['free', 'premium', 'enterprise']).toContain(record.accountType);
+  });
+
+  it('should use resolvedGenerator when present', () => {
+    const schema = createMockSchema([
+      {
+        name: 'status',
+        type: 'string',
+        params: [{ name: 'array', value: ['active', 'inactive'] }],
+      },
+    ]);
+
+    schema.fields[0] = {
+      ...schema.fields[0],
+      resolvedGenerator: 'pick',
+    };
+
+    const rng = createRNG(4545);
+    const record = generateRecord(schema, rng);
+
+    expect(['active', 'inactive']).toContain(record.status);
+  });
 });
 
 /**

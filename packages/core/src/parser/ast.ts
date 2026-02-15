@@ -19,7 +19,12 @@ export interface ASTNode {
  * Literal value types that can appear in the DSL.
  * Used for generator parameters and constraint values.
  */
-export type LiteralValue = string | number | boolean;
+export type LiteralValue =
+  | string
+  | number
+  | boolean
+  | readonly LiteralValue[]
+  | { readonly [key: string]: LiteralValue };
 
 /**
  * Named parameter passed to a generator function.

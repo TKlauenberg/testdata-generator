@@ -2,7 +2,8 @@ import { Given, When, Then, DataTable } from '@cucumber/cucumber';
 import { actorCalled } from '@serenity-js/core';
 import { Ensure, equals, isTrue } from '@serenity-js/assertions';
 import { UseGenerators } from '../support/abilities/UseGenerators';
-import { pick, weightedPick, type WeightedOption } from '../../src/generator/generators';
+import { UseGenerateDataAPI } from '../support/abilities/UseGenerateDataAPI';
+import { pick, weightedPick, type WeightedOption } from '../../src/generator/generators/selection';
 
 type SelectionSnapshot = {
   pickValue: string;
@@ -194,50 +195,13 @@ Then('{string} should be selected approximately {int}% of the time', async (expe
 });
 
 Given('a schema with fields:', (schemaText: string) => {
-  // Store schema text for later use in generation
-  generatorAbility('QATester').storeSequence('schemaText', [schemaText]);
+  UseGenerateDataAPI.as(actorCalled('QATester')).storeDSLSource(schemaText);
 });
 
-When('{word} generates {int} records with seed {int}', (actorName: string, count: number, seed: number) => {
-  const schemaTextArray = generatorAbility(actorName).getSequence('schemaText');
-  const schemaText = schemaTextArray[0] as string;
-  const rng = generatorAbility(actorName).createRNG(seed);
-
-  // Parse the schema and extract field definitions
-  // For simplicity in BDD tests, we'll generate mock records based on the schema patterns
-  const records: Record<string, unknown>[] = [];
-
-  for (let i = 0; i < count; i++) {
-    const record: Record<string, any> = {};
-
-    // Extract pick generator calls from schema
-    const pickMatch = schemaText.match(/pick\(\[(.*?)\]\)/);
-    if (pickMatch) {
-      const values = pickMatch[1].split(',').map((v) => v.trim().replace(/["']/g, ''));
-      record.status = pick(rng, values);
-    }
-
-    // Extract weightedPick generator calls from schema
-    const weightedMatch = schemaText.match(/weightedPick\(\[([\s\S]*?)\]\)/);
-    if (weightedMatch) {
-      const optionsText = weightedMatch[1];
-      const options: WeightedOption<string>[] = [];
-
-      // Parse {value: "x", weight: n} format
-      const optionMatches = optionsText.matchAll(/\{value:\s*"([^"]+)",\s*weight:\s*(\d+)\}/g);
-      for (const match of optionMatches) {
-        options.push({ value: match[1], weight: Number(match[2]) });
-      }
-
-      if (options.length > 0) {
-        record.accountType = weightedPick(rng, options);
-      }
-    }
-
-    records.push(record);
-  }
-
-  generatorAbility(actorName).storeSequence('generatedRecords', records);
+When('{word} generates {int} selection records with seed {int}', async (actorName: string, count: number, seed: number) => {
+  const api = UseGenerateDataAPI.as(actorCalled(actorName));
+  await api.generateRecordsWithSeed(count, seed);
+  generatorAbility(actorName).storeSequence('generatedRecords', api.getRecords());
 });
 
 Then(
@@ -245,7 +209,10 @@ Then(
   async (fieldName: string, allowedValuesString: string) => {
     const records = generatorAbility('QATester').getSequence('generatedRecords') as Record<string, unknown>[];
     const allowedValues = parseArray(allowedValuesString);
-    const allValid = records.every((record) => allowedValues.includes(record[fieldName]));
+    const allValid = records.every((record) => {
+      const value = record[fieldName];
+      return typeof value === 'string' && allowedValues.includes(value);
+    });
 
     await actorCalled('QATester').attemptsTo(Ensure.that(allValid, isTrue()));
   },

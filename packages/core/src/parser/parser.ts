@@ -740,7 +740,7 @@ export class Parser {
       this._addError(
         `Expected value after '=' in parameter '${paramName}'`,
         this._currentToken().location,
-        ['Parameter values can be strings, numbers, or booleans'],
+        ['Parameter values can be strings, numbers, booleans, arrays, or objects'],
       );
       return { ok: false, errors: this._errors };
     }
@@ -755,9 +755,9 @@ export class Parser {
   }
 
   /**
-   * Parses a literal value (string, number, or boolean).
+   * Parses a literal value (string, number, boolean, array, or object).
    *
-   * Grammar: Literal ::= String | Number | Boolean
+   * Grammar: Literal ::= String | Number | Boolean | ArrayLiteral | ObjectLiteral
    */
   private _parseLiteral(): Result<LiteralValue, Diagnostic[]> {
     const token = this._currentToken();
@@ -784,12 +784,125 @@ export class Parser {
       }
     }
 
+    if (token.kind === 'operator' && token.value === '[') {
+      return this._parseArrayLiteral();
+    }
+
+    if (token.kind === 'operator' && token.value === '{') {
+      return this._parseObjectLiteral();
+    }
+
     this._addError(
-      `Expected literal value (string, number, or boolean), but found ${this._tokenDescription(token)}`,
+      `Expected literal value (string, number, boolean, array, or object), but found ${this._tokenDescription(token)}`,
       token.location,
-      ['Literals: "string", 42, true, false'],
+      ['Literals: "string", 42, true, false, [1, 2], {key="value"}'],
     );
     return { ok: false, errors: this._errors };
+  }
+
+  /**
+   * Parses an array literal.
+   *
+   * Grammar: ArrayLiteral ::= '[' (Literal (',' Literal)*)? ']'
+   */
+  private _parseArrayLiteral(): Result<LiteralValue, Diagnostic[]> {
+    const openBracket = this._expect('operator', '[');
+    if (!openBracket.ok) {
+      return openBracket;
+    }
+
+    const values: LiteralValue[] = [];
+
+    if (!this._check('operator', ']')) {
+      const firstValue = this._parseLiteral();
+      if (!firstValue.ok) {
+        return firstValue;
+      }
+      values.push(firstValue.value);
+
+      while (this._check('operator', ',')) {
+        this._advance();
+
+        const nextValue = this._parseLiteral();
+        if (!nextValue.ok) {
+          return nextValue;
+        }
+        values.push(nextValue.value);
+      }
+    }
+
+    const closeBracket = this._expect('operator', ']');
+    if (!closeBracket.ok) {
+      this._addError(`Expected ']' to close array literal`, this._currentToken().location, [
+        'Array syntax: ["a", "b", "c"]',
+      ]);
+      return { ok: false, errors: this._errors };
+    }
+
+    return { ok: true, value: values };
+  }
+
+  /**
+   * Parses an object literal.
+   *
+   * Grammar: ObjectLiteral ::= '{' (Identifier (':'|'=') Literal (',' Identifier (':'|'=') Literal)*)? '}'
+   */
+  private _parseObjectLiteral(): Result<LiteralValue, Diagnostic[]> {
+    const openBrace = this._expect('operator', '{');
+    if (!openBrace.ok) {
+      return openBrace;
+    }
+
+    const obj: Record<string, LiteralValue> = {};
+
+    if (!this._check('operator', '}')) {
+      while (true) {
+        const keyResult = this._expect('identifier');
+        if (!keyResult.ok) {
+          this._addError(`Expected object property name`, this._currentToken().location, [
+            'Object syntax: {value="free", weight=70}',
+          ]);
+          return { ok: false, errors: this._errors };
+        }
+
+        if (keyResult.value.kind !== 'identifier') {
+          this._addError(`Expected identifier for object property name`, keyResult.value.location, []);
+          return { ok: false, errors: this._errors };
+        }
+
+        if (!(this._check('operator', '=') || this._check('operator', ':'))) {
+          this._addError(
+            `Expected '=' or ':' after object property '${keyResult.value.value}'`,
+            this._currentToken().location,
+            ['Object syntax: {value="free", weight=70}'],
+          );
+          return { ok: false, errors: this._errors };
+        }
+        this._advance();
+
+        const valueResult = this._parseLiteral();
+        if (!valueResult.ok) {
+          return valueResult;
+        }
+
+        obj[keyResult.value.value] = valueResult.value;
+
+        if (!this._check('operator', ',')) {
+          break;
+        }
+        this._advance();
+      }
+    }
+
+    const closeBrace = this._expect('operator', '}');
+    if (!closeBrace.ok) {
+      this._addError(`Expected '}' to close object literal`, this._currentToken().location, [
+        'Object syntax: {value="free", weight=70}',
+      ]);
+      return { ok: false, errors: this._errors };
+    }
+
+    return { ok: true, value: obj };
   }
 
   /**

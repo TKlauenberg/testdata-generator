@@ -54,11 +54,14 @@ export const GENERATOR_REGISTRY: GeneratorRegistry = new Map<
   // Primitive generators
   ['int', randomInt as GeneratorFunction],
   ['integer', randomInt as GeneratorFunction],
+  ['randomInt', randomInt as GeneratorFunction],
   ['float', randomFloat as GeneratorFunction],
   ['double', randomFloat as GeneratorFunction],
   ['number', randomFloat as GeneratorFunction],
+  ['randomFloat', randomFloat as GeneratorFunction],
   ['string', randomString as GeneratorFunction],
   ['text', randomString as GeneratorFunction],
+  ['randomString', randomString as GeneratorFunction],
   ['bool', randomBoolean as GeneratorFunction],
   ['boolean', randomBoolean as GeneratorFunction],
   // Identity generators

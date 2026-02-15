@@ -1,6 +1,6 @@
 # Story 5.5: Selection Generators (Pick, Weighted Pick)
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -261,6 +261,12 @@ No blocking issues encountered during implementation.
 - ✅ Wired cucumber runner for new feature and step definitions
 - ✅ All 463 tests passing (21 new selection tests + 442 existing)
 - ✅ All acceptance criteria satisfied
+- ✅ Code review fixes applied:
+  - Replaced mocked schema parsing in BDD with real `generateData()` pipeline execution
+  - Added parser support for array/object generator parameters used by selection generators
+  - Updated generator engine to execute `resolvedGenerator` and support `pick`/`weightedPick` parameters
+  - Enabled strict Cucumber mode and resolved step ambiguity/undefined bindings
+  - Updated story file list and sprint tracking consistency
 
 ### File List
 
@@ -272,7 +278,15 @@ New files:
 
 Modified files:
 - packages/core/src/generator/generators/index.ts
+- packages/core/src/parser/ast.ts
+- packages/core/src/parser/parser.ts
+- packages/core/src/parser/parser.test.ts
+- packages/core/src/generator/generator.ts
+- packages/core/src/generator/generator.test.ts
+- packages/core/features/selection-generators.feature
+- packages/core/features/step_definitions/selection-generators.steps.ts
 - packages/core/tests/run-cucumber.ts
+- _bmad-output/implementation-artifacts/sprint-status.yaml
 
 ### Change Log
 
@@ -281,3 +295,4 @@ Modified files:
 - Registered generators in module registry and exports (Date: 2026-02-15)
 - Added BDD test coverage with 8 scenarios (Date: 2026-02-15)
 - All 463 tests passing including 21 new selection generator tests (Date: 2026-02-15)
+- Code review fixes: schema-level selection execution, parser literal support, generator parameter integration, strict Cucumber validation (Date: 2026-02-15)

@@ -36,7 +36,7 @@ function ident(value: string, line: number, column: number): Token {
 }
 
 // Helper: Create operator token
-function op(value: ':' | '{' | '}' | '=' | '(' | ')' | ',', line: number, column: number): Token {
+function op(value: ':' | '{' | '}' | '=' | '(' | ')' | ',' | '[' | ']', line: number, column: number): Token {
   return { kind: 'operator', value, location: loc(line, column, 1) };
 }
 
@@ -267,6 +267,86 @@ describe('Parser - Generator Specifications', () => {
       expect(field.generator?.parameters?.length).toBe(2);
       expect(field.generator?.parameters?.[0]).toEqual({ name: 'min', value: 18 });
       expect(field.generator?.parameters?.[1]).toEqual({ name: 'max', value: 100 });
+    }
+  });
+
+  test('parses field with array literal parameter', () => {
+    // schema User { status: string generator=pick(array=["active", "inactive"]) }
+    const tokens: Token[] = [
+      keyword('schema', 1, 1),
+      ident('User', 1, 8),
+      op('{', 1, 13),
+      ident('status', 1, 15),
+      op(':', 1, 21),
+      ident('string', 1, 23),
+      ident('generator', 1, 30),
+      op('=', 1, 39),
+      ident('pick', 1, 40),
+      op('(', 1, 44),
+      ident('array', 1, 45),
+      op('=', 1, 50),
+      op('[', 1, 51),
+      str('active', 1, 52),
+      op(',', 1, 60),
+      str('inactive', 1, 62),
+      op(']', 1, 72),
+      op(')', 1, 73),
+      op('}', 1, 75),
+      eof(1, 76),
+    ];
+
+    const result = parse(tokens);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const field = (result.value.declarations[0] as SchemaNode).fields[0];
+      expect(field.generator?.name).toBe('pick');
+      expect(field.generator?.parameters?.[0].name).toBe('array');
+      expect(field.generator?.parameters?.[0].value).toEqual(['active', 'inactive']);
+    }
+  });
+
+  test('parses field with object array literal parameter', () => {
+    // schema User { tier: string generator=weightedPick(options=[{value="free", weight=70}]) }
+    const tokens: Token[] = [
+      keyword('schema', 1, 1),
+      ident('User', 1, 8),
+      op('{', 1, 13),
+      ident('tier', 1, 15),
+      op(':', 1, 19),
+      ident('string', 1, 21),
+      ident('generator', 1, 28),
+      op('=', 1, 37),
+      ident('weightedPick', 1, 38),
+      op('(', 1, 50),
+      ident('options', 1, 51),
+      op('=', 1, 58),
+      op('[', 1, 59),
+      op('{', 1, 60),
+      ident('value', 1, 61),
+      op('=', 1, 66),
+      str('free', 1, 67),
+      op(',', 1, 73),
+      ident('weight', 1, 75),
+      op('=', 1, 81),
+      num(70, 1, 82),
+      op('}', 1, 84),
+      op(']', 1, 85),
+      op(')', 1, 86),
+      op('}', 1, 88),
+      eof(1, 89),
+    ];
+
+    const result = parse(tokens);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const field = (result.value.declarations[0] as SchemaNode).fields[0];
+      expect(field.generator?.name).toBe('weightedPick');
+      expect(field.generator?.parameters?.[0].name).toBe('options');
+      expect(field.generator?.parameters?.[0].value).toEqual([
+        { value: 'free', weight: 70 },
+      ]);
     }
   });
 

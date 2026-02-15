@@ -44,7 +44,7 @@ const options: IRunOptions = {
     filterStacktraces: true,
     retry: 0,
     retryTagFilter: '',
-    strict: false,
+    strict: true,
     worldParameters: {},
   },
 };
