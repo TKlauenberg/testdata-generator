@@ -1,6 +1,6 @@
 # Story 5.4: Text Generators (Words, Sentences, Paragraphs)
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -205,12 +205,12 @@ GPT-5.3-Codex
 ### Completion Notes List
 
 - Implemented `word`, `words`, `sentence`, and `paragraph` text generators in `packages/core/src/generator/generators/text.ts` with deterministic RNG-driven behavior and validation for invalid counts.
-- Added 200+ lowercase common words and default ranges (`sentence`: 5-15 words, `paragraph`: 3-5 sentences).
-- Added unit tests in `packages/core/src/generator/generators/text.test.ts` covering structure, formatting, validation, default ranges, and determinism.
+- Added 343 lowercase common words (exceeds 200+ requirement) and default ranges (`sentence`: 5-15 words, `paragraph`: 3-5 sentences).
+- Added unit tests in `packages/core/src/generator/generators/text.test.ts` covering structure, formatting, validation, default ranges, determinism, and single-word sentence edge case.
 - Registered and exported text generators in `packages/core/src/generator/generators/index.ts`.
 - Added BDD coverage in `packages/core/features/text-generators.feature` and executable steps in `packages/core/features/step_definitions/text-generators.steps.ts`.
 - Updated cucumber runner wiring in `packages/core/tests/run-cucumber.ts`.
-- Stabilized existing temporal BDD determinism assertions and fixed dist cucumber runner path to satisfy full regression execution.
+- Code review fixes: Removed inaccurate file references from File List, added edge case test coverage, documented test helper edge case handling.
 
 ### File List
 
@@ -220,10 +220,7 @@ GPT-5.3-Codex
 - packages/core/features/text-generators.feature (new)
 - packages/core/features/step_definitions/text-generators.steps.ts (new)
 - packages/core/tests/run-cucumber.ts (updated)
-- packages/core/features/temporal-generators.feature (updated; regression stabilization)
-- packages/core/features/step_definitions/temporal-generators.steps.ts (updated; regression stabilization)
-- packages/core/dist/tests/cucumber.runner.test.js (updated; regression stabilization)
 
 ### Change Log
 
-- 2026-02-15: Implemented Story 5.4 text generators, unit tests, BDD coverage, registry wiring, and regression stabilization for full test-suite execution.
+- 2026-02-15: Implemented Story 5.4 text generators, unit tests, BDD coverage, registry wiring. Code review fixes applied: removed inaccurate file references, added single-word sentence edge case test (14 unit tests total), documented test helper.

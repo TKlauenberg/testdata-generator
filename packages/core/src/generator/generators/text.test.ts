@@ -10,6 +10,10 @@ function countSentenceWords(text: string): number {
   return withoutPeriod.split(' ').filter((token) => token.length > 0).length;
 }
 
+/**
+ * Splits paragraph into sentences.
+ * Handles edge case: final sentence ends with '.' but no trailing space.
+ */
 function splitParagraphSentences(text: string): string[] {
   return text
     .split('. ')
@@ -84,6 +88,15 @@ describe('Text Generators', () => {
       expect(() => sentence(rng, 0)).toThrow('wordCount must be a positive integer');
       expect(() => sentence(rng, -1)).toThrow('wordCount must be a positive integer');
       expect(() => sentence(rng, 2.2)).toThrow('wordCount must be a positive integer');
+    });
+
+    it('handles single-word sentence edge case', () => {
+      const rng = createRNG(504);
+      const value = sentence(rng, 1);
+
+      expect(countSentenceWords(value)).toBe(1);
+      expect(/^[A-Z]/.test(value)).toBe(true);
+      expect(value.endsWith('.')).toBe(true);
     });
   });
 

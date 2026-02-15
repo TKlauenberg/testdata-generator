@@ -5,7 +5,7 @@ const MAX_SENTENCE_WORDS = 15;
 const MIN_PARAGRAPH_SENTENCES = 3;
 const MAX_PARAGRAPH_SENTENCES = 5;
 
-export const COMMON_WORDS: readonly string[] = [
+export const COMMON_WORDS = [
   'about', 'above', 'across', 'action', 'active', 'actor', 'actual', 'adapt', 'admin', 'after',
   'again', 'agent', 'agree', 'ahead', 'alert', 'allow', 'alpha', 'among', 'angel', 'angle',
   'apply', 'array', 'asset', 'audio', 'audit', 'avoid', 'award', 'aware', 'basic', 'batch',
