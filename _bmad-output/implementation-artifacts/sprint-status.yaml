@@ -93,7 +93,7 @@ development_status:
   epic-6: in-progress
   6-1-template-engine-for-cross-field-references: done
   6-2-field-generation-order-resolver: done
-  6-3-schema-relationship-support: backlog
+  6-3-schema-relationship-support: ready-for-dev
   epic-6-retrospective: optional
 
   epic-7: backlog
