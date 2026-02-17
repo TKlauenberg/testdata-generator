@@ -474,6 +474,14 @@ describe('sortFieldsByDependency', () => {
     expect(() => sortFieldsByDependency([a, b])).toThrow(/b/);
   });
 
+  it('should throw a clear error when a field references a missing dependency', () => {
+    const a = makeField('a', ['missingField']);
+
+    expect(() => sortFieldsByDependency([a])).toThrow(/invalid field dependency/i);
+    expect(() => sortFieldsByDependency([a])).toThrow(/a/);
+    expect(() => sortFieldsByDependency([a])).toThrow(/missingField/);
+  });
+
   it('should produce correct record via generateRecord when email is declared before firstName', () => {
     // Integration check: sortFieldsByDependency is wired into generateRecord()
     const schema = createMockSchema([

@@ -130,6 +130,12 @@ export function sortFieldsByDependency(
 
   for (const field of fields) {
     for (const dep of field.templateReferences) {
+      if (!byName.has(dep)) {
+        throw new Error(
+          `Invalid field dependency: field '${field.node.name}' references missing field '${dep}'`
+        );
+      }
+
       inDegree.set(field.node.name, (inDegree.get(field.node.name) ?? 0) + 1);
       dependents.get(dep)?.push(field.node.name);
     }

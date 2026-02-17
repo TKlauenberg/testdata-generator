@@ -1,6 +1,6 @@
 # Story 6.2: Field Generation Order Resolver
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -197,14 +197,38 @@ claude-sonnet-4-6
 - Updated the repurposed test: schema sets `templateReferences: ['firstName']` on the `email` field so the sorter has the dependency info it needs; asserts `record.email === 'Ada@test.com'`.
 - Added 7 new unit tests in the `sortFieldsByDependency` describe block covering: stable no-dep order, linear chain, fan-in, multiple independent chains, empty list, runtime cycle guard (×2 assertion), and an integration check via `generateRecord`.
 - Added 1 new BDD scenario to `cross-field-templates.feature` (out-of-order field declaration). Existing step definitions were sufficient — no new steps needed.
-- All 34 Bun unit tests pass (0 fail). BDD runner (`bun test packages/core/tests/cucumber.runner.test.ts`) passes (1 pass, 0 fail).
+- All 35 Bun unit tests pass (0 fail), including new coverage for missing dependency guard in `sortFieldsByDependency`.
+- Code review follow-up fix applied: `sortFieldsByDependency` now throws a dedicated runtime integrity error when `templateReferences` contains a missing field name, preventing misleading cycle errors.
 
 ### File List
 
 - `packages/core/src/generator/generator.ts` — added `sortFieldsByDependency`, updated `generateRecord` to use it, updated JSDoc
 - `packages/core/src/generator/generator.test.ts` — updated broken-behavior test to assert success; added `sortFieldsByDependency` unit test suite (7 tests)
 - `packages/core/features/cross-field-templates.feature` — added out-of-order dependency BDD scenario
+- `_bmad-output/implementation-artifacts/6-2-field-generation-order-resolver.md` — status updated to done; review findings and fix summary recorded
+- `_bmad-output/implementation-artifacts/sprint-status.yaml` — story status synced to done
+
+## Senior Developer Review (AI)
+
+### Reviewer
+
+- Amelia (Developer Agent)
+
+### Date
+
+- 2026-02-17
+
+### Outcome
+
+- Approved after fixes
+
+### Findings Resolved
+
+- Medium: runtime guard now distinguishes missing dependencies from circular dependencies in `sortFieldsByDependency`
+- Medium: story File List now includes all changed artifacts (story + sprint status)
+- Medium: review traceability expanded in Dev Agent Record completion notes
 
 ## Change Log
 
 - 2026-02-17: Implemented Story 6.2 — `sortFieldsByDependency` (Kahn's BFS topological sort) added to `generator.ts` and integrated into `generateRecord()`. Template fields now resolve correctly regardless of DSL declaration order. 34 unit tests + BDD suite passing.
+- 2026-02-17: Code review remediation — added explicit missing-dependency runtime guard in field order resolver, added unit test coverage, updated story metadata/File List, and finalized story status to done.
