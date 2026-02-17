@@ -88,7 +88,7 @@ development_status:
   5-3-temporal-generators-dates-timestamps-ranges: done
   5-4-text-generators-words-sentences-paragraphs: done
   5-5-selection-generators-pick-weighted-pick: done
-  epic-5-retrospective: optional
+  epic-5-retrospective: done
 
   epic-6: backlog
   6-1-template-engine-for-cross-field-references: backlog
