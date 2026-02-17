@@ -178,12 +178,79 @@ describe('analyze()', () => {
   });
 
   describe('template reference validation', () => {
-    test('detects undefined template field reference', () => {
+    test('detects undefined template field reference in direct string parameter', () => {
       const program = createProgram([
         createSchema('User', [
           createField('firstName', 'string'),
           createField('fullName', 'string', 'randomString', [
             { name: 'template', value: '{{missingField}}' },
+          ]),
+        ]),
+      ]);
+
+      const result = analyze(program);
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        const templateError = result.errors.find(
+          (error) => error.code === 'analyzer.undefinedTemplateField',
+        );
+        expect(templateError).toBeDefined();
+        expect(templateError?.message).toContain('missingField');
+      }
+    });
+
+    test('detects undefined template field reference inside a pick array parameter (AC4)', () => {
+      // pick(array=["{{missingField}}"]) — template reference is inside an array value,
+      // not a top-level string parameter. Previously this was silently skipped.
+      const program = createProgram([
+        createSchema('User', [
+          createField('firstName', 'string'),
+          createField('email', 'string', 'pick', [
+            { name: 'array', value: ['{{firstName}}.{{missingField}}@test.com'] },
+          ]),
+        ]),
+      ]);
+
+      const result = analyze(program);
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        const templateError = result.errors.find(
+          (error) => error.code === 'analyzer.undefinedTemplateField',
+        );
+        expect(templateError).toBeDefined();
+        expect(templateError?.message).toContain('missingField');
+      }
+    });
+
+    test('accepts valid template references inside a pick array parameter', () => {
+      const program = createProgram([
+        createSchema('User', [
+          createField('firstName', 'string'),
+          createField('lastName', 'string'),
+          createField('email', 'string', 'pick', [
+            { name: 'array', value: ['{{firstName}}.{{lastName}}@test.com'] },
+          ]),
+        ]),
+      ]);
+
+      const result = analyze(program);
+
+      expect(result.ok).toBe(true);
+    });
+
+    test('detects undefined template reference nested inside a weightedPick options object', () => {
+      const program = createProgram([
+        createSchema('User', [
+          createField('firstName', 'string'),
+          createField('handle', 'string', 'weightedPick', [
+            {
+              name: 'options',
+              value: [
+                { value: '{{firstName}}_{{missingField}}', weight: 100 },
+              ],
+            },
           ]),
         ]),
       ]);

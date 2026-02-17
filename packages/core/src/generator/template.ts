@@ -1,5 +1,26 @@
-const TEMPLATE_REFERENCE_PATTERN = /\{\{\s*([^}]+?)\s*\}\}/g;
+/**
+ * Returns true if a string contains at least one `{{...}}` template placeholder.
+ *
+ * Use this for fast detection before invoking evaluateTemplate.
+ */
+export function hasTemplateReferences(value: string): boolean {
+  return /\{\{\s*[^}]+\s*\}\}/.test(value);
+}
 
+/**
+ * Converts an arbitrary context value to a string for template substitution.
+ *
+ * Conversion rules:
+ * - `string` → returned as-is
+ * - `number`, `boolean`, `bigint` → `String(value)`
+ * - `null` → the literal string `"null"`
+ * - `undefined` → the literal string `"undefined"`
+ * - objects / arrays → `JSON.stringify(value)`
+ *
+ * **Note:** `null` and `undefined` resolve to the literal strings `"null"` and
+ * `"undefined"`. If a template field can be null/undefined, consider guarding
+ * the field value before generation or treating it as a schema error.
+ */
 function toTemplateString(value: unknown): string {
   if (typeof value === 'string') {
     return value;
@@ -24,7 +45,11 @@ export function evaluateTemplate(
   template: string,
   context: Record<string, unknown>,
 ): string {
-  return template.replace(TEMPLATE_REFERENCE_PATTERN, (_match, rawKey: string): string => {
+  // Create the regex per-call (no /g-flag module-scope singleton) so that
+  // `lastIndex` state is never shared across concurrent or sequential calls.
+  const pattern = /\{\{\s*([^}]+?)\s*\}\}/g;
+
+  return template.replace(pattern, (_match, rawKey: string): string => {
     const key = rawKey.trim();
 
     if (!Object.prototype.hasOwnProperty.call(context, key)) {

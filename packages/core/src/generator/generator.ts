@@ -15,7 +15,7 @@ import { createRNG } from './rng';
 import type { ValidatedSchema, ValidatedField, ValidatedProgram } from '../analyzer/types';
 import type { GeneratorParameter } from '../parser/ast';
 import { GENERATOR_REGISTRY } from './generators';
-import { evaluateTemplate } from './template';
+import { evaluateTemplate, hasTemplateReferences } from './template';
 
 /**
  * Generated record is a plain JavaScript object with field names as keys.
@@ -282,7 +282,7 @@ function extractParameters(
 
 function resolveTemplateValue(value: unknown, context: GeneratedRecord): unknown {
   if (typeof value === 'string') {
-    if (/\{\{\s*[^}]+\s*\}\}/.test(value)) {
+    if (hasTemplateReferences(value)) {
       return evaluateTemplate(value, context);
     }
 

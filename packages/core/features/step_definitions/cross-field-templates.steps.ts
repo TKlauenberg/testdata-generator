@@ -2,7 +2,6 @@ import { Given, Then, When } from '@cucumber/cucumber';
 import { actorCalled } from '@serenity-js/core';
 import { Ensure, equals, isTrue } from '@serenity-js/assertions';
 import { UseGenerateDataAPI } from '../support/abilities/UseGenerateDataAPI';
-import { ValidationError } from '../../src/generateData';
 
 Given('the actor {word}', (actorName: string) => {
   actorCalled(actorName).whoCan(UseGenerateDataAPI.withDefaultCapabilities());
@@ -13,6 +12,11 @@ Given('{word} has DSL source code:', (actorName: string, docString: string) => {
   api.storeDSLSource(docString);
 });
 
+// Intentionally identical to the non-error variant at setup time: the DSL content itself is what
+// makes the scenario "semantically erroneous" (it contains template references to undeclared
+// fields). The error is now caught at semantic analysis time (ValidationError) because the
+// analyzer scans template patterns inside generator parameter strings such as
+// pick(array=["{{field}}"]) — see AC4 fix in Story 6.1.
 Given('{word} has DSL source code with semantic error:', (actorName: string, docString: string) => {
   const api = UseGenerateDataAPI.as(actorCalled(actorName));
   api.storeDSLSource(docString);
@@ -42,14 +46,6 @@ When(
 When('{word} attempts to generate records using the public generateData API', async (actorName: string) => {
   const api = UseGenerateDataAPI.as(actorCalled(actorName));
   await api.attemptGenerateRecords(1);
-});
-
-Then('a ValidationError should be thrown', async () => {
-  const api = UseGenerateDataAPI.as(actorCalled('QATester'));
-  const lastError = api.getLastError();
-  await actorCalled('QATester').attemptsTo(
-    Ensure.that(lastError instanceof ValidationError, equals(true)),
-  );
 });
 
 Then('a generation error should be thrown', async () => {

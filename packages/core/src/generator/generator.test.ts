@@ -339,6 +339,29 @@ describe('generateRecord', () => {
     expect(() => generateRecord(schema, rng)).toThrow(/email/i);
     expect(() => generateRecord(schema, rng)).toThrow(/lastName/i);
   });
+
+  it('should throw a clear error when a template field is declared before its dependency (ordering issue)', () => {
+    // email references {{firstName}} but is declared BEFORE firstName in field order.
+    // Because generateRecord builds context incrementally, firstName is not yet in context
+    // when email is processed, so evaluateTemplate must throw a missing-reference error.
+    const schema: ValidatedSchema = createMockSchema([
+      {
+        name: 'email',
+        type: 'pick',
+        params: [{ name: 'array', value: ['{{firstName}}@test.com'] }],
+      },
+      {
+        name: 'firstName',
+        type: 'pick',
+        params: [{ name: 'array', value: ['Ada'] }],
+      },
+    ]);
+
+    const rng = createRNG(1234);
+
+    // Should fail with a message mentioning the missing reference, not a generic crash
+    expect(() => generateRecord(schema, rng)).toThrow(/firstName/i);
+  });
 });
 
 /**
@@ -574,6 +597,40 @@ describe('generate (streaming)', () => {
       },
       { timeout: 60000 } // 60 second timeout for 1M records
     );
+  });
+
+  describe('template field resolution', () => {
+    it('should resolve template references through the async generate() pipeline', async () => {
+      // Verifies that template substitution works end-to-end through the streaming path,
+      // not just through the synchronous generateRecord() helper.
+      const program = createMockProgram([
+        {
+          name: 'User',
+          fields: [
+            {
+              name: 'firstName',
+              type: 'pick',
+              params: [{ name: 'array', value: ['Ada'] }],
+            },
+            {
+              name: 'email',
+              type: 'pick',
+              params: [{ name: 'array', value: ['{{firstName}}@test.com'] }],
+            },
+          ],
+        },
+      ]);
+
+      const records: Record<string, unknown>[] = [];
+      for await (const record of generate(program, { count: 3, seed: 7777 })) {
+        records.push(record);
+      }
+
+      expect(records).toHaveLength(3);
+      for (const record of records) {
+        expect(record.email).toBe('Ada@test.com');
+      }
+    });
   });
 
   describe('multiple schemas', () => {

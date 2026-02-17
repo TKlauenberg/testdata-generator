@@ -1,6 +1,6 @@
 # Story 6.1: Template Engine for Cross-Field References
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -65,6 +65,16 @@ so that **I can generate realistic related data like email from first and last n
     - [x] missing referenced field produces actionable error
     - [x] deterministic output with fixed seed
   - [x] Update `packages/core/tests/run-cucumber.ts` feature wiring.
+
+### Review Follow-ups (AI) — 2026-02-17
+
+- [x] [AI-Review][HIGH] Regex duplication: `resolveTemplateValue` in generator.ts had its own inline detection regex that diverged from `template.ts` pattern (greedy vs non-greedy). Fixed by exporting `hasTemplateReferences()` from `template.ts` and using it in `generator.ts`. [packages/core/src/generator/template.ts, packages/core/src/generator/generator.ts]
+- [x] [AI-Review][HIGH] Dead code: `ValidationError` import and `Then 'a ValidationError should be thrown'` step in `cross-field-templates.steps.ts` were never referenced by any BDD scenario. Removed both. [packages/core/features/step_definitions/cross-field-templates.steps.ts]
+- [x] [AI-Review][MEDIUM] AC4 coverage gap documented: the analyzer validates template references in `template`-type generator fields but NOT inside generator parameter strings (e.g. `pick(array=["{{field}}"])`). The BDD "missing referenced field" scenario exercises runtime error, not semantic analysis. **Fixed:** refactored `getTemplateReferencesForField` in `packages/core/src/analyzer/analyzer.ts` to recursively scan string values inside array and object parameter values. Updated `ValidationError.message` to include diagnostic error text so the BDD assertion `the error message should mention "missingField"` still passes (error now caught at analysis time, not runtime). Added 3 new analyzer tests (AC4 pick array, weightedPick nested object, valid pick array). [packages/core/src/analyzer/analyzer.ts, packages/core/src/generateData.ts, packages/core/src/analyzer/analyzer.test.ts, packages/core/features/step_definitions/cross-field-templates.steps.ts]
+- [x] [AI-Review][MEDIUM] Out-of-order field reference not tested: added unit test verifying that a template field declared before its dependency produces a clear error mentioning the missing reference. [packages/core/src/generator/generator.test.ts:L328]
+- [x] [AI-Review][MEDIUM] No streaming coverage of template resolution: added `generate (streaming) > template field resolution` test to verify template substitution works end-to-end through the async `generate()` pipeline, not just `generateRecord()`. [packages/core/src/generator/generator.test.ts]
+- [x] [AI-Review][LOW] `toTemplateString(null/undefined)` produce the literal strings `"null"` and `"undefined"`— untested and undocumented. Added JSDoc to `toTemplateString` documenting the conversion rules and two unit tests covering `null` and explicit `undefined` context values. [packages/core/src/generator/template.ts, packages/core/src/generator/template.test.ts]
+- [x] [AI-Review][LOW] Module-scope `/g`-flag regex `TEMPLATE_REFERENCE_PATTERN` is a footgun with `.exec()`/`.test()` (lastIndex state). Replaced with a per-call local `const pattern = /…/g` inside `evaluateTemplate` and removed the module-scope constant. [packages/core/src/generator/template.ts]
 
 ## Dev Notes
 
@@ -207,7 +217,13 @@ GPT-5.3-Codex
 - `packages/core/features/cross-field-templates.feature`
 - `packages/core/features/step_definitions/cross-field-templates.steps.ts`
 - `packages/core/tests/run-cucumber.ts`
+- `packages/core/src/analyzer/analyzer.ts`
+- `packages/core/src/analyzer/analyzer.test.ts`
+- `packages/core/src/generateData.ts`
 
 ### Change Log
 
 - 2026-02-17: Implemented Story 6.1 template engine support, integrated generator runtime substitution, added unit/BDD coverage, and validated full regression suite.
+- 2026-02-17: Code review (AI, Amelia/dev agent): fixed regex duplication (H1), removed dead ValidationError step+import (H2/H3), added out-of-order field test (M1), added streaming template pipeline test (M3), documented AC4 analyzer gap and `with semantic error` step intent (M2). Two LOW items deferred to Story 6.2. Story set to in-progress pending AC4 analyzer gap resolution.
+- 2026-02-17: Fixed remaining LOW items: added JSDoc + two tests for `null`/`undefined` toTemplateString behaviour (L1); replaced module-scope `/g` regex with per-call local constant to eliminate shared lastIndex footgun (L2).
+- 2026-02-17: Fixed AC4 (M2): refactored `getTemplateReferencesForField` to recursively scan template patterns in array/object generator parameters; updated `ValidationError.message` to include diagnostic text; added 3 analyzer tests. All issues resolved. Story status → done.

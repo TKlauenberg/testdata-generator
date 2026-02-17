@@ -348,25 +348,22 @@ function getTemplateReferencesForSchema(schema: SchemaNode): TemplateReference[]
   return references;
 }
 
-function getTemplateReferencesForField(field: SchemaNode['fields'][number]): TemplateReference[] {
-  if (!field.generator?.parameters) {
-    return [];
-  }
-
-  const references: TemplateReference[] = [];
-
-  for (const parameter of field.generator.parameters) {
-    if (typeof parameter.value !== 'string') {
-      continue;
-    }
-
-    const matches = parameter.value.matchAll(/\{\{\s*([^}]+)\s*\}\}/g);
+/**
+ * Recursively extracts template references from any parameter value.
+ *
+ * Handles strings, arrays, and nested objects so that generators like
+ * `pick(array=["{{field}}"])` are scanned in the same way as a top-level
+ * string parameter value.
+ */
+function extractTemplateReferencesFromValue(value: unknown): TemplateReference[] {
+  if (typeof value === 'string') {
+    const references: TemplateReference[] = [];
+    const matches = value.matchAll(/\{\{\s*([^}]+)\s*\}\}/g);
     for (const match of matches) {
       const raw = match[1]?.trim();
       if (!raw) {
         continue;
       }
-
       if (raw.includes('.')) {
         const [schema, fieldName] = raw.split('.', 2);
         if (schema && fieldName) {
@@ -374,12 +371,32 @@ function getTemplateReferencesForField(field: SchemaNode['fields'][number]): Tem
           continue;
         }
       }
-
       references.push({ raw, field: raw });
     }
+    return references;
   }
 
-  return references;
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => extractTemplateReferencesFromValue(item));
+  }
+
+  if (value !== null && typeof value === 'object') {
+    return Object.values(value as Record<string, unknown>).flatMap((v) =>
+      extractTemplateReferencesFromValue(v),
+    );
+  }
+
+  return [];
+}
+
+function getTemplateReferencesForField(field: SchemaNode['fields'][number]): TemplateReference[] {
+  if (!field.generator?.parameters) {
+    return [];
+  }
+
+  return field.generator.parameters.flatMap((parameter) =>
+    extractTemplateReferencesFromValue(parameter.value),
+  );
 }
 
 function buildDependencyGraph(

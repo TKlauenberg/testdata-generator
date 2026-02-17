@@ -51,4 +51,18 @@ describe('evaluateTemplate', () => {
       }),
     ).toThrow(/missingField/i);
   });
+
+  it('converts null context value to the literal string "null"', () => {
+    const result = evaluateTemplate('value={{field}}', { field: null });
+    expect(result).toBe('value=null');
+  });
+
+  it('converts undefined context value to the literal string "undefined"', () => {
+    // undefined must be explicitly present as an own property to reach toTemplateString;
+    // a missing key throws a missing-reference error instead.
+    const ctx = {} as Record<string, unknown>;
+    Object.defineProperty(ctx, 'field', { value: undefined, enumerable: true, configurable: true });
+    const result = evaluateTemplate('value={{field}}', ctx);
+    expect(result).toBe('value=undefined');
+  });
 });
