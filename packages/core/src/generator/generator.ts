@@ -15,6 +15,7 @@ import { createRNG } from './rng';
 import type { ValidatedSchema, ValidatedField, ValidatedProgram } from '../analyzer/types';
 import type { GeneratorParameter } from '../parser/ast';
 import { GENERATOR_REGISTRY } from './generators';
+import { evaluateTemplate } from './template';
 
 /**
  * Generated record is a plain JavaScript object with field names as keys.
@@ -135,7 +136,7 @@ export function generateRecord(
 
     try {
       // Generate value for this field
-      const value = generateFieldValue(field, rng);
+      const value = generateFieldValue(field, rng, record);
 
       // Assign to record
       record[fieldName] = value;
@@ -162,7 +163,11 @@ export function generateRecord(
  *
  * @throws {Error} If generator type is unknown
  */
-function generateFieldValue(field: ValidatedField, rng: RNG): unknown {
+function generateFieldValue(
+  field: ValidatedField,
+  rng: RNG,
+  context: GeneratedRecord,
+): unknown {
   const generatorType = field.resolvedGenerator ?? field.resolvedType;
 
   // Lookup generator by type
@@ -175,7 +180,7 @@ function generateFieldValue(field: ValidatedField, rng: RNG): unknown {
   }
 
   // Extract parameters and invoke
-  const params = extractParameters(field, generatorType);
+  const params = extractParameters(field, generatorType, context);
   return generator(rng, ...params);
 }
 
@@ -191,21 +196,30 @@ function generateFieldValue(field: ValidatedField, rng: RNG): unknown {
  * @param field - Validated field with parameter information
  * @returns Array of positional parameters for generator function
  */
-function extractParameters(field: ValidatedField, generatorType: string): unknown[] {
+function extractParameters(
+  field: ValidatedField,
+  generatorType: string,
+  context: GeneratedRecord,
+): unknown[] {
   const params = field.node.generator?.parameters ?? [];
+
+  const resolvedParams = params.map((parameter) => ({
+    ...parameter,
+    value: resolveTemplateValue(parameter.value, context),
+  }));
 
   switch (generatorType) {
     case 'int':
     case 'integer': {
       // randomInt(rng, min, max)
-      const min = findParam(params, 'min')?.value ?? 0;
-      const max = findParam(params, 'max')?.value ?? 100;
+      const min = findParam(resolvedParams, 'min')?.value ?? 0;
+      const max = findParam(resolvedParams, 'max')?.value ?? 100;
       return [min, max];
     }
 
     case 'randomInt': {
-      const min = findParam(params, 'min')?.value ?? 0;
-      const max = findParam(params, 'max')?.value ?? 100;
+      const min = findParam(resolvedParams, 'min')?.value ?? 0;
+      const max = findParam(resolvedParams, 'max')?.value ?? 100;
       return [min, max];
     }
 
@@ -213,28 +227,28 @@ function extractParameters(field: ValidatedField, generatorType: string): unknow
     case 'double':
     case 'number': {
       // randomFloat(rng, min, max)
-      const min = findParam(params, 'min')?.value ?? 0.0;
-      const max = findParam(params, 'max')?.value ?? 1.0;
+      const min = findParam(resolvedParams, 'min')?.value ?? 0.0;
+      const max = findParam(resolvedParams, 'max')?.value ?? 1.0;
       return [min, max];
     }
 
     case 'randomFloat': {
-      const min = findParam(params, 'min')?.value ?? 0.0;
-      const max = findParam(params, 'max')?.value ?? 1.0;
+      const min = findParam(resolvedParams, 'min')?.value ?? 0.0;
+      const max = findParam(resolvedParams, 'max')?.value ?? 1.0;
       return [min, max];
     }
 
     case 'string':
     case 'text': {
       // randomString(rng, length, charset?)
-      const length = findParam(params, 'length')?.value ?? 10;
-      const charset = findParam(params, 'charset')?.value;
+      const length = findParam(resolvedParams, 'length')?.value ?? 10;
+      const charset = findParam(resolvedParams, 'charset')?.value;
       return charset ? [length, charset] : [length];
     }
 
     case 'randomString': {
-      const length = findParam(params, 'length')?.value ?? 10;
-      const charset = findParam(params, 'charset')?.value;
+      const length = findParam(resolvedParams, 'length')?.value ?? 10;
+      const charset = findParam(resolvedParams, 'charset')?.value;
       return charset ? [length, charset] : [length];
     }
 
@@ -245,7 +259,8 @@ function extractParameters(field: ValidatedField, generatorType: string): unknow
     }
 
     case 'pick': {
-      const arrayParam = findParam(params, 'array')?.value ?? findParam(params, 'values')?.value;
+      const arrayParam =
+        findParam(resolvedParams, 'array')?.value ?? findParam(resolvedParams, 'values')?.value;
       if (!Array.isArray(arrayParam)) {
         throw new Error(`Generator 'pick' requires parameter 'array' as an array`);
       }
@@ -253,7 +268,7 @@ function extractParameters(field: ValidatedField, generatorType: string): unknow
     }
 
     case 'weightedPick': {
-      const optionsParam = findParam(params, 'options')?.value;
+      const optionsParam = findParam(resolvedParams, 'options')?.value;
       if (!Array.isArray(optionsParam)) {
         throw new Error(`Generator 'weightedPick' requires parameter 'options' as an array`);
       }
@@ -261,8 +276,33 @@ function extractParameters(field: ValidatedField, generatorType: string): unknow
     }
 
     default:
-      return params.map((parameter) => parameter.value);
+      return resolvedParams.map((parameter) => parameter.value);
   }
+}
+
+function resolveTemplateValue(value: unknown, context: GeneratedRecord): unknown {
+  if (typeof value === 'string') {
+    if (/\{\{\s*[^}]+\s*\}\}/.test(value)) {
+      return evaluateTemplate(value, context);
+    }
+
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => resolveTemplateValue(item, context));
+  }
+
+  if (value !== null && typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>).map(([key, entryValue]) => [
+      key,
+      resolveTemplateValue(entryValue, context),
+    ]);
+
+    return Object.fromEntries(entries);
+  }
+
+  return value;
 }
 
 /**
@@ -273,8 +313,8 @@ function extractParameters(field: ValidatedField, generatorType: string): unknow
  * @returns Parameter if found, undefined otherwise
  */
 function findParam(
-  params: readonly GeneratorParameter[],
+  params: ReadonlyArray<{ name: string; value: unknown }>,
   name: string
-): GeneratorParameter | undefined {
+): { name: string; value: unknown } | undefined {
   return params.find((p) => p.name === name);
 }

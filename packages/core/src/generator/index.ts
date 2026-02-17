@@ -23,3 +23,4 @@ export {
   nanoid,
 } from './generators';
 export { generateRecord, type GeneratedRecord, generate, type GenerateOptions } from './generator';
+export { evaluateTemplate } from './template';

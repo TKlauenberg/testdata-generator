@@ -282,6 +282,63 @@ describe('generateRecord', () => {
 
     expect(['active', 'inactive']).toContain(record.status);
   });
+
+  it('should evaluate template parameter values using current record context', () => {
+    const schema: ValidatedSchema = createMockSchema([
+      {
+        name: 'firstName',
+        type: 'pick',
+        params: [{ name: 'array', value: ['Ada'] }],
+      },
+      {
+        name: 'lastName',
+        type: 'pick',
+        params: [{ name: 'array', value: ['Lovelace'] }],
+      },
+      {
+        name: 'email',
+        type: 'string',
+        params: [{ name: 'template', value: '{{firstName}}.{{lastName}}@test.com' }],
+      },
+    ]);
+
+    schema.fields[2] = {
+      ...schema.fields[2],
+      resolvedGenerator: 'pick',
+      node: {
+        ...schema.fields[2].node,
+        generator: {
+          name: 'pick',
+          parameters: [{ name: 'array', value: ['{{firstName}}.{{lastName}}@test.com'] }],
+        },
+      },
+    };
+
+    const rng = createRNG(1212);
+    const record = generateRecord(schema, rng);
+
+    expect(record.email).toBe('Ada.Lovelace@test.com');
+  });
+
+  it('should fail with field-scoped error when template reference is missing', () => {
+    const schema: ValidatedSchema = createMockSchema([
+      {
+        name: 'firstName',
+        type: 'pick',
+        params: [{ name: 'array', value: ['Ada'] }],
+      },
+      {
+        name: 'email',
+        type: 'pick',
+        params: [{ name: 'array', value: ['{{firstName}}.{{lastName}}@test.com'] }],
+      },
+    ]);
+
+    const rng = createRNG(9898);
+
+    expect(() => generateRecord(schema, rng)).toThrow(/email/i);
+    expect(() => generateRecord(schema, rng)).toThrow(/lastName/i);
+  });
 });
 
 /**

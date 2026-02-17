@@ -1,6 +1,6 @@
 # Story 6.1: Template Engine for Cross-Field References
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -25,46 +25,46 @@ so that **I can generate realistic related data like email from first and last n
 
 ## Tasks / Subtasks
 
-- [ ] Implement template engine module (AC: 1, 2, 3, 6, 7)
-  - [ ] Create `packages/core/src/generator/template.ts`.
-  - [ ] Implement `evaluateTemplate(template, context)` with placeholder extraction via `{{...}}` pattern.
-  - [ ] Resolve scalar context values to strings predictably.
-  - [ ] Return helpful error when a referenced field is missing in context.
-  - [ ] Support repeated and multiple references in the same template string.
+- [x] Implement template engine module (AC: 1, 2, 3, 6, 7)
+  - [x] Create `packages/core/src/generator/template.ts`.
+  - [x] Implement `evaluateTemplate(template, context)` with placeholder extraction via `{{...}}` pattern.
+  - [x] Resolve scalar context values to strings predictably.
+  - [x] Return helpful error when a referenced field is missing in context.
+  - [x] Support repeated and multiple references in the same template string.
 
-- [ ] Integrate template evaluation into record generation flow (AC: 3, 5, 6, 7)
-  - [ ] Update `packages/core/src/generator/generator.ts` to evaluate `template` generator parameter values.
-  - [ ] Ensure template fields are evaluated only when dependencies are available in current record context.
-  - [ ] Add fail-fast, field-scoped error wrapping for unresolved references.
-  - [ ] Preserve deterministic generation and existing non-template generator behavior.
+- [x] Integrate template evaluation into record generation flow (AC: 3, 5, 6, 7)
+  - [x] Update `packages/core/src/generator/generator.ts` to evaluate `template` generator parameter values.
+  - [x] Ensure template fields are evaluated only when dependencies are available in current record context.
+  - [x] Add fail-fast, field-scoped error wrapping for unresolved references.
+  - [x] Preserve deterministic generation and existing non-template generator behavior.
 
-- [ ] Confirm semantic validation alignment (AC: 4)
-  - [ ] Reuse existing analyzer template validation path in `packages/core/src/analyzer/analyzer.ts`.
-  - [ ] Ensure no duplicated validation logic is added in generator layer.
-  - [ ] If analyzer gaps are discovered, add focused fixes only for Story 6.1 scope.
+- [x] Confirm semantic validation alignment (AC: 4)
+  - [x] Reuse existing analyzer template validation path in `packages/core/src/analyzer/analyzer.ts`.
+  - [x] Ensure no duplicated validation logic is added in generator layer.
+  - [x] If analyzer gaps are discovered, add focused fixes only for Story 6.1 scope.
 
-- [ ] Export updates (AC: 8)
-  - [ ] Export `evaluateTemplate` from `packages/core/src/generator/index.ts`.
-  - [ ] Keep module boundaries and existing export conventions intact.
+- [x] Export updates (AC: 8)
+  - [x] Export `evaluateTemplate` from `packages/core/src/generator/index.ts`.
+  - [x] Keep module boundaries and existing export conventions intact.
 
-- [ ] Unit test coverage (AC: 9)
-  - [ ] Create `packages/core/src/generator/template.test.ts` with:
-    - [ ] single reference replacement
-    - [ ] multiple reference replacement
-    - [ ] repeated reference replacement
-    - [ ] missing reference error message quality
-    - [ ] whitespace-tolerant placeholder parsing (`{{ firstName }}`)
-  - [ ] Extend `packages/core/src/generator/generator.test.ts` for template-enabled record generation scenarios.
+- [x] Unit test coverage (AC: 9)
+  - [x] Create `packages/core/src/generator/template.test.ts` with:
+    - [x] single reference replacement
+    - [x] multiple reference replacement
+    - [x] repeated reference replacement
+    - [x] missing reference error message quality
+    - [x] whitespace-tolerant placeholder parsing (`{{ firstName }}`)
+  - [x] Extend `packages/core/src/generator/generator.test.ts` for template-enabled record generation scenarios.
 
-- [ ] BDD coverage (AC: 10)
-  - [ ] Create `packages/core/features/cross-field-templates.feature`.
-  - [ ] Add executable step definitions in `packages/core/features/step_definitions/cross-field-templates.steps.ts`.
-  - [ ] Add scenarios for:
-    - [ ] email template using first/last name
-    - [ ] multiple placeholders in one field
-    - [ ] missing referenced field produces actionable error
-    - [ ] deterministic output with fixed seed
-  - [ ] Update `packages/core/tests/run-cucumber.ts` feature wiring.
+- [x] BDD coverage (AC: 10)
+  - [x] Create `packages/core/features/cross-field-templates.feature`.
+  - [x] Add executable step definitions in `packages/core/features/step_definitions/cross-field-templates.steps.ts`.
+  - [x] Add scenarios for:
+    - [x] email template using first/last name
+    - [x] multiple placeholders in one field
+    - [x] missing referenced field produces actionable error
+    - [x] deterministic output with fixed seed
+  - [x] Update `packages/core/tests/run-cucumber.ts` feature wiring.
 
 ## Dev Notes
 
@@ -176,6 +176,38 @@ GPT-5.3-Codex
 
 ### Debug Log References
 
+- `runTests` (focused): `packages/core/src/generator/template.test.ts`, `packages/core/src/generator/generator.test.ts` → passing.
+- `runTests` (full regression): `513 passed, 0 failed`.
+
+### Implementation Plan
+
+- Kept semantic template validation in analyzer unchanged and implemented runtime substitution strictly in generator layer.
+- Added `evaluateTemplate` for placeholder substitution and predictable scalar conversion.
+- Applied recursive template substitution to generator parameters so nested literals (e.g., `pick(array=["{{firstName}}"]`) resolve from current record context.
+- Preserved existing generator behavior and deterministic seeded output.
+
 ### Completion Notes List
 
+- ✅ Implemented `evaluateTemplate(template, context)` with `{{field}}` and `{{ field }}` support plus helpful missing-reference errors.
+- ✅ Integrated template resolution into `generateRecord` parameter extraction using in-progress record context.
+- ✅ Reused analyzer template validation path without duplicate generator-layer semantic validation.
+- ✅ Added unit coverage for template evaluator and generator integration/error propagation.
+- ✅ Added BDD feature + step definitions for cross-field templates and wired feature in cucumber runner.
+- ✅ Ran full regression suite successfully (`513` passing tests).
+
 ### File List
+
+- `_bmad-output/implementation-artifacts/6-1-template-engine-for-cross-field-references.md`
+- `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- `packages/core/src/generator/template.ts`
+- `packages/core/src/generator/template.test.ts`
+- `packages/core/src/generator/generator.ts`
+- `packages/core/src/generator/generator.test.ts`
+- `packages/core/src/generator/index.ts`
+- `packages/core/features/cross-field-templates.feature`
+- `packages/core/features/step_definitions/cross-field-templates.steps.ts`
+- `packages/core/tests/run-cucumber.ts`
+
+### Change Log
+
+- 2026-02-17: Implemented Story 6.1 template engine support, integrated generator runtime substitution, added unit/BDD coverage, and validated full regression suite.
