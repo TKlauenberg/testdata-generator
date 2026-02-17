@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'bun:test';
 import { createRNG } from './rng';
-import { generateRecord, generate } from './generator';
+import { generateRecord, generate, sortFieldsByDependency } from './generator';
 import type { ValidatedSchema, ValidatedField, ValidatedProgram } from '../analyzer/types';
 import type { FieldNode, GeneratorParameter, SchemaNode } from '../parser/ast';
 import type { SourceLocation } from '../common/diagnostic';
@@ -342,8 +342,8 @@ describe('generateRecord', () => {
 
   it('should throw a clear error when a template field is declared before its dependency (ordering issue)', () => {
     // email references {{firstName}} but is declared BEFORE firstName in field order.
-    // Because generateRecord builds context incrementally, firstName is not yet in context
-    // when email is processed, so evaluateTemplate must throw a missing-reference error.
+    // Story 6.2: sortFieldsByDependency re-orders fields so firstName generates first.
+    // The record must now SUCCEED, not throw.
     const schema: ValidatedSchema = createMockSchema([
       {
         name: 'email',
@@ -357,10 +357,148 @@ describe('generateRecord', () => {
       },
     ]);
 
+    // Set templateReferences so the order resolver knows email depends on firstName
+    schema.fields[0] = {
+      ...schema.fields[0],
+      templateReferences: ['firstName'],
+    };
+
     const rng = createRNG(1234);
 
-    // Should fail with a message mentioning the missing reference, not a generic crash
-    expect(() => generateRecord(schema, rng)).toThrow(/firstName/i);
+    // After 6.2: ordering is resolved automatically – record generates successfully
+    const record = generateRecord(schema, rng);
+    expect(record.email).toBe('Ada@test.com');
+    expect(record.firstName).toBe('Ada');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// sortFieldsByDependency unit tests (Story 6.2 – AC: 4, 5, 8)
+// ---------------------------------------------------------------------------
+
+describe('sortFieldsByDependency', () => {
+  /**
+   * Small helper: build a minimal ValidatedField with given name and deps.
+   * Avoids importing the full createMockSchema for field-level tests.
+   */
+  function makeField(
+    name: string,
+    templateReferences: string[] = []
+  ): ValidatedField {
+    const mockLocation = { file: 'test.td', line: 1, column: 1, length: 10 };
+    const node: FieldNode = {
+      kind: 'field',
+      name,
+      type: 'string',
+      generator: { name: 'string', parameters: [] },
+      location: mockLocation,
+    };
+    return {
+      node,
+      resolvedType: 'string',
+      resolvedGenerator: 'string',
+      templateReferences,
+    };
+  }
+
+  it('should return fields unchanged when there are no dependencies (stable declaration order)', () => {
+    const a = makeField('a');
+    const b = makeField('b');
+    const c = makeField('c');
+
+    const result = sortFieldsByDependency([a, b, c]);
+
+    expect(result.map((f) => f.node.name)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('should resolve a linear chain C → B → A into order A, B, C', () => {
+    // C depends on B, B depends on A → generation order: A, B, C
+    const a = makeField('a');
+    const b = makeField('b', ['a']);
+    const c = makeField('c', ['b']);
+
+    // Declare in reverse order: C, B, A
+    const result = sortFieldsByDependency([c, b, a]);
+
+    expect(result.map((f) => f.node.name)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('should resolve fan-in: C references both A and B (independent of each other)', () => {
+    // A and B are independent; C depends on both → A and B come before C
+    const a = makeField('a');
+    const b = makeField('b');
+    const c = makeField('c', ['a', 'b']);
+
+    const result = sortFieldsByDependency([c, a, b]);
+    const names = result.map((f) => f.node.name);
+
+    // A and B must appear before C
+    const idxA = names.indexOf('a');
+    const idxB = names.indexOf('b');
+    const idxC = names.indexOf('c');
+    expect(idxA).toBeLessThan(idxC);
+    expect(idxB).toBeLessThan(idxC);
+    expect(names).toHaveLength(3);
+  });
+
+  it('should resolve multiple independent chains [A→B] and [C→D] in the same schema', () => {
+    const a = makeField('a');
+    const b = makeField('b', ['a']);
+    const c = makeField('c');
+    const d = makeField('d', ['c']);
+
+    const result = sortFieldsByDependency([b, d, a, c]);
+    const names = result.map((f) => f.node.name);
+
+    // A must come before B; C must come before D
+    expect(names.indexOf('a')).toBeLessThan(names.indexOf('b'));
+    expect(names.indexOf('c')).toBeLessThan(names.indexOf('d'));
+    expect(names).toHaveLength(4);
+  });
+
+  it('should handle an empty field list', () => {
+    const result = sortFieldsByDependency([]);
+    expect(result).toHaveLength(0);
+  });
+
+  it('should throw a clear error listing field names when a runtime cycle is detected', () => {
+    // Manually construct a cycle: a → b → a (impossible after analyzer, but guard must fire)
+    const a = makeField('a', ['b']);
+    const b = makeField('b', ['a']);
+
+    expect(() => sortFieldsByDependency([a, b])).toThrow(
+      /circular field dependency/i
+    );
+    // Error message must mention the involved fields
+    expect(() => sortFieldsByDependency([a, b])).toThrow(/a/);
+    expect(() => sortFieldsByDependency([a, b])).toThrow(/b/);
+  });
+
+  it('should produce correct record via generateRecord when email is declared before firstName', () => {
+    // Integration check: sortFieldsByDependency is wired into generateRecord()
+    const schema = createMockSchema([
+      {
+        name: 'email',
+        type: 'pick',
+        params: [{ name: 'array', value: ['{{firstName}}@example.com'] }],
+      },
+      {
+        name: 'firstName',
+        type: 'pick',
+        params: [{ name: 'array', value: ['Grace'] }],
+      },
+    ]);
+
+    schema.fields[0] = {
+      ...schema.fields[0],
+      templateReferences: ['firstName'],
+    };
+
+    const rng = createRNG(5555);
+    const record = generateRecord(schema, rng);
+
+    expect(record.firstName).toBe('Grace');
+    expect(record.email).toBe('Grace@example.com');
   });
 });
 

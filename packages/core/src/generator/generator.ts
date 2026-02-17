@@ -103,11 +103,74 @@ export async function* generate(
 }
 
 /**
+ * Sort fields in dependency order using Kahn's algorithm (BFS topological sort).
+ *
+ * Fields with no dependencies sort first; fields that reference other fields
+ * sort after their dependencies. Declaration order is preserved for independent
+ * fields (stable sort).
+ *
+ * This ensures `generateRecord()` always resolves template references correctly
+ * regardless of the order fields are declared in the DSL source.
+ *
+ * @param fields - Fields to sort (from ValidatedField.templateReferences)
+ * @returns Fields sorted so every dependency comes before its dependent
+ *
+ * @throws {Error} If a circular dependency is detected at runtime
+ *   (defensive guard — the analyzer enforces no cycles at validation time)
+ */
+export function sortFieldsByDependency(
+  fields: readonly ValidatedField[]
+): readonly ValidatedField[] {
+  // Build name → ValidatedField lookup
+  const byName = new Map(fields.map((f) => [f.node.name, f]));
+
+  // Build in-degree count and adjacency list (dependency → its dependents)
+  const inDegree = new Map(fields.map((f) => [f.node.name, 0]));
+  const dependents = new Map<string, string[]>(fields.map((f) => [f.node.name, []]));
+
+  for (const field of fields) {
+    for (const dep of field.templateReferences) {
+      inDegree.set(field.node.name, (inDegree.get(field.node.name) ?? 0) + 1);
+      dependents.get(dep)?.push(field.node.name);
+    }
+  }
+
+  // BFS: start with all zero-in-degree fields (declaration order for stability)
+  const queue: string[] = fields
+    .filter((f) => inDegree.get(f.node.name) === 0)
+    .map((f) => f.node.name);
+  const sorted: ValidatedField[] = [];
+
+  while (queue.length > 0) {
+    const name = queue.shift()!;
+    sorted.push(byName.get(name)!);
+    for (const dep of (dependents.get(name) ?? [])) {
+      const newDegree = (inDegree.get(dep) ?? 1) - 1;
+      inDegree.set(dep, newDegree);
+      if (newDegree === 0) queue.push(dep);
+    }
+  }
+
+  // Cycle guard – should never trigger when the analyzer has validated the schema
+  if (sorted.length !== fields.length) {
+    const remaining = fields
+      .filter((f) => !sorted.includes(f))
+      .map((f) => f.node.name);
+    throw new Error(
+      `Circular field dependency detected among fields: ${remaining.join(', ')}`
+    );
+  }
+
+  return sorted;
+}
+
+/**
  * Generate a single record from a validated schema.
  *
  * CRITICAL: Pure function - same inputs always produce same output.
  * CRITICAL: Use provided RNG instance - do NOT create new RNG.
- * CRITICAL: Iterate fields in schema order for consistent output.
+ * CRITICAL: Fields are sorted by dependency order before generation so that
+ *   template references always resolve against already-generated fields.
  *
  * @param schema - Validated schema with field definitions
  * @param rng - RNG instance for deterministic generation
@@ -130,8 +193,13 @@ export function generateRecord(
 ): GeneratedRecord {
   const record: GeneratedRecord = {};
 
-  // Process each field in order (maintains consistent field ordering)
-  for (const field of schema.fields) {
+  // Sort fields so dependencies are generated before the fields that reference them.
+  // This ensures template placeholders (e.g. {{firstName}}) always resolve correctly
+  // regardless of declaration order in the DSL source (Story 6.2).
+  const orderedFields = sortFieldsByDependency(schema.fields);
+
+  // Process each field in dependency order
+  for (const field of orderedFields) {
     const fieldName = field.node.name;
 
     try {

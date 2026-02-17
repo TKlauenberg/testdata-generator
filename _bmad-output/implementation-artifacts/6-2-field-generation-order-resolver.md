@@ -1,6 +1,6 @@
 # Story 6.2: Field Generation Order Resolver
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -24,35 +24,35 @@ so that **template fields can reference already-generated fields regardless of t
 
 ## Tasks / Subtasks
 
-- [ ] Implement `sortFieldsByDependency` helper (AC: 1, 2, 4, 5, 6)
-  - [ ] Create function `sortFieldsByDependency(fields: readonly ValidatedField[]): readonly ValidatedField[]` inside `packages/core/src/generator/generator.ts` (or extract to a new `packages/core/src/generator/orderResolver.ts` if preferred for modularity).
-  - [ ] Build an adjacency map from `field.templateReferences` (each ref string maps to the field with that name).
-  - [ ] Perform Kahn's algorithm (BFS-based topological sort) or DFS post-order over the field dependency graph.
-  - [ ] Fields with no dependencies sort first; remaining fields sort after their dependencies, preserving relative declaration order for independent fields (stable sort).
-  - [ ] If a cycle is detected at runtime (guard against impossible state since analyzer enforces no cycles), throw a clear error listing the involved field names.
+- [x] Implement `sortFieldsByDependency` helper (AC: 1, 2, 4, 5, 6)
+  - [x] Create function `sortFieldsByDependency(fields: readonly ValidatedField[]): readonly ValidatedField[]` inside `packages/core/src/generator/generator.ts` (or extract to a new `packages/core/src/generator/orderResolver.ts` if preferred for modularity).
+  - [x] Build an adjacency map from `field.templateReferences` (each ref string maps to the field with that name).
+  - [x] Perform Kahn's algorithm (BFS-based topological sort) or DFS post-order over the field dependency graph.
+  - [x] Fields with no dependencies sort first; remaining fields sort after their dependencies, preserving relative declaration order for independent fields (stable sort).
+  - [x] If a cycle is detected at runtime (guard against impossible state since analyzer enforces no cycles), throw a clear error listing the involved field names.
 
-- [ ] Integrate order resolver into `generateRecord()` (AC: 2, 6)
-  - [ ] In `generateRecord()` in `packages/core/src/generator/generator.ts`, call `sortFieldsByDependency(schema.fields)` to get the ordered field list.
-  - [ ] Iterate the sorted list rather than `schema.fields` directly.
-  - [ ] The `record` context object is still built incrementally in the sorted order, so template references are always resolved against already-generated fields.
+- [x] Integrate order resolver into `generateRecord()` (AC: 2, 6)
+  - [x] In `generateRecord()` in `packages/core/src/generator/generator.ts`, call `sortFieldsByDependency(schema.fields)` to get the ordered field list.
+  - [x] Iterate the sorted list rather than `schema.fields` directly.
+  - [x] The `record` context object is still built incrementally in the sorted order, so template references are always resolved against already-generated fields.
 
-- [ ] Update existing test that documented old broken behavior (AC: 7)
-  - [ ] In `packages/core/src/generator/generator.test.ts`, locate the test `'should throw a clear error when a template field is declared before its dependency (ordering issue)'`.
-  - [ ] Rewrite the assertion: the test schema has `email` (referencing `{{firstName}}`) declared before `firstName`. After 6.2, `generateRecord` MUST succeed and produce `{ email: 'Ada@test.com', firstName: 'Ada' }` (or equivalent).
-  - [ ] Do NOT delete the test — repurpose it to prove the fix.
+- [x] Update existing test that documented old broken behavior (AC: 7)
+  - [x] In `packages/core/src/generator/generator.test.ts`, locate the test `'should throw a clear error when a template field is declared before its dependency (ordering issue)'`.
+  - [x] Rewrite the assertion: the test schema has `email` (referencing `{{firstName}}`) declared before `firstName`. After 6.2, `generateRecord` MUST succeed and produce `{ email: 'Ada@test.com', firstName: 'Ada' }` (or equivalent).
+  - [x] Do NOT delete the test — repurposed it to prove the fix.
 
-- [ ] Add focused unit tests for `sortFieldsByDependency` (AC: 4, 5, 8)
-  - [ ] Linear chain: `C → B → A` → generation order must be `A, B, C`.
-  - [ ] Fan-in: `C` references both `A` and `B` (independent of each other) → `A` and `B` generated before `C`.
-  - [ ] Multiple independent chains: `[A → B]` and `[C → D]` in same schema → both chains resolve, any interleaving that satisfies deps is acceptable.
-  - [ ] No-dependency schema: field order unchanged (stable, declaration order preserved).
-  - [ ] Runtime cycle guard: manually construct a `ValidatedField[]` with a circular `templateReferences` chain and assert the thrown error message mentions the field names.
+- [x] Add focused unit tests for `sortFieldsByDependency` (AC: 4, 5, 8)
+  - [x] Linear chain: `C → B → A` → generation order must be `A, B, C`.
+  - [x] Fan-in: `C` references both `A` and `B` (independent of each other) → `A` and `B` generated before `C`.
+  - [x] Multiple independent chains: `[A → B]` and `[C → D]` in same schema → both chains resolve, any interleaving that satisfies deps is acceptable.
+  - [x] No-dependency schema: field order unchanged (stable, declaration order preserved).
+  - [x] Runtime cycle guard: manually construct a `ValidatedField[]` with a circular `templateReferences` chain and assert the thrown error message mentions the field names.
 
-- [ ] Add BDD scenario: out-of-order dependency resolves correctly (AC: 6, 9)
-  - [ ] Add a new scenario to `packages/core/features/cross-field-templates.feature`.
-  - [ ] The scenario DSL schema declares `email` (using `{{firstName}}`) BEFORE `firstName`.
-  - [ ] Assert the generated record contains the correctly resolved email value.
-  - [ ] Add step definitions to `packages/core/features/step_definitions/cross-field-templates.steps.ts` if any new steps are needed (reuse existing steps if sufficient).
+- [x] Add BDD scenario: out-of-order dependency resolves correctly (AC: 6, 9)
+  - [x] Add a new scenario to `packages/core/features/cross-field-templates.feature`.
+  - [x] The scenario DSL schema declares `email` (using `{{firstName}}`) BEFORE `firstName`.
+  - [x] Assert the generated record contains the correctly resolved email value.
+  - [x] Add step definitions to `packages/core/features/step_definitions/cross-field-templates.steps.ts` if any new steps are needed (reuse existing steps — all steps were sufficient).
 
 ## Dev Notes
 
@@ -186,11 +186,25 @@ function sortFieldsByDependency(fields: readonly ValidatedField[]): readonly Val
 
 ### Agent Model Used
 
-claude-sonnet-4-5
+claude-sonnet-4-6
 
 ### Debug Log References
 
 ### Completion Notes List
 
+- Chose Option A (co-located in `generator.ts`) per story recommendation — `sortFieldsByDependency` added as an exported function in `packages/core/src/generator/generator.ts` alongside `generateRecord`.
+- `generateRecord()` now calls `sortFieldsByDependency(schema.fields)` before iterating, making DSL field declaration order irrelevant to template resolution.
+- Updated the repurposed test: schema sets `templateReferences: ['firstName']` on the `email` field so the sorter has the dependency info it needs; asserts `record.email === 'Ada@test.com'`.
+- Added 7 new unit tests in the `sortFieldsByDependency` describe block covering: stable no-dep order, linear chain, fan-in, multiple independent chains, empty list, runtime cycle guard (×2 assertion), and an integration check via `generateRecord`.
+- Added 1 new BDD scenario to `cross-field-templates.feature` (out-of-order field declaration). Existing step definitions were sufficient — no new steps needed.
+- All 34 Bun unit tests pass (0 fail). BDD runner (`bun test packages/core/tests/cucumber.runner.test.ts`) passes (1 pass, 0 fail).
+
 ### File List
 
+- `packages/core/src/generator/generator.ts` — added `sortFieldsByDependency`, updated `generateRecord` to use it, updated JSDoc
+- `packages/core/src/generator/generator.test.ts` — updated broken-behavior test to assert success; added `sortFieldsByDependency` unit test suite (7 tests)
+- `packages/core/features/cross-field-templates.feature` — added out-of-order dependency BDD scenario
+
+## Change Log
+
+- 2026-02-17: Implemented Story 6.2 — `sortFieldsByDependency` (Kahn's BFS topological sort) added to `generator.ts` and integrated into `generateRecord()`. Template fields now resolve correctly regardless of DSL declaration order. 34 unit tests + BDD suite passing.

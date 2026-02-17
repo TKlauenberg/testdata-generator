@@ -42,6 +42,17 @@ Feature: Cross-Field Template Evaluation
     Then a generation error should be thrown
     And the error message should mention "missingField"
 
+  Scenario: Field declared before its dependency resolves correctly (out-of-order DSL declaration)
+    Given QATester has DSL source code:
+      ```
+      schema User {
+        email: string generator=pick(array=["{{firstName}}@test.com"])
+        firstName: string generator=pick(array=["Ada"])
+      }
+      ```
+    When QATester generates 1 records using the public generateData API
+    Then each generated record should have field "email" equal to "Ada@test.com"
+
   Scenario: Fixed seed keeps template output deterministic
     Given QATester has DSL source code:
       ```
