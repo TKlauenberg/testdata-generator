@@ -1,6 +1,29 @@
 import type { RNG } from '../rng';
 
 /**
+ * Default date range computed ONCE at module load, snapped to second precision.
+ *
+ * Computing per-call via `new Date()` means two successive calls can land on
+ * different milliseconds, causing `rng.nextIntRange(startMs, endMs)` to return
+ * different values for the same seed even though the range is conceptually
+ * identical. Snapping to seconds and fixing the value at load time eliminates
+ * both the sub-second drift and any cross-second-boundary race condition.
+ */
+const _DEFAULT_NOW_MS = Math.floor(Date.now() / 1000) * 1000;
+const _DEFAULT_RANGE_END = new Date(_DEFAULT_NOW_MS);
+const _DEFAULT_RANGE_START = new Date(_DEFAULT_NOW_MS);
+_DEFAULT_RANGE_START.setFullYear(_DEFAULT_RANGE_END.getFullYear() - 1);
+
+/**
+ * Get default date range (last year to now).
+ * Returns the module-level constants so every call within a process gets the
+ * same bounds, guaranteeing deterministic generation for the same seed.
+ */
+function getDefaultDateRange(): { start: Date; end: Date } {
+  return { start: _DEFAULT_RANGE_START, end: _DEFAULT_RANGE_END };
+}
+
+/**
  * Parse a date input that can be either a Date object or a string.
  * Validates that the parsed date is valid.
  *
@@ -19,17 +42,6 @@ export function parseDate(input: Date | string): Date {
   }
 
   return parsed;
-}
-
-/**
- * Get default date range (last year to now)
- */
-function getDefaultDateRange(): { start: Date; end: Date } {
-  const now = new Date();
-  const oneYearAgo = new Date(now);
-  oneYearAgo.setFullYear(now.getFullYear() - 1);
-
-  return { start: oneYearAgo, end: now };
 }
 
 /**

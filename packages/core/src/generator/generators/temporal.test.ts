@@ -297,4 +297,27 @@ describe('Temporal Generators', () => {
       expect(isNaN(parsed.getTime())).toBe(false);
     });
   });
+
+  describe('cross-call default-range determinism', () => {
+    it('two date() calls with the same seed but separate RNG instances produce identical results', () => {
+      // Regression: getDefaultDateRange() previously called new Date() per invocation,
+      // so two calls in quick succession could land on different milliseconds and produce
+      // different timestamps for the same seed. Module-scope constants fix this.
+      const result1 = date(createRNG(99999));
+      const result2 = date(createRNG(99999));
+      expect(result1.getTime()).toBe(result2.getTime());
+    });
+
+    it('two timestamp() calls with the same seed but separate RNG instances produce identical results', () => {
+      const result1 = timestamp(createRNG(77777));
+      const result2 = timestamp(createRNG(77777));
+      expect(result1).toBe(result2);
+    });
+
+    it('two datetime() calls with the same seed but separate RNG instances produce identical results', () => {
+      const result1 = datetime(createRNG(55555));
+      const result2 = datetime(createRNG(55555));
+      expect(result1).toBe(result2);
+    });
+  });
 });

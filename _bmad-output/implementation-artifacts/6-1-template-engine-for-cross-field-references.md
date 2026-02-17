@@ -220,6 +220,8 @@ GPT-5.3-Codex
 - `packages/core/src/analyzer/analyzer.ts`
 - `packages/core/src/analyzer/analyzer.test.ts`
 - `packages/core/src/generateData.ts`
+- `packages/core/src/generator/generators/temporal.ts`
+- `packages/core/src/generator/generators/temporal.test.ts`
 
 ### Change Log
 
@@ -227,3 +229,4 @@ GPT-5.3-Codex
 - 2026-02-17: Code review (AI, Amelia/dev agent): fixed regex duplication (H1), removed dead ValidationError step+import (H2/H3), added out-of-order field test (M1), added streaming template pipeline test (M3), documented AC4 analyzer gap and `with semantic error` step intent (M2). Two LOW items deferred to Story 6.2. Story set to in-progress pending AC4 analyzer gap resolution.
 - 2026-02-17: Fixed remaining LOW items: added JSDoc + two tests for `null`/`undefined` toTemplateString behaviour (L1); replaced module-scope `/g` regex with per-call local constant to eliminate shared lastIndex footgun (L2).
 - 2026-02-17: Fixed AC4 (M2): refactored `getTemplateReferencesForField` to recursively scan template patterns in array/object generator parameters; updated `ValidationError.message` to include diagnostic text; added 3 analyzer tests. All issues resolved. Story status → done.
+- 2026-02-17: Fixed pre-existing temporal determinism flake: `getDefaultDateRange()` called `new Date()` per invocation, causing 1ms drift between two generation steps and breaking the BDD "Verify determinism" scenario. Fixed by computing module-scope constants (snapped to second precision) at load time. Added 3 cross-call determinism regression tests. [packages/core/src/generator/generators/temporal.ts, packages/core/src/generator/generators/temporal.test.ts]
