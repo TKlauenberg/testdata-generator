@@ -1,6 +1,6 @@
 # Story 6.3: schema-relationship-support
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -24,29 +24,29 @@ so that **I can create realistic datasets with foreign key relationships**.
 
 ## Tasks / Subtasks
 
-- [ ] Add schema-reference semantic model support (AC: 1, 2)
-  - [ ] Confirm analyzer output carries enough schema-reference metadata for generation decisions.
-  - [ ] Add/adjust analyzer validation to reject unknown `@schema:<name>` references with clear diagnostics.
-  - [ ] Ensure validation remains Result-based (`Result<T, Diagnostic[]>`) and does not throw for expected failures.
+- [x] Add schema-reference semantic model support (AC: 1, 2)
+  - [x] Confirm analyzer output carries enough schema-reference metadata for generation decisions.
+  - [x] Add/adjust analyzer validation to reject unknown `@schema:<name>` references with clear diagnostics.
+  - [x] Ensure validation remains Result-based (`Result<T, Diagnostic[]>`) and does not throw for expected failures.
 
-- [ ] Implement relationship generation in generator pipeline (AC: 1, 3, 4, 5)
-  - [ ] Extend generator field handling to recognize schema-reference values and invoke referenced-schema record generation.
-  - [ ] Ensure generation uses the same RNG instance to preserve determinism and seed reproducibility.
-  - [ ] Reuse existing record generation pathways instead of duplicating generation logic.
+- [x] Implement relationship generation in generator pipeline (AC: 1, 3, 4, 5)
+  - [x] Extend generator field handling to recognize schema-reference values and invoke referenced-schema record generation.
+  - [x] Ensure generation uses the same RNG instance to preserve determinism and seed reproducibility.
+  - [x] Reuse existing record generation pathways instead of duplicating generation logic.
 
-- [ ] Add recursion-depth safety guard (AC: 6, 7)
-  - [ ] Introduce depth-tracking context for relationship expansion.
-  - [ ] Enforce default max depth `5` and support configurable override via generation options/config.
-  - [ ] Emit actionable runtime error when depth exceeds the limit, including schema path context.
+- [x] Add recursion-depth safety guard (AC: 6, 7)
+  - [x] Introduce depth-tracking context for relationship expansion.
+  - [x] Enforce default max depth `5` and support configurable override via generation options/config.
+  - [x] Emit actionable runtime error when depth exceeds the limit, including schema path context.
 
-- [ ] Validate nested and repeated relationship scenarios (AC: 5, 9)
-  - [ ] Cover nested schema-reference chains in unit tests.
-  - [ ] Add BDD scenarios for relationship generation patterns that mimic one-to-many and many-to-one datasets.
-  - [ ] Verify no regression to cross-field templates and dependency ordering behavior from stories 6.1 and 6.2.
+- [x] Validate nested and repeated relationship scenarios (AC: 5, 9)
+  - [x] Cover nested schema-reference chains in unit tests.
+  - [x] Add BDD scenarios for relationship generation patterns that mimic one-to-many and many-to-one datasets.
+  - [x] Verify no regression to cross-field templates and dependency ordering behavior from stories 6.1 and 6.2.
 
-- [ ] Update exports and docs where required (AC: 1-9)
-  - [ ] Preserve module boundaries and export via module `index.ts` files only.
-  - [ ] Update story completion records and sprint status after implementation/review workflow.
+- [x] Update exports and docs where required (AC: 1-9)
+  - [x] Preserve module boundaries and export via module `index.ts` files only.
+  - [x] Update story completion records and sprint status after implementation/review workflow.
 
 ## Dev Notes
 
@@ -142,7 +142,25 @@ GPT-5.3-Codex
 
 - Ultimate context engine analysis completed - comprehensive developer guide created.
 - Story prepared with architecture, testing, and anti-regression guardrails for implementation.
+- Added scanner/parser support for `@schema:SchemaName` field syntax and analyzer schema-reference metadata for generation decisions.
+- Implemented inline related-record generation with shared RNG flow, nested relationship support, and configurable `maxRelationshipDepth` (default `5`) guardrails.
+- Added unit coverage for parser, analyzer, and generator relationship behavior including deterministic generation and depth overflow runtime protection.
+- Added BDD scenarios for many-to-one and one-to-many style relationship generation and nested-field assertions.
+- Validation completed with full test suite: `594 passed, 0 failed`.
 
 ### File List
 
 - `_bmad-output/implementation-artifacts/6-3-schema-relationship-support.md`
+- `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- `packages/core/src/scanner/tokens.ts`
+- `packages/core/src/scanner/scanner.test.ts`
+- `packages/core/src/parser/parser.ts`
+- `packages/core/src/parser/parser.test.ts`
+- `packages/core/src/analyzer/types.ts`
+- `packages/core/src/analyzer/analyzer.ts`
+- `packages/core/src/analyzer/analyzer.test.ts`
+- `packages/core/src/generator/generator.ts`
+- `packages/core/src/generator/generator.test.ts`
+- `packages/core/src/validate.test.ts`
+- `packages/core/features/cross-field-templates.feature`
+- `packages/core/features/step_definitions/cross-field-templates.steps.ts`

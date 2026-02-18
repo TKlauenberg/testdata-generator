@@ -14,7 +14,8 @@ function createMockSchema(
     name: string;
     type: string;
     params?: Array<{ name: string; value: unknown }>;
-  }>
+  }>,
+  schemaName: string = 'TestSchema',
 ): ValidatedSchema {
   const mockLocation: SourceLocation = {
     file: 'test.td',
@@ -38,7 +39,7 @@ function createMockSchema(
 
   const schemaNode: SchemaNode = {
     kind: 'schema',
-    name: 'TestSchema',
+    name: schemaName,
     fields: fieldNodes,
     location: mockLocation,
   };
@@ -49,6 +50,7 @@ function createMockSchema(
       resolvedType: f.type,
       resolvedGenerator: f.type,
       templateReferences: [],
+      referencedSchema: f.type.startsWith('@schema:') ? f.type.replace('@schema:', '') : undefined,
     })
   );
 
@@ -533,7 +535,7 @@ function createMockProgram(
   const schemaMap = new Map<string, ValidatedSchema>();
 
   for (const s of schemas) {
-    const schema = createMockSchema(s.fields);
+    const schema = createMockSchema(s.fields, s.name);
     schemaMap.set(s.name, schema);
   }
 
@@ -776,6 +778,96 @@ describe('generate (streaming)', () => {
       for (const record of records) {
         expect(record.email).toBe('Ada@test.com');
       }
+    });
+  });
+
+  describe('schema relationship generation', () => {
+    it('generates related records inline for @schema:<name> fields', async () => {
+      const program = createMockProgram([
+        {
+          name: 'Profile',
+          fields: [
+            {
+              name: 'bio',
+              type: 'pick',
+              params: [{ name: 'array', value: ['hello-world'] }],
+            },
+          ],
+        },
+        {
+          name: 'User',
+          fields: [{ name: 'profile', type: '@schema:Profile' }],
+        },
+      ]);
+
+      const records: Record<string, unknown>[] = [];
+      for await (const record of generate(program, { count: 1, seed: 123 })) {
+        records.push(record);
+      }
+
+      const userRecord = records.find((record) => 'profile' in record) as
+        | Record<string, unknown>
+        | undefined;
+      expect(userRecord).toBeDefined();
+      const profile = userRecord?.profile as Record<string, unknown>;
+      expect(typeof profile).toBe('object');
+      expect(profile.bio).toBe('hello-world');
+    });
+
+    it('preserves deterministic output with relationships for fixed seed', async () => {
+      const program = createMockProgram([
+        {
+          name: 'Department',
+          fields: [
+            {
+              name: 'name',
+              type: 'pick',
+              params: [{ name: 'array', value: ['Engineering', 'QA', 'Design'] }],
+            },
+          ],
+        },
+        {
+          name: 'User',
+          fields: [{ name: 'department', type: '@schema:Department' }],
+        },
+      ]);
+
+      const records1: Record<string, unknown>[] = [];
+      for await (const record of generate(program, { count: 4, seed: 77 })) {
+        records1.push(record);
+      }
+
+      const records2: Record<string, unknown>[] = [];
+      for await (const record of generate(program, { count: 4, seed: 77 })) {
+        records2.push(record);
+      }
+
+      expect(records1).toEqual(records2);
+    });
+
+    it('throws actionable error when relationship depth exceeds configured max depth', async () => {
+      const program = createMockProgram([
+        {
+          name: 'A',
+          fields: [{ name: 'b', type: '@schema:B' }],
+        },
+        {
+          name: 'B',
+          fields: [{ name: 'c', type: '@schema:C' }],
+        },
+        {
+          name: 'C',
+          fields: [{ name: 'value', type: 'pick', params: [{ name: 'array', value: ['leaf'] }] }],
+        },
+      ]);
+
+      const stream = generate(program, { count: 1, seed: 42, maxRelationshipDepth: 1 });
+
+      await expect(async () => {
+        for await (const _record of stream) {
+          // consume
+        }
+      }).toThrow(/depth exceeded max depth 1/i);
     });
   });
 

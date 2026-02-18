@@ -231,17 +231,19 @@ describe('Scanner', () => {
 
   describe('operator tokenization', () => {
     test('scans single-character operators', () => {
-      const result = scan(': , { } [ ] ( ) =', 'test.td');
+      const result = scan(': , { } [ ] ( ) = @', 'test.td');
 
       expect(result.ok).toBe(true);
       if (result.ok) {
-        expect(result.value).toHaveLength(10); // 9 operators + eof
+        expect(result.value).toHaveLength(11); // 10 operators + eof
         expect(result.value[0].kind).toBe('operator');
         expect(tokenWithValueAt(result.value, 0).value).toBe(':');
         expect(result.value[1].kind).toBe('operator');
         expect(tokenWithValueAt(result.value, 1).value).toBe(',');
         expect(result.value[2].kind).toBe('operator');
         expect(tokenWithValueAt(result.value, 2).value).toBe('{');
+        expect(result.value[9].kind).toBe('operator');
+        expect(tokenWithValueAt(result.value, 9).value).toBe('@');
       }
     });
 
@@ -342,18 +344,18 @@ describe('Scanner', () => {
 
   describe('error handling', () => {
     test('reports invalid character', () => {
-      const result = scan('@invalid', 'test.td');
+      const result = scan('#invalid', 'test.td');
 
       expect(result.ok).toBe(false);
       if (!result.ok) {
         expect(result.errors).toHaveLength(1);
         expect(result.errors[0].code).toBe('scanner.invalidCharacter');
-        expect(result.errors[0].message).toContain('@');
+        expect(result.errors[0].message).toContain('#');
       }
     });
 
     test('collects multiple errors', () => {
-      const source = '"unterminated\n@invalid';
+      const source = '"unterminated\n#invalid';
       const result = scan(source, 'test.td');
 
       expect(result.ok).toBe(false);
@@ -375,7 +377,7 @@ describe('Scanner', () => {
     });
 
     test('continues scanning after errors', () => {
-      const source = '@bad identifier';
+      const source = '#bad identifier';
       const result = scan(source, 'test.td');
 
       expect(result.ok).toBe(false);

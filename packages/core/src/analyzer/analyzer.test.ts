@@ -317,6 +317,23 @@ describe('analyze()', () => {
   });
 
   describe('schema reference validation', () => {
+    test('accepts @schema:<name> references and exposes metadata for generation', () => {
+      const program = createProgram([
+        createSchema('Profile', [createField('bio', 'string')]),
+        createSchema('User', [createField('profile', '@schema:Profile')]),
+      ]);
+
+      const result = analyze(program);
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        const userSchema = result.value.schemas.get('User');
+        expect(userSchema).toBeDefined();
+        expect(userSchema?.dependencies.has('Profile')).toBe(true);
+        expect(userSchema?.fields[0]?.referencedSchema).toBe('Profile');
+      }
+    });
+
     test('detects undefined schema types', () => {
       const program = createProgram([
         createSchema('User', [createField('profile', 'Profile')]),
@@ -329,6 +346,21 @@ describe('analyze()', () => {
         const schemaError = result.errors.find((error) => error.code === 'analyzer.undefinedSchema');
         expect(schemaError).toBeDefined();
         expect(schemaError?.message).toContain('Profile');
+      }
+    });
+
+    test('detects undefined @schema:<name> references', () => {
+      const program = createProgram([
+        createSchema('User', [createField('profile', '@schema:MissingProfile')]),
+      ]);
+
+      const result = analyze(program);
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        const schemaError = result.errors.find((error) => error.code === 'analyzer.undefinedSchema');
+        expect(schemaError).toBeDefined();
+        expect(schemaError?.message).toContain('MissingProfile');
       }
     });
   });

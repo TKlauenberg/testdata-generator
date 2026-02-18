@@ -32,7 +32,7 @@ export type KeywordType = (typeof KEYWORD_VALUES)[number];
 /**
  * Operator symbols used in the DSL.
  */
-export const OPERATOR_VALUES = [':', ',', '{', '}', '[', ']', '(', ')', '=', '->'] as const;
+export const OPERATOR_VALUES = [':', ',', '{', '}', '[', ']', '(', ')', '=', '->', '@'] as const;
 export type OperatorType = (typeof OPERATOR_VALUES)[number];
 
 /**

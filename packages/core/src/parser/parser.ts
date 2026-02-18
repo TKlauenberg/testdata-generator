@@ -542,22 +542,11 @@ export class Parser {
     }
 
     // Parse field type
-    const typeResult = this._expect('identifier');
-    if (!typeResult.ok) {
-      this._addError(
-        `Expected type after ':' in field '${fieldName}'`,
-        this._currentToken().location,
-        ['Field types: string, number, boolean, date, etc.'],
-      );
-      return { ok: false, errors: this._errors };
+    const fieldTypeResult = this._parseFieldType(fieldName);
+    if (!fieldTypeResult.ok) {
+      return fieldTypeResult;
     }
-
-    // Type guard
-    if (typeResult.value.kind !== 'identifier') {
-      this._addError('Expected identifier for field type', typeResult.value.location);
-      return { ok: false, errors: this._errors };
-    }
-    const fieldType = typeResult.value.value;
+    const fieldType = fieldTypeResult.value;
 
     // Parse optional generator specification
     // Look ahead to check if next token is 'generator' identifier
@@ -605,6 +594,79 @@ export class Parser {
         location,
       },
     };
+  }
+
+  private _parseFieldType(fieldName: string): Result<string, Diagnostic[]> {
+    if (this._check('operator', '@')) {
+      return this._parseSchemaReferenceFieldType(fieldName);
+    }
+
+    const typeResult = this._expect('identifier');
+    if (!typeResult.ok) {
+      this._addError(
+        `Expected type after ':' in field '${fieldName}'`,
+        this._currentToken().location,
+        ['Field types: string, number, boolean, date, etc.', 'Schema reference syntax: @schema:User'],
+      );
+      return { ok: false, errors: this._errors };
+    }
+
+    if (typeResult.value.kind !== 'identifier') {
+      this._addError('Expected identifier for field type', typeResult.value.location);
+      return { ok: false, errors: this._errors };
+    }
+
+    return { ok: true, value: typeResult.value.value };
+  }
+
+  private _parseSchemaReferenceFieldType(fieldName: string): Result<string, Diagnostic[]> {
+    const atResult = this._expect('operator', '@');
+    if (!atResult.ok) {
+      this._addError(
+        `Expected '@schema:<SchemaName>' type for field '${fieldName}'`,
+        this._currentToken().location,
+        ['Schema reference syntax: @schema:User'],
+      );
+      return { ok: false, errors: this._errors };
+    }
+
+    const prefixToken = this._currentToken();
+    const isSchemaPrefixToken =
+      (prefixToken.kind === 'identifier' && prefixToken.value === 'schema') ||
+      (prefixToken.kind === 'keyword' && prefixToken.value === 'schema');
+
+    if (!isSchemaPrefixToken) {
+      this._addError(
+        `Expected 'schema' after '@' in field '${fieldName}'`,
+        this._currentToken().location,
+        ['Schema reference syntax: @schema:User'],
+      );
+      return { ok: false, errors: this._errors };
+    }
+
+    this._advance();
+
+    const colonResult = this._expect('operator', ':');
+    if (!colonResult.ok) {
+      this._addError(
+        `Expected ':' after '@schema' in field '${fieldName}'`,
+        this._currentToken().location,
+        ['Schema reference syntax: @schema:User'],
+      );
+      return { ok: false, errors: this._errors };
+    }
+
+    const schemaNameResult = this._expect('identifier');
+    if (!schemaNameResult.ok || schemaNameResult.value.kind !== 'identifier') {
+      this._addError(
+        `Expected schema name after '@schema:' in field '${fieldName}'`,
+        this._currentToken().location,
+        ['Schema reference syntax: @schema:User'],
+      );
+      return { ok: false, errors: this._errors };
+    }
+
+    return { ok: true, value: `@schema:${schemaNameResult.value.value}` };
   }
 
   /**

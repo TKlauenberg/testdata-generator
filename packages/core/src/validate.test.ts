@@ -59,7 +59,7 @@ describe('validateSchema()', () => {
         expect(userSchema?.fields.length).toBe(3);
       } else {
         // @ symbol may cause scanner error if not supported
-        expect(result.errors[0].code).toMatch(/scanner/);
+        expect(result.errors[0].code).toMatch(/(scanner|PARSE|parser)/);
       }
     });
 
@@ -226,7 +226,7 @@ describe('validateSchema()', () => {
       if (!result.ok) {
         expect(result.errors.length).toBeGreaterThan(0);
         // @ symbol may cause scanner error if not supported yet
-        expect(result.errors[0].code).toMatch(/(scanner|analyzer)/);
+        expect(result.errors[0].code).toMatch(/(scanner|analyzer|PARSE|parser)/);
       }
     });
 

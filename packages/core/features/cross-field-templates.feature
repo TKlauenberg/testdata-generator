@@ -65,3 +65,35 @@ Feature: Cross-Field Template Evaluation
     When QATester generates 5 records with seed 42 using the public generateData API
     And QATester generates another 5 records with the same seed 42
     Then both record sequences should be identical
+
+  Scenario: Many-to-one style related entity generation via @schema reference
+    Given QATester has DSL source code:
+      ```
+      schema Company {
+        name: string generator=pick(array=["Acme Corp"])
+      }
+
+      schema Employee {
+        company: @schema:Company
+      }
+      ```
+    When QATester generates 3 records using the public generateData API
+    Then each generated record should have nested field "company.name" equal to "Acme Corp"
+
+  Scenario: One-to-many style related entity generation via nested @schema references
+    Given QATester has DSL source code:
+      ```
+      schema Author {
+        name: string generator=pick(array=["Ada"])
+      }
+
+      schema Book {
+        author: @schema:Author
+      }
+
+      schema Review {
+        book: @schema:Book
+      }
+      ```
+    When QATester generates 2 records using the public generateData API
+    Then each generated record should have nested field "book.author.name" equal to "Ada"

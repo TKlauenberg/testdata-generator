@@ -90,3 +90,36 @@ Then(
     }
   },
 );
+
+Then(
+  'each generated record should have nested field {string} equal to {string}',
+  async (fieldPath: string, expectedValue: string) => {
+    const api = UseGenerateDataAPI.as(actorCalled('QATester'));
+    const records = api.getRecords();
+
+    await actorCalled('QATester').attemptsTo(Ensure.that(records.length > 0, isTrue()));
+
+    let matchedRecords = 0;
+
+    for (const record of records) {
+      const value = fieldPath
+        .split('.')
+        .reduce<unknown>((current, segment) => {
+          if (current !== null && typeof current === 'object') {
+            return (current as Record<string, unknown>)[segment];
+          }
+          return undefined;
+        }, record);
+
+      if (value === undefined) {
+        continue;
+      }
+
+      matchedRecords++;
+
+      await actorCalled('QATester').attemptsTo(Ensure.that(value, equals(expectedValue)));
+    }
+
+    await actorCalled('QATester').attemptsTo(Ensure.that(matchedRecords > 0, isTrue()));
+  },
+);

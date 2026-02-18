@@ -36,7 +36,7 @@ function ident(value: string, line: number, column: number): Token {
 }
 
 // Helper: Create operator token
-function op(value: ':' | '{' | '}' | '=' | '(' | ')' | ',' | '[' | ']', line: number, column: number): Token {
+function op(value: ':' | '{' | '}' | '=' | '(' | ')' | ',' | '[' | ']' | '@', line: number, column: number): Token {
   return { kind: 'operator', value, location: loc(line, column, 1) };
 }
 
@@ -166,6 +166,32 @@ describe('Parser - Basic Functionality', () => {
 
       const schema2 = result.value.declarations[1] as SchemaNode;
       expect(schema2.name).toBe('Product');
+    }
+  });
+
+  test('parses schema-reference field type syntax (@schema:Name)', () => {
+    // schema User { profile: @schema:Profile }
+    const tokens: Token[] = [
+      keyword('schema', 1, 1),
+      ident('User', 1, 8),
+      op('{', 1, 13),
+      ident('profile', 1, 15),
+      op(':', 1, 22),
+      op('@', 1, 24),
+      ident('schema', 1, 25),
+      op(':', 1, 31),
+      ident('Profile', 1, 32),
+      op('}', 1, 40),
+      eof(1, 41),
+    ];
+
+    const result = parse(tokens);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const schema = result.value.declarations[0] as SchemaNode;
+      expect(schema.fields[0]?.name).toBe('profile');
+      expect(schema.fields[0]?.type).toBe('@schema:Profile');
     }
   });
 });

@@ -33,6 +33,14 @@ export type GeneratedRecord = Record<string, unknown>;
 export interface GenerateOptions {
   readonly count: number;
   readonly seed?: number;
+  readonly maxRelationshipDepth?: number;
+}
+
+interface RelationshipGenerationContext {
+  readonly programSchemas: ReadonlyMap<string, ValidatedSchema>;
+  readonly maxDepth: number;
+  readonly currentDepth: number;
+  readonly schemaPath: readonly string[];
 }
 
 /**
@@ -85,6 +93,8 @@ export async function* generate(
   // CRITICAL: Same RNG instance used for all records ensures determinism
   const rng = createRNG(options.seed);
 
+  const maxDepth = options.maxRelationshipDepth ?? 5;
+
   // Step 2: Iterate through each schema in the program
   // ValidatedProgram contains multiple schemas in a Map
   for (const schema of program.schemas.values()) {
@@ -92,7 +102,12 @@ export async function* generate(
     for (let i = 0; i < options.count; i++) {
       // Step 4: Generate single record using generateRecord
       // This is where all field generation happens
-      const record = generateRecord(schema, rng);
+      const record = generateRecord(schema, rng, {
+        programSchemas: program.schemas,
+        maxDepth,
+        currentDepth: 0,
+        schemaPath: [schema.node.name],
+      });
 
       // Step 5: Yield immediately - lazy evaluation!
       // Record is produced and consumed before next record is generated
@@ -195,7 +210,8 @@ export function sortFieldsByDependency(
  */
 export function generateRecord(
   schema: ValidatedSchema,
-  rng: RNG
+  rng: RNG,
+  relationshipContext?: RelationshipGenerationContext,
 ): GeneratedRecord {
   const record: GeneratedRecord = {};
 
@@ -210,7 +226,7 @@ export function generateRecord(
 
     try {
       // Generate value for this field
-      const value = generateFieldValue(field, rng, record);
+      const value = generateFieldValue(field, rng, record, relationshipContext);
 
       // Assign to record
       record[fieldName] = value;
@@ -241,7 +257,12 @@ function generateFieldValue(
   field: ValidatedField,
   rng: RNG,
   context: GeneratedRecord,
+  relationshipContext?: RelationshipGenerationContext,
 ): unknown {
+  if (field.referencedSchema) {
+    return generateRelatedRecord(field, rng, relationshipContext);
+  }
+
   const generatorType = field.resolvedGenerator ?? field.resolvedType;
 
   // Lookup generator by type
@@ -256,6 +277,44 @@ function generateFieldValue(
   // Extract parameters and invoke
   const params = extractParameters(field, generatorType, context);
   return generator(rng, ...params);
+}
+
+function generateRelatedRecord(
+  field: ValidatedField,
+  rng: RNG,
+  relationshipContext?: RelationshipGenerationContext,
+): GeneratedRecord {
+  const referencedSchemaName = field.referencedSchema;
+  if (!referencedSchemaName) {
+    throw new Error(`Missing schema reference metadata for field '${field.node.name}'`);
+  }
+
+  if (!relationshipContext) {
+    throw new Error(
+      `Cannot generate related schema '${referencedSchemaName}' for field '${field.node.name}' without program context`
+    );
+  }
+
+  const nextDepth = relationshipContext.currentDepth + 1;
+  const nextPath = [...relationshipContext.schemaPath, referencedSchemaName];
+  if (nextDepth > relationshipContext.maxDepth) {
+    throw new Error(
+      `Relationship generation depth exceeded max depth ${relationshipContext.maxDepth} at path ${nextPath.join(' -> ')}`
+    );
+  }
+
+  const referencedSchema = relationshipContext.programSchemas.get(referencedSchemaName);
+  if (!referencedSchema) {
+    throw new Error(
+      `Referenced schema '${referencedSchemaName}' not found for field '${field.node.name}' at path ${nextPath.join(' -> ')}`
+    );
+  }
+
+  return generateRecord(referencedSchema, rng, {
+    ...relationshipContext,
+    currentDepth: nextDepth,
+    schemaPath: nextPath,
+  });
 }
 
 /**

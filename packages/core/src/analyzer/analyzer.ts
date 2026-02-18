@@ -51,6 +51,19 @@ type TemplateReference = {
   readonly field: string;
 };
 
+function parseSchemaReference(type: string): string | undefined {
+  if (type.startsWith('@schema:')) {
+    const schemaName = type.slice('@schema:'.length).trim();
+    return schemaName.length > 0 ? schemaName : undefined;
+  }
+
+  if (/^[A-Z]/.test(type)) {
+    return type;
+  }
+
+  return undefined;
+}
+
 /**
  * Main semantic analysis function.
  * Validates a parsed AST and returns a ValidatedProgram or errors.
@@ -127,6 +140,7 @@ export function analyze(ast: Program): Result<ValidatedProgram, Diagnostic[]> {
       resolvedType: field.type,
       resolvedGenerator: field.generator?.name,
       templateReferences: getTemplateReferencesForField(field).map((ref) => ref.raw),
+      referencedSchema: parseSchemaReference(field.type),
     }));
 
     validatedSchemas.set(schema.name, {
@@ -197,16 +211,15 @@ function validateFieldTypes(
   const schemaNames = schemas.map((item) => item.name);
 
   for (const field of schema.fields) {
-    // Check if it's a reference to another schema (starts with uppercase)
-    const isSchemaReference = /^[A-Z]/.test(field.type);
+    const schemaReference = parseSchemaReference(field.type);
 
-    if (isSchemaReference) {
-      const referencedSchema = symbolTable.lookupSchema(field.type);
+    if (schemaReference) {
+      const referencedSchema = symbolTable.lookupSchema(schemaReference);
       if (!referencedSchema) {
-        const suggestions = findSimilar(field.type, schemaNames);
+        const suggestions = findSimilar(schemaReference, schemaNames);
         errors.push({
           code: 'analyzer.undefinedSchema',
-          message: `Schema '${field.type}' is not defined`,
+          message: `Schema '${schemaReference}' is not defined`,
           severity: 'error',
           location: field.location,
           suggestion: suggestions.length > 0 ? `Did you mean '${suggestions[0]}'?` : undefined,
@@ -410,8 +423,9 @@ function buildDependencyGraph(
     const dependencies = new Set<string>();
 
     for (const field of schema.fields) {
-      if (/^[A-Z]/.test(field.type) && schemaNames.has(field.type)) {
-        dependencies.add(field.type);
+      const schemaReference = parseSchemaReference(field.type);
+      if (schemaReference && schemaNames.has(schemaReference)) {
+        dependencies.add(schemaReference);
       }
     }
 

@@ -62,4 +62,7 @@ export interface ValidatedField {
 
   /** Extracted template field references (e.g., from {{fieldName}}) */
   readonly templateReferences: readonly string[];
+
+  /** Referenced schema name when field uses @schema:<SchemaName> syntax */
+  readonly referencedSchema?: string;
 }
