@@ -1,6 +1,6 @@
 # Story 6.3: schema-relationship-support
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -147,11 +147,14 @@ GPT-5.3-Codex
 - Added unit coverage for parser, analyzer, and generator relationship behavior including deterministic generation and depth overflow runtime protection.
 - Added BDD scenarios for many-to-one and one-to-many style relationship generation and nested-field assertions.
 - Validation completed with full test suite: `594 passed, 0 failed`.
+- Code review auto-fixes applied: nested-field BDD step now enforces the assertion for every generated record and no longer allows partial matches.
+- Validation pipeline tests now use supported `generator=...` syntax and assert analyzer-level unrecognized-generator diagnostics.
 
 ### File List
 
 - `_bmad-output/implementation-artifacts/6-3-schema-relationship-support.md`
 - `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- `.vscode/settings.json`
 - `packages/core/src/scanner/tokens.ts`
 - `packages/core/src/scanner/scanner.test.ts`
 - `packages/core/src/parser/parser.ts`

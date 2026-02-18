@@ -43,23 +43,19 @@ describe('validateSchema()', () => {
     test('should validate schema with generators', () => {
       const source = `
         schema User {
-          id: uuid @generate(uuid)
-          email: string @generate(email)
-          age: number @generate(randomInt, min: 18, max: 90)
+          id: uuid generator=uuid
+          email: string generator=email
+          age: number generator=randomInt(min=18, max=90)
         }
       `;
       const result = validateSchema(source, 'test.td');
 
-      // Generators with @ syntax may not be fully supported yet
-      // If scanner doesn't support @, this will fail
+      expect(result.ok).toBe(true);
       if (result.ok) {
         expect(result.value.schemas.size).toBe(1);
         const userSchema = result.value.schemas.get('User');
         expect(userSchema).toBeDefined();
         expect(userSchema?.fields.length).toBe(3);
-      } else {
-        // @ symbol may cause scanner error if not supported
-        expect(result.errors[0].code).toMatch(/(scanner|PARSE|parser)/);
       }
     });
 
@@ -219,14 +215,13 @@ describe('validateSchema()', () => {
     });
 
     test('should return error for undefined generator', () => {
-      const source = `schema User { id: string @generate(unknownGenerator) }`;
+      const source = `schema User { id: string generator=unknownGenerator }`;
       const result = validateSchema(source, 'test.td');
 
       expect(result.ok).toBe(false);
       if (!result.ok) {
         expect(result.errors.length).toBeGreaterThan(0);
-        // @ symbol may cause scanner error if not supported yet
-        expect(result.errors[0].code).toMatch(/(scanner|analyzer|PARSE|parser)/);
+        expect(result.errors[0].code).toMatch(/analyzer\.unrecognizedGenerator/);
       }
     });
 

@@ -99,9 +99,14 @@ Then(
 
     await actorCalled('QATester').attemptsTo(Ensure.that(records.length > 0, isTrue()));
 
-    let matchedRecords = 0;
+    const [rootField] = fieldPath.split('.', 1);
+    const relevantRecords = records.filter(
+      (record) => rootField !== undefined && Object.hasOwn(record, rootField),
+    );
 
-    for (const record of records) {
+    await actorCalled('QATester').attemptsTo(Ensure.that(relevantRecords.length > 0, isTrue()));
+
+    for (const record of relevantRecords) {
       const value = fieldPath
         .split('.')
         .reduce<unknown>((current, segment) => {
@@ -111,15 +116,9 @@ Then(
           return undefined;
         }, record);
 
-      if (value === undefined) {
-        continue;
-      }
-
-      matchedRecords++;
+      await actorCalled('QATester').attemptsTo(Ensure.that(value === undefined, equals(false)));
 
       await actorCalled('QATester').attemptsTo(Ensure.that(value, equals(expectedValue)));
     }
-
-    await actorCalled('QATester').attemptsTo(Ensure.that(matchedRecords > 0, isTrue()));
   },
 );

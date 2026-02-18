@@ -42,6 +42,10 @@
     "/^bun run build(( 2>&1 \\| tail -[0-9]+)|())$/": {
       "approve": true,
       "matchCommandLine": true
+    },
+    "/^git rev-parse --is-inside-work-tree && git status --porcelain && echo '---UNSTAGED---' && git diff --name-only && echo '---STAGED---' && git diff --cached --name-only$/": {
+      "approve": true,
+      "matchCommandLine": true
     }
   }
 }
