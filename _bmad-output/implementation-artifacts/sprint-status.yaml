@@ -94,7 +94,7 @@ development_status:
   6-1-template-engine-for-cross-field-references: done
   6-2-field-generation-order-resolver: done
   6-3-schema-relationship-support: done
-  epic-6-retrospective: optional
+  epic-6-retrospective: done
 
   epic-7: backlog
   7-1-uniqueness-constraint-tracker: backlog
