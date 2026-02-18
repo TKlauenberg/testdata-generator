@@ -96,8 +96,8 @@ development_status:
   6-3-schema-relationship-support: done
   epic-6-retrospective: done
 
-  epic-7: backlog
-  7-1-uniqueness-constraint-tracker: backlog
+  epic-7: in-progress
+  7-1-uniqueness-constraint-tracker: ready-for-dev
   7-2-single-field-uniqueness-enforcement: backlog
   7-3-composite-uniqueness-constraints: backlog
   epic-7-retrospective: optional
