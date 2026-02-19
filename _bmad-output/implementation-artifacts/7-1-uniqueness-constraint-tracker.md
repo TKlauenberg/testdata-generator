@@ -1,6 +1,6 @@
 # Story 7.1: uniqueness-constraint-tracker
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -22,29 +22,29 @@ so that **duplicate values can be detected and prevented**.
 
 ## Tasks / Subtasks
 
-- [ ] Implement uniqueness tracker primitive in generator module (AC: 1, 2, 4)
-  - [ ] Add `UniquenessTracker` to `packages/core/src/generator/uniqueness.ts`.
-  - [ ] Implement single-field storage as `Map<string, Set<string>>` (or equivalent deterministic hash strategy).
-  - [ ] Ensure `track()` performs idempotent duplicate detection and returns boolean success.
+- [x] Implement uniqueness tracker primitive in generator module (AC: 1, 2, 4)
+  - [x] Add `UniquenessTracker` to `packages/core/src/generator/uniqueness.ts`.
+  - [x] Implement single-field storage as `Map<string, Set<string>>` (or equivalent deterministic hash strategy).
+  - [x] Ensure `track()` performs idempotent duplicate detection and returns boolean success.
 
-- [ ] Add composite-key tracking support (AC: 3, 4)
-  - [ ] Add API for tracking composite values with stable key serialization.
-  - [ ] Ensure composite key representation is deterministic and collision-resistant for JSON-serializable inputs.
-  - [ ] Keep implementation isolated so Story 7.2 can plug it into generation retry flow without refactor.
+- [x] Add composite-key tracking support (AC: 3, 4)
+  - [x] Add API for tracking composite values with stable key serialization.
+  - [x] Ensure composite key representation is deterministic and collision-resistant for JSON-serializable inputs.
+  - [x] Keep implementation isolated so Story 7.2 can plug it into generation retry flow without refactor.
 
-- [ ] Add lifecycle/reset behavior for generation sessions (AC: 5)
-  - [ ] Implement `clear()` (or equivalent reset method) on `UniquenessTracker`.
-  - [ ] Confirm reset behavior aligns with per-run generator session boundaries.
+- [x] Add lifecycle/reset behavior for generation sessions (AC: 5)
+  - [x] Implement `clear()` (or equivalent reset method) on `UniquenessTracker`.
+  - [x] Confirm reset behavior aligns with per-run generator session boundaries.
 
-- [ ] Add focused unit test coverage (AC: 6, 7)
-  - [ ] Create `packages/core/src/generator/uniqueness.test.ts` for tracker behavior.
-  - [ ] Cover first-seen vs duplicate for primitive and object-like values.
-  - [ ] Cover composite key duplicate detection for 2-field and 3-field combinations.
-  - [ ] Add scale-oriented test that tracks many values and asserts stable behavior.
+- [x] Add focused unit test coverage (AC: 6, 7)
+  - [x] Create `packages/core/src/generator/uniqueness.test.ts` for tracker behavior.
+  - [x] Cover first-seen vs duplicate for primitive and object-like values.
+  - [x] Cover composite key duplicate detection for 2-field and 3-field combinations.
+  - [x] Add scale-oriented test that tracks many values and asserts stable behavior.
 
-- [ ] Add BDD coverage scaffold for uniqueness behavior (AC: 6)
-  - [ ] Add `packages/core/features/uniqueness-constraints.feature` with baseline tracker behavior scenarios.
-  - [ ] Implement matching steps in `packages/core/features/step_definitions/` using current Screenplay patterns.
+- [x] Add BDD coverage scaffold for uniqueness behavior (AC: 6)
+  - [x] Add `packages/core/features/uniqueness-constraints.feature` with baseline tracker behavior scenarios.
+  - [x] Implement matching steps in `packages/core/features/step_definitions/` using current Screenplay patterns.
 
 ## Dev Notes
 
@@ -126,8 +126,24 @@ GPT-5.3-Codex
 - Ultimate context engine analysis completed - comprehensive developer guide created.
 - Story prepared with architecture-aligned implementation guidance and anti-regression guardrails.
 - Story status set to `ready-for-dev` and sprint tracker updated accordingly.
+- Implemented `UniquenessTracker` with O(1)-lookup `Map` + `Set` storage for single-field and composite uniqueness checks.
+- Added deterministic stable serialization for JSON-serializable object-like values and composite tuple tracking.
+- Added lifecycle reset via `clear()` to support per-generation-session boundaries.
+- Added focused unit tests covering single-field duplicates, composite duplicates (2-field/3-field), reset behavior, and large-set tracking.
+- Added BDD scaffold feature and Screenplay-compatible step definitions for tracker behavior.
+- Validation completed: all tests pass (`bun test`), BDD runner passes (`bun run test:bdd`), changed-file ESLint checks pass.
 
 ### File List
 
 - `_bmad-output/implementation-artifacts/7-1-uniqueness-constraint-tracker.md`
 - `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- `packages/core/src/generator/uniqueness.ts`
+- `packages/core/src/generator/uniqueness.test.ts`
+- `packages/core/src/generator/index.ts`
+- `packages/core/features/uniqueness-constraints.feature`
+- `packages/core/features/step_definitions/uniqueness-constraints.steps.ts`
+- `packages/core/tests/run-cucumber.ts`
+
+### Change Log
+
+- 2026-02-18: Implemented uniqueness tracker foundation (single-field + composite + reset), added unit and BDD scaffold coverage, and advanced story status to `review`.
