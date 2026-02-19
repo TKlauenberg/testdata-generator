@@ -16,6 +16,9 @@ import type { ValidatedSchema, ValidatedField, ValidatedProgram } from '../analy
 import type { GeneratorParameter } from '../parser/ast';
 import { GENERATOR_REGISTRY } from './generators';
 import { evaluateTemplate, hasTemplateReferences } from './template';
+import { UniquenessTracker } from './uniqueness';
+
+const MAX_UNIQUENESS_ATTEMPTS = 100;
 
 /**
  * Generated record is a plain JavaScript object with field names as keys.
@@ -41,6 +44,10 @@ interface RelationshipGenerationContext {
   readonly maxDepth: number;
   readonly currentDepth: number;
   readonly schemaPath: readonly string[];
+}
+
+interface GenerationSessionContext {
+  readonly uniquenessTracker: UniquenessTracker;
 }
 
 /**
@@ -92,6 +99,9 @@ export async function* generate(
   // Step 1: Create RNG ONCE for entire generation session
   // CRITICAL: Same RNG instance used for all records ensures determinism
   const rng = createRNG(options.seed);
+  const sessionContext: GenerationSessionContext = {
+    uniquenessTracker: new UniquenessTracker(),
+  };
 
   const maxDepth = options.maxRelationshipDepth ?? 5;
 
@@ -107,7 +117,7 @@ export async function* generate(
         maxDepth,
         currentDepth: 0,
         schemaPath: [schema.node.name],
-      });
+      }, sessionContext);
 
       // Step 5: Yield immediately - lazy evaluation!
       // Record is produced and consumed before next record is generated
@@ -212,6 +222,7 @@ export function generateRecord(
   schema: ValidatedSchema,
   rng: RNG,
   relationshipContext?: RelationshipGenerationContext,
+  sessionContext?: GenerationSessionContext,
 ): GeneratedRecord {
   const record: GeneratedRecord = {};
 
@@ -226,7 +237,16 @@ export function generateRecord(
 
     try {
       // Generate value for this field
-      const value = generateFieldValue(field, rng, record, relationshipContext);
+      const value = field.isUnique && sessionContext
+        ? generateUniqueFieldValue(
+          field,
+          rng,
+          record,
+          relationshipContext,
+          sessionContext,
+          `${schema.node.name}.${field.node.name}`,
+        )
+        : generateFieldValue(field, rng, record, relationshipContext, sessionContext);
 
       // Assign to record
       record[fieldName] = value;
@@ -258,9 +278,10 @@ function generateFieldValue(
   rng: RNG,
   context: GeneratedRecord,
   relationshipContext?: RelationshipGenerationContext,
+  sessionContext?: GenerationSessionContext,
 ): unknown {
   if (field.referencedSchema) {
-    return generateRelatedRecord(field, rng, relationshipContext);
+    return generateRelatedRecord(field, rng, relationshipContext, sessionContext);
   }
 
   const generatorType = field.resolvedGenerator ?? field.resolvedType;
@@ -279,10 +300,33 @@ function generateFieldValue(
   return generator(rng, ...params);
 }
 
+function generateUniqueFieldValue(
+  field: ValidatedField,
+  rng: RNG,
+  context: GeneratedRecord,
+  relationshipContext: RelationshipGenerationContext | undefined,
+  sessionContext: GenerationSessionContext,
+  uniquenessScope: string,
+): unknown {
+  for (let attempt = 1; attempt <= MAX_UNIQUENESS_ATTEMPTS; attempt++) {
+    const candidate = generateFieldValue(field, rng, context, relationshipContext, sessionContext);
+    const accepted = sessionContext.uniquenessTracker.track(uniquenessScope, candidate);
+    if (accepted) {
+      return candidate;
+    }
+  }
+
+  throw new Error(
+    `Uniqueness constraint failed for field '${field.node.name}' after ${MAX_UNIQUENESS_ATTEMPTS} attempts. ` +
+      `Increase generator variety (wider ranges/options) or relax uniqueness constraints.`,
+  );
+}
+
 function generateRelatedRecord(
   field: ValidatedField,
   rng: RNG,
   relationshipContext?: RelationshipGenerationContext,
+  sessionContext?: GenerationSessionContext,
 ): GeneratedRecord {
   const referencedSchemaName = field.referencedSchema;
   if (!referencedSchemaName) {
@@ -314,7 +358,7 @@ function generateRelatedRecord(
     ...relationshipContext,
     currentDepth: nextDepth,
     schemaPath: nextPath,
-  });
+  }, sessionContext);
 }
 
 /**

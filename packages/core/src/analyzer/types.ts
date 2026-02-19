@@ -60,6 +60,9 @@ export interface ValidatedField {
   /** Resolved generator name (if specified) */
   readonly resolvedGenerator: string | undefined;
 
+  /** Whether single-field uniqueness is required for this field */
+  readonly isUnique: boolean;
+
   /** Extracted template field references (e.g., from {{fieldName}}) */
   readonly templateReferences: readonly string[];
 

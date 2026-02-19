@@ -14,6 +14,7 @@ function createMockSchema(
     name: string;
     type: string;
     params?: Array<{ name: string; value: unknown }>;
+    isUnique?: boolean;
   }>,
   schemaName: string = 'TestSchema',
 ): ValidatedSchema {
@@ -33,6 +34,7 @@ function createMockSchema(
         name: f.type,
         parameters: (f.params ?? []) as GeneratorParameter[],
       },
+      constraints: f.isUnique ? { unique: true } : undefined,
       location: mockLocation,
     })
   );
@@ -49,6 +51,7 @@ function createMockSchema(
       node: fieldNodes[idx],
       resolvedType: f.type,
       resolvedGenerator: f.type,
+      isUnique: f.isUnique ?? false,
       templateReferences: [],
       referencedSchema: f.type.startsWith('@schema:') ? f.type.replace('@schema:', '') : undefined,
     })
@@ -399,6 +402,7 @@ describe('sortFieldsByDependency', () => {
       node,
       resolvedType: 'string',
       resolvedGenerator: 'string',
+      isUnique: false,
       templateReferences,
     };
   }
@@ -778,6 +782,122 @@ describe('generate (streaming)', () => {
       for (const record of records) {
         expect(record.email).toBe('Ada@test.com');
       }
+    });
+  });
+
+  describe('single-field uniqueness enforcement', () => {
+    it('enforces uniqueness for fields marked unique across count > 1', async () => {
+      const program = createMockProgram([
+        {
+          name: 'User',
+          fields: [
+            {
+              name: 'id',
+              type: 'randomInt',
+              params: [
+                { name: 'min', value: 1 },
+                { name: 'max', value: 10_000 },
+              ],
+              isUnique: true,
+            },
+          ],
+        },
+      ]);
+
+      const records: Record<string, unknown>[] = [];
+      for await (const record of generate(program, { count: 5, seed: 99 })) {
+        records.push(record);
+      }
+
+      const ids = records.map((record) => record.id);
+      expect(new Set(ids).size).toBe(ids.length);
+    });
+
+    it('retries transient duplicates and eventually succeeds deterministically', async () => {
+      const program = createMockProgram([
+        {
+          name: 'User',
+          fields: [
+            {
+              name: 'id',
+              type: 'pick',
+              params: [{ name: 'array', value: [1, 1, 2, 3, 4] }],
+              isUnique: true,
+            },
+          ],
+        },
+      ]);
+
+      const records1: Record<string, unknown>[] = [];
+      for await (const record of generate(program, { count: 3, seed: 1234 })) {
+        records1.push(record);
+      }
+
+      const records2: Record<string, unknown>[] = [];
+      for await (const record of generate(program, { count: 3, seed: 1234 })) {
+        records2.push(record);
+      }
+
+      const ids = records1.map((record) => record.id);
+      expect(new Set(ids).size).toBe(ids.length);
+      expect(records1).toEqual(records2);
+    });
+
+    it('fails with field-scoped guidance after exhausting uniqueness retries', async () => {
+      const program = createMockProgram([
+        {
+          name: 'User',
+          fields: [
+            {
+              name: 'status',
+              type: 'pick',
+              params: [{ name: 'array', value: ['same'] }],
+              isUnique: true,
+            },
+          ],
+        },
+      ]);
+
+      await expect(async () => {
+        for await (const _record of generate(program, { count: 2, seed: 111 })) {
+          // consume stream
+        }
+      }).toThrow(/status/i);
+
+      await expect(async () => {
+        for await (const _record of generate(program, { count: 2, seed: 111 })) {
+          // consume stream
+        }
+      }).toThrow(/increase.*variety|relax.*constraint/i);
+    });
+
+    it('resets uniqueness tracking between separate generate() sessions', async () => {
+      const program = createMockProgram([
+        {
+          name: 'User',
+          fields: [
+            {
+              name: 'status',
+              type: 'pick',
+              params: [{ name: 'array', value: ['only-value'] }],
+              isUnique: true,
+            },
+          ],
+        },
+      ]);
+
+      const firstSession: Record<string, unknown>[] = [];
+      for await (const record of generate(program, { count: 1, seed: 55 })) {
+        firstSession.push(record);
+      }
+
+      const secondSession: Record<string, unknown>[] = [];
+      for await (const record of generate(program, { count: 1, seed: 55 })) {
+        secondSession.push(record);
+      }
+
+      expect(firstSession).toEqual([{ status: 'only-value' }]);
+      expect(secondSession).toEqual([{ status: 'only-value' }]);
     });
   });
 

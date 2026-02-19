@@ -113,6 +113,12 @@ export function analyze(ast: Program): Result<ValidatedProgram, Diagnostic[]> {
       errors.push(...templateResult.errors);
     }
 
+    // Validate uniqueness constraints
+    const uniqueResult = validateUniqueConstraints(schema);
+    if (!uniqueResult.ok) {
+      errors.push(...uniqueResult.errors);
+    }
+
     templateReferencesBySchema.set(schema.name, getTemplateReferencesForSchema(schema));
   }
 
@@ -139,6 +145,7 @@ export function analyze(ast: Program): Result<ValidatedProgram, Diagnostic[]> {
       node: field,
       resolvedType: field.type,
       resolvedGenerator: field.generator?.name,
+      isUnique: field.constraints?.unique === true,
       templateReferences: getTemplateReferencesForField(field).map((ref) => ref.raw),
       referencedSchema: parseSchemaReference(field.type),
     }));
@@ -341,6 +348,38 @@ function validateTemplateReferences(
           suggestion: suggestions.length > 0 ? `Did you mean '${suggestions[0]}'?` : undefined,
         });
       }
+    }
+  }
+
+  if (errors.length > 0) {
+    return { ok: false, errors };
+  }
+
+  return { ok: true, value: undefined };
+}
+
+/**
+ * Validates uniqueness constraint payloads.
+ *
+ * Parser grammar only emits `unique` as boolean true. This check defends
+ * against malformed AST payloads from direct programmatic construction.
+ */
+function validateUniqueConstraints(schema: SchemaNode): Result<void, Diagnostic[]> {
+  const errors: Diagnostic[] = [];
+
+  for (const field of schema.fields) {
+    if (!field.constraints || field.constraints.unique === undefined) {
+      continue;
+    }
+
+    if (field.constraints.unique !== true) {
+      errors.push({
+        code: 'analyzer.invalidUniqueConstraint',
+        message: `Invalid unique constraint for field '${field.name}': expected keyword 'unique'`,
+        severity: 'error',
+        location: field.location,
+        suggestion: `Use '${field.name}: ${field.type} unique' without assigning true/false`,
+      });
     }
   }
 

@@ -26,3 +26,27 @@ Feature: Uniqueness Constraint Tracking
     And Dev clears the uniqueness tracker
     And Dev tracks value "42" for field "id" again
     Then the second tracking result should be true
+
+  @uniqueness @generation
+  Scenario: Enforce single-field uniqueness during generation
+    Given Dev has uniqueness-enforced DSL source code:
+      """
+      schema User {
+        id: number generator=randomInt(min=1, max=10000) unique
+      }
+      """
+    When Dev generates 50 records for uniqueness constraints
+    Then all generated values for field "id" should be unique
+
+  @uniqueness @generation @failure
+  Scenario: Report clear failure when uniqueness cannot be satisfied
+    Given Dev has uniqueness-enforced DSL source code:
+      """
+      schema User {
+        status: string generator=pick(array=["same-value"]) unique
+      }
+      """
+    When Dev attempts to generate 2 records for uniqueness constraints
+    Then uniqueness generation should fail
+    And uniqueness failure should mention field "status"
+    And uniqueness failure should suggest increasing value variety

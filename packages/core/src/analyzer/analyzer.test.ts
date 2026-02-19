@@ -365,6 +365,52 @@ describe('analyze()', () => {
     });
   });
 
+  describe('single-field uniqueness metadata', () => {
+    test('propagates unique constraint metadata to validated fields', () => {
+      const uniqueField = createField('email', 'string', 'email');
+      const normalField = createField('name', 'string');
+
+      const program = createProgram([
+        createSchema('User', [
+          {
+            ...uniqueField,
+            constraints: { unique: true },
+          },
+          normalField,
+        ]),
+      ]);
+
+      const result = analyze(program);
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        const userSchema = result.value.schemas.get('User');
+        expect(userSchema).toBeDefined();
+        expect(userSchema?.fields[0]?.isUnique).toBe(true);
+        expect(userSchema?.fields[1]?.isUnique).toBe(false);
+      }
+    });
+
+    test('emits analyzer diagnostic for invalid unique constraint payload', () => {
+      const malformedField: FieldNode = {
+        ...createField('email', 'string', 'email'),
+        constraints: { unique: false as unknown as true },
+      };
+
+      const program = createProgram([createSchema('User', [malformedField])]);
+      const result = analyze(program);
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        const uniqueError = result.errors.find(
+          (error) => error.code === 'analyzer.invalidUniqueConstraint',
+        );
+        expect(uniqueError).toBeDefined();
+        expect(uniqueError?.message).toContain('email');
+      }
+    });
+  });
+
   describe('error accumulation', () => {
     test('accumulates multiple different error types', () => {
       const program = createProgram([

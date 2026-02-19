@@ -1,6 +1,6 @@
 # Story 7.2: single-field-uniqueness-enforcement
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -24,30 +24,30 @@ so that **generated values don't have duplicates**.
 
 ## Tasks / Subtasks
 
-- [ ] Propagate unique constraints through semantic analysis (AC: 2)
-  - [ ] Extend analyzer enrichment so `ValidatedField` includes single-field uniqueness metadata from `FieldNode.constraints.unique`.
-  - [ ] Add analyzer validation for unsupported/invalid uniqueness configurations (if any are currently representable), and emit `Diagnostic` entries with analyzer error codes.
-  - [ ] Add/extend analyzer unit tests to verify valid unique-constraint analysis and error diagnostics.
+- [x] Propagate unique constraints through semantic analysis (AC: 2)
+  - [x] Extend analyzer enrichment so `ValidatedField` includes single-field uniqueness metadata from `FieldNode.constraints.unique`.
+  - [x] Add analyzer validation for unsupported/invalid uniqueness configurations (if any are currently representable), and emit `Diagnostic` entries with analyzer error codes.
+  - [x] Add/extend analyzer unit tests to verify valid unique-constraint analysis and error diagnostics.
 
-- [ ] Implement runtime single-field uniqueness enforcement in generation pipeline (AC: 3, 4, 5, 6, 7)
-  - [ ] Integrate `UniquenessTracker` into `generate()` session lifecycle so each call starts with fresh tracking state.
-  - [ ] Enforce uniqueness for fields marked unique during record generation with bounded retry loop (`MAX_UNIQUENESS_ATTEMPTS = 100`).
-  - [ ] Preserve deterministic behavior under a fixed seed while retrying through the same RNG stream.
-  - [ ] Throw clear field-scoped error when retries are exhausted, including guidance to increase generator variety or relax constraints.
+- [x] Implement runtime single-field uniqueness enforcement in generation pipeline (AC: 3, 4, 5, 6, 7)
+  - [x] Integrate `UniquenessTracker` into `generate()` session lifecycle so each call starts with fresh tracking state.
+  - [x] Enforce uniqueness for fields marked unique during record generation with bounded retry loop (`MAX_UNIQUENESS_ATTEMPTS = 100`).
+  - [x] Preserve deterministic behavior under a fixed seed while retrying through the same RNG stream.
+  - [x] Throw clear field-scoped error when retries are exhausted, including guidance to increase generator variety or relax constraints.
 
-- [ ] Keep module/API boundaries clean (AC: 2, 3)
-  - [ ] Update generator/analyzer type contracts in place (no CLI coupling).
-  - [ ] Maintain export boundaries through module `index.ts` files where new types/functions are surfaced.
+- [x] Keep module/API boundaries clean (AC: 2, 3)
+  - [x] Update generator/analyzer type contracts in place (no CLI coupling).
+  - [x] Maintain export boundaries through module `index.ts` files where new types/functions are surfaced.
 
-- [ ] Add focused unit coverage for uniqueness enforcement behavior (AC: 8)
-  - [ ] Add generator tests for successful unique generation across `count > 1`.
-  - [ ] Add retry-path tests that force transient duplicates before eventual success.
-  - [ ] Add failure-path tests that exhaust 100 attempts and assert error clarity.
-  - [ ] Add session-boundary tests proving tracker reset between separate `generate()` invocations.
+- [x] Add focused unit coverage for uniqueness enforcement behavior (AC: 8)
+  - [x] Add generator tests for successful unique generation across `count > 1`.
+  - [x] Add retry-path tests that force transient duplicates before eventual success.
+  - [x] Add failure-path tests that exhaust 100 attempts and assert error clarity.
+  - [x] Add session-boundary tests proving tracker reset between separate `generate()` invocations.
 
-- [ ] Add BDD coverage for user-facing uniqueness behavior (AC: 9)
-  - [ ] Extend `packages/core/features/uniqueness-constraints.feature` with single-field uniqueness enforcement scenarios.
-  - [ ] Add/extend Screenplay tasks/questions/step-definitions for generation-level uniqueness checks and failure messaging.
+- [x] Add BDD coverage for user-facing uniqueness behavior (AC: 9)
+  - [x] Extend `packages/core/features/uniqueness-constraints.feature` with single-field uniqueness enforcement scenarios.
+  - [x] Add/extend Screenplay tasks/questions/step-definitions for generation-level uniqueness checks and failure messaging.
 
 ## Dev Notes
 
@@ -143,22 +143,44 @@ so that **generated values don't have duplicates**.
 
 GPT-5.3-Codex
 
+### Implementation Plan
+
+- Propagate field-level `unique` metadata through analyzer output (`ValidatedField.isUnique`) and add defensive analyzer diagnostics for malformed uniqueness payloads.
+- Integrate per-session `UniquenessTracker` into `generate()` and enforce single-field uniqueness with a bounded retry loop (`MAX_UNIQUENESS_ATTEMPTS = 100`).
+- Add targeted analyzer/generator unit tests and BDD scenarios for uniqueness success/failure messaging and session reset behavior.
+
 ### Debug Log References
 
-- N/A (create-story context generation only)
+- Ran targeted tests:
+  - `packages/core/src/analyzer/analyzer.test.ts`
+  - `packages/core/src/generator/generator.test.ts`
+  - `packages/core/src/generateData.test.ts`
+- Ran full test suite:
+  - `bun test` (via `runTests`) → 592 passed, 0 failed
 
 ### Completion Notes List
 
-- Ultimate context engine analysis completed - comprehensive developer guide created.
-- Story scoped to single-field uniqueness enforcement with analyzer propagation + generator retry guardrails.
-- Retry failure mode requires explicit, field-scoped diagnostics with actionable remediation.
-- Story status set to `ready-for-dev` and sprint tracker updated accordingly.
+- Added `ValidatedField.isUnique` and analyzer propagation from `FieldNode.constraints.unique`.
+- Added analyzer defensive validation for malformed uniqueness payloads with `analyzer.invalidUniqueConstraint` diagnostics.
+- Integrated per-generation-session `UniquenessTracker` into `generate()` lifecycle to ensure clean state per invocation.
+- Implemented bounded uniqueness retry loop (`100` attempts) with deterministic RNG progression under fixed seed.
+- Added clear uniqueness exhaustion error guidance including field scope and remediation (increase variety or relax constraints).
+- Added unit coverage for uniqueness success, retry path, exhaustion failure, and session reset.
+- Extended uniqueness BDD scenarios for generation-time unique enforcement and failure messaging.
 
 ### File List
 
 - `_bmad-output/implementation-artifacts/7-2-single-field-uniqueness-enforcement.md`
 - `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- `packages/core/src/analyzer/types.ts`
+- `packages/core/src/analyzer/analyzer.ts`
+- `packages/core/src/analyzer/analyzer.test.ts`
+- `packages/core/src/generator/generator.ts`
+- `packages/core/src/generator/generator.test.ts`
+- `packages/core/features/uniqueness-constraints.feature`
+- `packages/core/features/step_definitions/uniqueness-constraints.steps.ts`
 
 ### Change Log
 
 - 2026-02-19: Created Story 7.2 implementation context and marked sprint status to `ready-for-dev`.
+- 2026-02-19: Implemented single-field uniqueness enforcement in analyzer/generator, added unit + BDD coverage, and advanced story to `review`.
