@@ -32,7 +32,7 @@ Feature: Uniqueness Constraint Tracking
     Given Dev has uniqueness-enforced DSL source code:
       """
       schema User {
-        id: number generator=randomInt(min=1, max=10000) unique
+        id: number generator=randomInt(min=1, max=50) unique
       }
       """
     When Dev generates 50 records for uniqueness constraints
@@ -50,3 +50,15 @@ Feature: Uniqueness Constraint Tracking
     Then uniqueness generation should fail
     And uniqueness failure should mention field "status"
     And uniqueness failure should suggest increasing value variety
+
+  @uniqueness @generation @session-reset
+  Scenario: Uniqueness tracking resets between separate generation sessions
+    Given Dev has uniqueness-enforced DSL source code:
+      """
+      schema User {
+        status: string generator=pick(array=["only-value"]) unique
+      }
+      """
+    When Dev generates 1 records for uniqueness constraints
+    And Dev generates 1 records for uniqueness constraints
+    Then all generated values for field "status" should be unique

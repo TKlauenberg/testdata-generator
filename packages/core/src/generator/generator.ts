@@ -205,6 +205,12 @@ export function sortFieldsByDependency(
  *
  * @param schema - Validated schema with field definitions
  * @param rng - RNG instance for deterministic generation
+ * @param relationshipContext - Optional context for nested schema generation
+ * @param sessionContext - Optional session context carrying the UniquenessTracker.
+ *   **WARNING:** When omitted, fields marked `isUnique` receive NO uniqueness enforcement
+ *   and will silently produce duplicates. Always pass a sessionContext when generating
+ *   multiple records from schemas that contain unique fields. The `generate()` async
+ *   generator always supplies this context automatically.
  * @returns Plain JavaScript object with all fields populated
  *
  * @throws {Error} If unknown generator type encountered
@@ -317,7 +323,7 @@ function generateUniqueFieldValue(
   }
 
   throw new Error(
-    `Uniqueness constraint failed for field '${field.node.name}' after ${MAX_UNIQUENESS_ATTEMPTS} attempts. ` +
+    `Uniqueness constraint failed for field '${uniquenessScope}' after ${MAX_UNIQUENESS_ATTEMPTS} attempts. ` +
       `Increase generator variety (wider ranges/options) or relax uniqueness constraints.`,
   );
 }

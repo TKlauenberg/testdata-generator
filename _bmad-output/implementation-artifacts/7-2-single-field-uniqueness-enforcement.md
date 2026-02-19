@@ -1,6 +1,6 @@
 # Story 7.2: single-field-uniqueness-enforcement
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -180,7 +180,22 @@ GPT-5.3-Codex
 - `packages/core/features/uniqueness-constraints.feature`
 - `packages/core/features/step_definitions/uniqueness-constraints.steps.ts`
 
+### Senior Developer Review (AI)
+
+**Reviewer:** Tobi (via code-review workflow) · **Date:** 2026-02-19
+
+**Result:** ✅ APPROVED — 0 HIGH, 4 MEDIUM (all fixed), 3 LOW (tracked as action items)
+
+**Fixes applied:**
+
+- **M1 (MEDIUM)** — Added `isUnique?: boolean` to `createMockProgram`'s `fields` type in `generator.test.ts`. Previously the type silently dropped the property from IntelliSense, misleading future maintainers.
+- **M2 (MEDIUM)** — Changed BDD uniqueness scenario from `randomInt(min=1, max=10000)` with 50 records to `randomInt(min=1, max=50)` with 50 records. The original range had only ~11.5% collision probability without enforcement, so the test would pass even if the feature were disabled. The tighter range guarantees collisions occur without enforcement and must be resolved by the retry loop.
+- **M3 (MEDIUM)** — Added explicit JSDoc warning to `generateRecord` documenting that `isUnique` fields receive **no enforcement** when `sessionContext` is omitted. Prevents silent data duplication for callers using `generateRecord` directly in multi-record loops.
+- **M4 (MEDIUM)** — Changed uniqueness exhaustion error from `field.node.name` (bare field name) to `uniquenessScope` (schema-qualified, e.g. `User.status`). Fixes ambiguity in multi-schema programs where two schemas share a field name.
+
 ### Change Log
 
 - 2026-02-19: Created Story 7.2 implementation context and marked sprint status to `ready-for-dev`.
 - 2026-02-19: Implemented single-field uniqueness enforcement in analyzer/generator, added unit + BDD coverage, and advanced story to `review`.
+- 2026-02-19: Code review — fixed 4 MEDIUM issues (M1 type safety, M2 BDD scenario strength, M3 generateRecord docs, M4 scoped error message). Story advanced to `done`.
+- 2026-02-19: Fixed 3 LOW issues — L1: retry-path test now uses 9-dup/1-unique array + explicit `toContain` assertions proving the retry branch was exercised; L2: added Gherkin session-reset scenario for AC 7; L3: added `test.each` for `null`, `0`, and string invalid-unique-constraint cases in analyzer test.

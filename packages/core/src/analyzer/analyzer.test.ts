@@ -409,6 +409,29 @@ describe('analyze()', () => {
         expect(uniqueError?.message).toContain('email');
       }
     });
+
+    test.each([
+      ['null', null],
+      ['zero', 0],
+      ['string', 'yes'],
+    ])('emits analyzer diagnostic for unique constraint with value %s', (_label, invalidValue) => {
+      const malformedField: FieldNode = {
+        ...createField('score', 'string', 'randomString'),
+        constraints: { unique: invalidValue as unknown as true },
+      };
+
+      const program = createProgram([createSchema('User', [malformedField])]);
+      const result = analyze(program);
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        const uniqueError = result.errors.find(
+          (error) => error.code === 'analyzer.invalidUniqueConstraint',
+        );
+        expect(uniqueError).toBeDefined();
+        expect(uniqueError?.message).toContain('score');
+      }
+    });
   });
 
   describe('error accumulation', () => {

@@ -526,6 +526,7 @@ function createMockProgram(
       name: string;
       type: string;
       params?: Array<{ name: string; value: unknown }>;
+      isUnique?: boolean;
     }>;
   }>
 ): ValidatedProgram {
@@ -814,6 +815,11 @@ describe('generate (streaming)', () => {
     });
 
     it('retries transient duplicates and eventually succeeds deterministically', async () => {
+      // Array has 9 copies of 'dup' and 1 copy of 'unique'.
+      // Generating 2 records forces the tracker to reject 'dup' for the second
+      // record at least once (90% chance per draw), exercising the retry loop.
+      // Asserting both 'dup' and 'unique' appear in the output proves the retry
+      // path was reached: without retry enforcement both records would likely be 'dup'.
       const program = createMockProgram([
         {
           name: 'User',
@@ -821,7 +827,7 @@ describe('generate (streaming)', () => {
             {
               name: 'id',
               type: 'pick',
-              params: [{ name: 'array', value: [1, 1, 2, 3, 4] }],
+              params: [{ name: 'array', value: ['dup', 'dup', 'dup', 'dup', 'dup', 'dup', 'dup', 'dup', 'dup', 'unique'] }],
               isUnique: true,
             },
           ],
@@ -829,17 +835,22 @@ describe('generate (streaming)', () => {
       ]);
 
       const records1: Record<string, unknown>[] = [];
-      for await (const record of generate(program, { count: 3, seed: 1234 })) {
+      for await (const record of generate(program, { count: 2, seed: 1234 })) {
         records1.push(record);
       }
 
       const records2: Record<string, unknown>[] = [];
-      for await (const record of generate(program, { count: 3, seed: 1234 })) {
+      for await (const record of generate(program, { count: 2, seed: 1234 })) {
         records2.push(record);
       }
 
       const ids = records1.map((record) => record.id);
+      // Uniqueness enforced: no duplicate values
       expect(new Set(ids).size).toBe(ids.length);
+      // Both values present: 'dup' was picked once and 'unique' was reached via retry
+      expect(ids).toContain('dup');
+      expect(ids).toContain('unique');
+      // Deterministic: same seed produces identical output
       expect(records1).toEqual(records2);
     });
 
