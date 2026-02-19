@@ -27,6 +27,30 @@ describe('UniquenessTracker', () => {
     expect(tracker.track('profile', sameDifferentOrder)).toBe(false);
   });
 
+  it('distinguishes special numeric values during tracking', () => {
+    const tracker = new UniquenessTracker();
+
+    expect(tracker.track('metrics', NaN)).toBe(true);
+    expect(tracker.track('metrics', NaN)).toBe(false);
+
+    expect(tracker.track('metrics', Infinity)).toBe(true);
+    expect(tracker.track('metrics', -Infinity)).toBe(true);
+    expect(tracker.track('metrics', null)).toBe(true);
+
+    expect(tracker.track('metrics', Infinity)).toBe(false);
+    expect(tracker.track('metrics', -Infinity)).toBe(false);
+  });
+
+  it('avoids collisions for non-plain object values', () => {
+    const tracker = new UniquenessTracker();
+
+    expect(tracker.track('advanced', new Map([['a', 1]]))).toBe(true);
+    expect(tracker.track('advanced', new Map([['a', 2]]))).toBe(true);
+    expect(tracker.track('advanced', new Set(['x', 'y']))).toBe(true);
+    expect(tracker.track('advanced', /abc/i)).toBe(true);
+    expect(tracker.track('advanced', /abc/i)).toBe(false);
+  });
+
   it('supports composite uniqueness for 2-field combinations', () => {
     const tracker = new UniquenessTracker();
 
@@ -41,6 +65,14 @@ describe('UniquenessTracker', () => {
     expect(tracker.trackComposite(['country', 'city', 'zip'], ['US', 'New York', '10001'])).toBe(true);
     expect(tracker.trackComposite(['country', 'city', 'zip'], ['US', 'New York', '10001'])).toBe(false);
     expect(tracker.trackComposite(['country', 'city', 'zip'], ['US', 'New York', '10002'])).toBe(true);
+  });
+
+  it('rejects invalid composite tracking inputs', () => {
+    const tracker = new UniquenessTracker();
+
+    expect(tracker.trackComposite([], [])).toBe(false);
+    expect(tracker.trackComposite(['a'], [])).toBe(false);
+    expect(tracker.trackComposite(['a', 'b'], ['one'])).toBe(false);
   });
 
   it('resets state with clear()', () => {
@@ -64,5 +96,23 @@ describe('UniquenessTracker', () => {
     for (let index = 0; index < 10000; index++) {
       expect(tracker.track('large-set', `value-${index}`)).toBe(false);
     }
+  });
+
+  it('stays within a reasonable memory envelope for large tracking workloads', () => {
+    const tracker = new UniquenessTracker();
+    const before = process.memoryUsage().heapUsed;
+
+    for (let index = 0; index < 50000; index++) {
+      tracker.track('memory-check', `value-${index}`);
+    }
+
+    const afterInsert = process.memoryUsage().heapUsed;
+    const growth = afterInsert - before;
+
+    expect(growth).toBeLessThan(256 * 1024 * 1024);
+
+    tracker.clear();
+
+    expect(tracker.track('memory-check', 'value-0')).toBe(true);
   });
 });

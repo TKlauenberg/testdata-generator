@@ -97,7 +97,7 @@ development_status:
   epic-6-retrospective: done
 
   epic-7: in-progress
-  7-1-uniqueness-constraint-tracker: review
+  7-1-uniqueness-constraint-tracker: done
   7-2-single-field-uniqueness-enforcement: backlog
   7-3-composite-uniqueness-constraints: backlog
   epic-7-retrospective: optional

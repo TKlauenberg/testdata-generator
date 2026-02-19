@@ -1,6 +1,6 @@
 # Story 7.1: uniqueness-constraint-tracker
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -132,6 +132,9 @@ GPT-5.3-Codex
 - Added focused unit tests covering single-field duplicates, composite duplicates (2-field/3-field), reset behavior, and large-set tracking.
 - Added BDD scaffold feature and Screenplay-compatible step definitions for tracker behavior.
 - Validation completed: all tests pass (`bun test`), BDD runner passes (`bun run test:bdd`), changed-file ESLint checks pass.
+- Senior code review remediation applied: hardened stable serialization for non-finite numbers and non-plain objects (`Map`, `Set`, `RegExp`, `Error`) to prevent duplicate-key collisions.
+- Expanded unit coverage for numeric edge cases, non-plain object collision resistance, invalid composite input handling, and memory-oriented large-set checks.
+- Refactored uniqueness BDD glue to explicit Screenplay Ability/Tasks/Questions components for consistency with project testing patterns.
 
 ### File List
 
@@ -142,8 +145,28 @@ GPT-5.3-Codex
 - `packages/core/src/generator/index.ts`
 - `packages/core/features/uniqueness-constraints.feature`
 - `packages/core/features/step_definitions/uniqueness-constraints.steps.ts`
+- `packages/core/features/support/abilities/UseUniquenessTracker.ts`
+- `packages/core/features/support/tasks/UniquenessTrackerTasks.ts`
+- `packages/core/features/support/questions/UniquenessTrackerQuestions.ts`
 - `packages/core/tests/run-cucumber.ts`
 
 ### Change Log
 
 - 2026-02-18: Implemented uniqueness tracker foundation (single-field + composite + reset), added unit and BDD scaffold coverage, and advanced story status to `review`.
+- 2026-02-19: Completed adversarial code-review fixes (serialization collision hardening, expanded unit coverage, Screenplay refactor for uniqueness steps) and moved story to `done`.
+
+## Senior Developer Review (AI)
+
+### Reviewer
+
+Tobi (AI-assisted), 2026-02-19
+
+### Outcome
+
+Approved after fixes.
+
+### Findings Resolved
+
+- Fixed high-severity serialization collisions for `NaN`, `Infinity`, `-Infinity`, and non-plain object values.
+- Added missing high-priority memory-oriented and invalid-input unit checks required by AC/test intent.
+- Aligned uniqueness BDD implementation with project Screenplay architecture using Ability/Tasks/Questions.

@@ -7,12 +7,27 @@ type StableValue =
   | { [key: string]: StableValue };
 
 function normalizeForStableSerialization(value: unknown): StableValue {
-  if (
-    value === null ||
-    typeof value === 'boolean' ||
-    typeof value === 'number' ||
-    typeof value === 'string'
-  ) {
+  if (value === null || typeof value === 'boolean' || typeof value === 'string') {
+    return value;
+  }
+
+  if (typeof value === 'number') {
+    if (Number.isNaN(value)) {
+      return { __type: 'number', value: 'NaN' };
+    }
+
+    if (value === Infinity) {
+      return { __type: 'number', value: 'Infinity' };
+    }
+
+    if (value === -Infinity) {
+      return { __type: 'number', value: '-Infinity' };
+    }
+
+    if (Object.is(value, -0)) {
+      return { __type: 'number', value: '-0' };
+    }
+
     return value;
   }
 
@@ -30,6 +45,43 @@ function normalizeForStableSerialization(value: unknown): StableValue {
 
   if (value instanceof Date) {
     return { __type: 'date', value: value.toISOString() };
+  }
+
+  if (value instanceof RegExp) {
+    return { __type: 'regexp', source: value.source, flags: value.flags };
+  }
+
+  if (value instanceof Error) {
+    return {
+      __type: 'error',
+      name: value.name,
+      message: value.message,
+    };
+  }
+
+  if (value instanceof Map) {
+    const normalizedEntries = Array.from(value.entries()).map(([key, mapValue]) => {
+      const normalizedKey = normalizeForStableSerialization(key);
+      const normalizedValue = normalizeForStableSerialization(mapValue);
+      return [normalizedKey, normalizedValue] as const;
+    });
+
+    normalizedEntries.sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
+
+    return {
+      __type: 'map',
+      entries: normalizedEntries as unknown as StableValue[],
+    };
+  }
+
+  if (value instanceof Set) {
+    const normalizedValues = Array.from(value.values()).map((setValue) => normalizeForStableSerialization(setValue));
+    normalizedValues.sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
+
+    return {
+      __type: 'set',
+      values: normalizedValues,
+    };
   }
 
   if (typeof value === 'object') {
