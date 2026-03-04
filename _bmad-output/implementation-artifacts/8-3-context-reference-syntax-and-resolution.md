@@ -1,6 +1,6 @@
 # Story 8.3: context-reference-syntax-and-resolution
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -168,7 +168,7 @@ GPT-5.3-Codex
 - Context assembled from sprint status, Epic 8, architecture artifacts, project context, current core source modules, and latest git commits.
 - Implemented context reference parser/resolver and generator integration in core context/analyzer/generator modules.
 - Added semantic validation diagnostics for malformed references and unavailable context collections.
-- Executed test validation: targeted unit suites and full repository tests (`658 passed, 0 failed`).
+- Executed test validation: targeted unit suites and full repository tests (`619 passed, 0 failed`).
 
 ### Completion Notes List
 
@@ -181,6 +181,18 @@ GPT-5.3-Codex
 - Added context plumbing through `GenerateOptions` + `generateData`/`validateSchema` so analyzer can validate against available collections and generator can resolve expressions with seeded RNG.
 - Added unit tests for analyzer and generator context reference flows (including deterministic behavior and runtime failures for missing collection/index/field).
 - Added BDD feature and step definitions for end-to-end context reference behavior using JSON fixture-backed collections.
+- Applied senior code review fixes: ensured context collections persist across DSL source updates in Screenplay ability state, removed actor hardcoding in context-reference assertions, and wired context-reference feature into Cucumber runner.
+
+### Senior Developer Review (AI)
+
+- Outcome: **Approved after fixes**
+- Issues fixed automatically (HIGH/MEDIUM):
+  - Included `context-reference-resolution.feature` and its step definitions in the Cucumber runner allowlist.
+  - Preserved loaded context collections in `UseGenerateDataAPI.storeDSLSource()`.
+  - Removed hardcoded actor usage in context-reference step assertions using `actorInTheSpotlight()`.
+  - Corrected stale test-run evidence in this story's debug record.
+- Validation:
+  - Full test run passes after fixes (`619 passed, 0 failed`).
 
 ### File List
 
@@ -198,7 +210,9 @@ GPT-5.3-Codex
 - `packages/core/features/context-reference-resolution.feature`
 - `packages/core/features/step_definitions/context-reference-resolution.steps.ts`
 - `packages/core/features/support/abilities/UseGenerateDataAPI.ts`
+- `packages/core/tests/run-cucumber.ts`
 
 ### Change Log
 
 - 2026-03-04: Implemented Story 8.3 context reference syntax/validation/resolution end-to-end, added unit and BDD coverage, and validated with full passing test suite.
+- 2026-03-04: Code review fixes applied (BDD runner wiring, context state persistence, actor-agnostic context-reference assertions) and revalidated with full passing tests.

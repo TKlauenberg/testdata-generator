@@ -51,7 +51,6 @@ export class UseGenerateDataAPI extends Ability {
     this._state.dslSource = source;
     this._state.records = [];
     this._state.recordsSecondSequence = [];
-    this._state.contextCollections = {};
     this._state.lastError = null;
     this._state.generationStarted = false;
   }

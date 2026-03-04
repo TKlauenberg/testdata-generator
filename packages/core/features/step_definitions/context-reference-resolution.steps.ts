@@ -1,5 +1,5 @@
 import { Given, Then } from '@cucumber/cucumber';
-import { actorCalled } from '@serenity-js/core';
+import { actorCalled, actorInTheSpotlight } from '@serenity-js/core';
 import { Ensure, equals } from '@serenity-js/assertions';
 import * as path from 'node:path';
 import { loadJsonContext } from '../../src/context';
@@ -22,7 +22,8 @@ Given(
 Then(
   'each generated record should have field {string} in set {string}',
   async (fieldName: string, allowedValuesCsv: string) => {
-    const api = UseGenerateDataAPI.as(actorCalled('QATester'));
+    const activeActor = actorInTheSpotlight();
+    const api = UseGenerateDataAPI.as(activeActor);
     const records = api.getRecords();
     const allowedValues = allowedValuesCsv
       .split(',')
@@ -30,7 +31,7 @@ Then(
       .filter((value) => value.length > 0);
 
     for (const record of records) {
-      await actorCalled('QATester').attemptsTo(
+      await activeActor.attemptsTo(
         Ensure.that(allowedValues.includes(String(record[fieldName])), equals(true)),
       );
     }
