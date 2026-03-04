@@ -1,6 +1,6 @@
 export interface ContextMetadata {
   readonly source: string;
-  readonly format: 'json';
+  readonly format: 'json' | 'csv';
   readonly loadedAt: string;
   readonly recordCount: number;
 }

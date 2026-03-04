@@ -1,0 +1,244 @@
+import { err, ok } from '../../common/result';
+import type { Result } from '../../common/result';
+import type { ContextData, ContextRecord, JsonValue } from '../types';
+
+function normalizeHeader(header: string): Result<string, string> {
+  const normalized = header.trim();
+
+  if (normalized.length === 0) {
+    return err('CSV header names must be non-empty');
+  }
+
+  return ok(normalized);
+}
+
+function inferCsvPrimitive(rawValue: string): JsonValue {
+  const trimmed = rawValue.trim();
+  const lowered = trimmed.toLowerCase();
+
+  if (lowered === 'true') {
+    return true;
+  }
+
+  if (lowered === 'false') {
+    return false;
+  }
+
+  const numericPattern = /^-?(?:0|[1-9]\d*)(?:\.\d+)?$/;
+  if (numericPattern.test(trimmed)) {
+    const parsed = Number(trimmed);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return rawValue;
+}
+
+function mapRowToRecord(
+  headers: readonly string[],
+  row: readonly string[],
+  rowNumber: number,
+): Result<ContextRecord, string> {
+  if (row.length !== headers.length) {
+    return err(
+      `Malformed CSV row ${rowNumber}: expected ${headers.length} columns but found ${row.length}`,
+    );
+  }
+
+  const record: Record<string, JsonValue> = {};
+  for (const [index, header] of headers.entries()) {
+    record[header] = inferCsvPrimitive(row[index] ?? '');
+  }
+
+  return ok(record);
+}
+
+function isRowBlank(row: readonly string[]): boolean {
+  return row.every((cell) => cell.length === 0);
+}
+
+async function parseCsvStream(
+  stream: ReadableStream<Uint8Array>,
+  onRow: (row: readonly string[]) => Result<void, string>,
+): Promise<Result<void, string>> {
+  const reader = stream.getReader();
+  const decoder = new TextDecoder();
+
+  let currentCell = '';
+  let currentRow: string[] = [];
+  let inQuotes = false;
+  let justClosedQuote = false;
+
+  const pushCell = (): void => {
+    currentRow.push(currentCell);
+    currentCell = '';
+    justClosedQuote = false;
+  };
+
+  const emitRow = (): Result<void, string> => {
+    pushCell();
+    const result = onRow(currentRow);
+    currentRow = [];
+    return result;
+  };
+
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) {
+        break;
+      }
+
+      const chunk = decoder.decode(value, { stream: true });
+      for (let index = 0; index < chunk.length; index += 1) {
+        const char = chunk[index];
+
+        if (justClosedQuote) {
+          if (char === ' ' || char === '\t') {
+            continue;
+          }
+
+          if (char !== ',' && char !== '\n' && char !== '\r') {
+            return err(
+              `Malformed CSV: unexpected character "${char}" after closing quote`,
+            );
+          }
+        }
+
+        if (char === '"') {
+          if (!inQuotes) {
+            if (currentCell.length > 0) {
+              return err('Malformed CSV: unexpected quote in unquoted field');
+            }
+            inQuotes = true;
+            continue;
+          }
+
+          const nextChar = chunk[index + 1];
+          if (nextChar === '"') {
+            currentCell += '"';
+            index += 1;
+            continue;
+          }
+
+          inQuotes = false;
+          justClosedQuote = true;
+          continue;
+        }
+
+        if (char === ',' && !inQuotes) {
+          pushCell();
+          continue;
+        }
+
+        if ((char === '\n' || char === '\r') && !inQuotes) {
+          if (char === '\r' && chunk[index + 1] === '\n') {
+            index += 1;
+          }
+
+          const emitted = emitRow();
+          if (!emitted.ok) {
+            return emitted;
+          }
+          continue;
+        }
+
+        currentCell += char;
+      }
+    }
+
+    const finalChunk = decoder.decode();
+    if (finalChunk.length > 0) {
+      currentCell += finalChunk;
+    }
+
+    if (inQuotes) {
+      return err('Malformed CSV: unterminated quoted field');
+    }
+
+    if (currentCell.length > 0 || currentRow.length > 0 || justClosedQuote) {
+      const emitted = emitRow();
+      if (!emitted.ok) {
+        return emitted;
+      }
+    }
+
+    return ok(undefined);
+  } finally {
+    reader.releaseLock();
+  }
+}
+
+export async function loadCsvContext(filePath: string): Promise<ContextData> {
+  const file = Bun.file(filePath);
+
+  if (!(await file.exists())) {
+    throw new Error(`CSV context file not found: ${filePath}`);
+  }
+
+  const records: ContextRecord[] = [];
+  let headers: readonly string[] | null = null;
+  let csvRowNumber = 0;
+
+  let parseResult: Result<void, string>;
+  try {
+    parseResult = await parseCsvStream(file.stream(), (row) => {
+      if (row.length === 1 && row[0] === '' && headers === null) {
+        return ok(undefined);
+      }
+
+      csvRowNumber += 1;
+
+      if (headers === null) {
+        if (isRowBlank(row)) {
+          return err('CSV header row must not be empty');
+        }
+
+        const normalizedHeaders: string[] = [];
+        for (const header of row) {
+          const normalized = normalizeHeader(header);
+          if (!normalized.ok) {
+            return normalized;
+          }
+          normalizedHeaders.push(normalized.value);
+        }
+        headers = normalizedHeaders;
+        return ok(undefined);
+      }
+
+      if (isRowBlank(row)) {
+        return ok(undefined);
+      }
+
+      const rowResult = mapRowToRecord(headers, row, csvRowNumber);
+      if (!rowResult.ok) {
+        return rowResult;
+      }
+
+      records.push(rowResult.value);
+      return ok(undefined);
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to read CSV context file "${filePath}": ${message}`);
+  }
+
+  if (!parseResult.ok) {
+    throw new Error(`Invalid CSV in context file "${filePath}": ${parseResult.errors}`);
+  }
+
+  if (headers === null) {
+    throw new Error(`Invalid CSV in context file "${filePath}": CSV content is empty`);
+  }
+
+  return {
+    records,
+    metadata: {
+      source: filePath,
+      format: 'csv',
+      loadedAt: new Date().toISOString(),
+      recordCount: records.length,
+    },
+  };
+}

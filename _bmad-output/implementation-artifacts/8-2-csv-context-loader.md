@@ -1,6 +1,6 @@
 # Story 8.2: CSV Context Loader
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -25,35 +25,35 @@ so that **I can use database exports in my test scenarios**.
 
 ## Tasks / Subtasks
 
-- [ ] Define CSV context contracts and metadata evolution (AC: 1, 5, 6)
-  - [ ] Update `packages/core/src/context/types.ts` so metadata can represent both JSON and CSV loaders while preserving strict readonly semantics.
-  - [ ] Keep `ContextData` shape stable (`records` + `metadata`) for forward compatibility with Story 8.3 resolver usage.
-  - [ ] Document deterministic CSV type inference rules in code-level types or helper contracts (numbers, booleans, fallback string).
+- [x] Define CSV context contracts and metadata evolution (AC: 1, 5, 6)
+  - [x] Update `packages/core/src/context/types.ts` so metadata can represent both JSON and CSV loaders while preserving strict readonly semantics.
+  - [x] Keep `ContextData` shape stable (`records` + `metadata`) for forward compatibility with Story 8.3 resolver usage.
+  - [x] Document deterministic CSV type inference rules in code-level types or helper contracts (numbers, booleans, fallback string).
 
-- [ ] Implement CSV loader module with robust parsing (AC: 1, 2, 3, 4, 5, 6, 7)
-  - [ ] Create `packages/core/src/context/loaders/csvLoader.ts` exposing `loadCsvContext(filePath: string): Promise<ContextData>`.
-  - [ ] Read input via Bun file APIs and validate file existence/access errors with actionable messages.
-  - [ ] Parse header row and records, including quoted values and escaped delimiters, without breaking column alignment.
-  - [ ] Convert row data to normalized object records keyed by headers.
-  - [ ] Apply deterministic type inference per cell (`number` / `boolean` / `string`) while avoiding lossy conversions.
-  - [ ] Keep implementation streaming-oriented for large files (incremental processing strategy, avoid unnecessary full-copy transforms).
-  - [ ] Return context metadata (`source`, `format: 'csv'`, `loadedAt`, `recordCount`).
+- [x] Implement CSV loader module with robust parsing (AC: 1, 2, 3, 4, 5, 6, 7)
+  - [x] Create `packages/core/src/context/loaders/csvLoader.ts` exposing `loadCsvContext(filePath: string): Promise<ContextData>`.
+  - [x] Read input via Bun file APIs and validate file existence/access errors with actionable messages.
+  - [x] Parse header row and records, including quoted values and escaped delimiters, without breaking column alignment.
+  - [x] Convert row data to normalized object records keyed by headers.
+  - [x] Apply deterministic type inference per cell (`number` / `boolean` / `string`) while avoiding lossy conversions.
+  - [x] Keep implementation streaming-oriented for large files (incremental processing strategy, avoid unnecessary full-copy transforms).
+  - [x] Return context metadata (`source`, `format: 'csv'`, `loadedAt`, `recordCount`).
 
-- [ ] Wire module exports and package surface (AC: 8)
-  - [ ] Update `packages/core/src/context/index.ts` to export `loadCsvContext` alongside `loadJsonContext` and context types.
-  - [ ] Update `packages/core/src/index.ts` so CSV context loading is available on the public core API.
-  - [ ] Keep module boundaries intact (`core` remains independent of CLI internals).
+- [x] Wire module exports and package surface (AC: 8)
+  - [x] Update `packages/core/src/context/index.ts` to export `loadCsvContext` alongside `loadJsonContext` and context types.
+  - [x] Update `packages/core/src/index.ts` so CSV context loading is available on the public core API.
+  - [x] Keep module boundaries intact (`core` remains independent of CLI internals).
 
-- [ ] Add focused unit tests for CSV loader behavior (AC: 9)
-  - [ ] Create `packages/core/src/context/loaders/csvLoader.test.ts`.
-  - [ ] Cover headers + row mapping, quoted fields, escaped commas, boolean/number inference, and stable row ordering.
-  - [ ] Cover malformed row width, empty header conditions, and missing-file/malformed-input errors.
-  - [ ] Add large-input sanity test validating memory-safe processing approach and accurate `recordCount`.
+- [x] Add focused unit tests for CSV loader behavior (AC: 9)
+  - [x] Create `packages/core/src/context/loaders/csvLoader.test.ts`.
+  - [x] Cover headers + row mapping, quoted fields, escaped commas, boolean/number inference, and stable row ordering.
+  - [x] Cover malformed row width, empty header conditions, and missing-file/malformed-input errors.
+  - [x] Add large-input sanity test validating memory-safe processing approach and accurate `recordCount`.
 
-- [ ] Add BDD tests using existing Screenplay architecture (AC: 10)
-  - [ ] Add `packages/core/features/csv-context-loader.feature` with realistic database-export scenarios.
-  - [ ] Add step definitions under `packages/core/features/step_definitions/csv-context-loader.steps.ts`.
-  - [ ] Add or extend Screenplay abilities/tasks/questions under `packages/core/features/support/` for CSV loading behaviors.
+- [x] Add BDD tests using existing Screenplay architecture (AC: 10)
+  - [x] Add `packages/core/features/csv-context-loader.feature` with realistic database-export scenarios.
+  - [x] Add step definitions under `packages/core/features/step_definitions/csv-context-loader.steps.ts`.
+  - [x] Add or extend Screenplay abilities/tasks/questions under `packages/core/features/support/` for CSV loading behaviors.
 
 ## Dev Notes
 
@@ -151,18 +151,48 @@ GPT-5.3-Codex
 
 - Workflow execution context gathered from sprint status, epic/prd/architecture artifacts, current context module sources, and latest git history.
 
+### Implementation Plan
+
+- Extend context metadata format union to support CSV while preserving `ContextData` shape.
+- Implement `loadCsvContext` with streaming-oriented parsing and strict malformed input detection.
+- Add deterministic primitive inference (`boolean` + safe `number`, fallback `string`).
+- Wire exports through context index and public API boundary.
+- Add unit and BDD coverage with Screenplay abilities/tasks/questions.
+- Run full test suite and verify story completion gates.
+
 ### Completion Notes List
 
 - Selected next backlog story automatically from sprint status: `8-2-csv-context-loader`.
 - Produced comprehensive implementation guide with acceptance-criteria mapping, architecture guardrails, and anti-scope-creep boundaries.
 - Added previous-story and git intelligence to reduce implementation drift and rework.
 - Marked story status as `ready-for-dev` and aligned artifact naming with implementation tracker.
+- Implemented streaming-oriented CSV context loading with robust quoted-field handling, row-width validation, and actionable parse/file errors.
+- Added deterministic primitive inference for CSV values (`true`/`false`, safe numeric literals, fallback string).
+- Added unit coverage for happy paths, malformed input, and large-file record counting.
+- Added BDD feature + Screenplay support (ability/tasks/questions/steps) for end-to-end CSV fixture loading scenarios.
+- Executed repository tests: all discovered tests passing (`645` pass) plus focused CSV loader unit tests (`9` pass).
+- Lint gate still reports pre-existing unrelated repository violations outside this story scope.
 
 ### File List
 
 - `_bmad-output/implementation-artifacts/8-2-csv-context-loader.md`
 - `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- `packages/core/src/context/types.ts`
+- `packages/core/src/context/index.ts`
+- `packages/core/src/context/loaders/csvLoader.ts`
+- `packages/core/src/context/loaders/csvLoader.test.ts`
+- `packages/core/features/csv-context-loader.feature`
+- `packages/core/features/step_definitions/csv-context-loader.steps.ts`
+- `packages/core/features/fixtures/context/users.export.csv`
+- `packages/core/features/fixtures/context/users.quoted.csv`
+- `packages/core/features/fixtures/context/users.malformed.csv`
+- `packages/core/features/support/abilities/UseCsvContextLoader.ts`
+- `packages/core/features/support/tasks/CsvContextLoaderTasks.ts`
+- `packages/core/features/support/questions/CsvContextLoaderQuestions.ts`
+- `packages/core/features/support/screenplay/Actors.ts`
+- `packages/core/tests/run-cucumber.ts`
 
 ## Change Log
 
 - 2026-03-04: Created Story 8.2 context artifact via create-story workflow and set sprint status to `ready-for-dev`.
+- 2026-03-04: Implemented Story 8.2 CSV context loader, unit + BDD coverage, and updated story/sprint status to `review`.
