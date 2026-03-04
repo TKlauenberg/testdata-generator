@@ -1,6 +1,6 @@
 # Story 8.2: CSV Context Loader
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -172,6 +172,9 @@ GPT-5.3-Codex
 - Added BDD feature + Screenplay support (ability/tasks/questions/steps) for end-to-end CSV fixture loading scenarios.
 - Executed repository tests: all discovered tests passing (`645` pass) plus focused CSV loader unit tests (`9` pass).
 - Lint gate still reports pre-existing unrelated repository violations outside this story scope.
+- Applied code-review fixes for CSV parser robustness: escaped quote handling now supports quote pairs split across stream chunks.
+- Added CSV header uniqueness validation to prevent silent key overwrite/data loss.
+- Extended unit coverage with deterministic chunk-boundary stream test, CRLF parsing test, and duplicate-header rejection test.
 
 ### File List
 
@@ -192,7 +195,29 @@ GPT-5.3-Codex
 - `packages/core/features/support/screenplay/Actors.ts`
 - `packages/core/tests/run-cucumber.ts`
 
+## Senior Developer Review (AI)
+
+### Reviewer
+
+Tobi
+
+### Date
+
+2026-03-04
+
+### Outcome
+
+Approved after fixes
+
+### Findings Resolved
+
+- High: Story File List claimed `packages/core/src/index.ts` changed without git evidence. Resolved by correcting File List.
+- High: CSV escaped-quote parsing could fail when quote pairs crossed stream chunk boundaries. Resolved with state-machine handling for deferred quote interpretation.
+- Medium: Duplicate CSV headers silently overwrote earlier column values. Resolved by explicit duplicate-header validation error.
+- Medium: Missing targeted tests for chunk-boundary quote escaping and CRLF rows. Resolved with deterministic stream test and CRLF coverage.
+
 ## Change Log
 
 - 2026-03-04: Created Story 8.2 context artifact via create-story workflow and set sprint status to `ready-for-dev`.
 - 2026-03-04: Implemented Story 8.2 CSV context loader, unit + BDD coverage, and updated story/sprint status to `review`.
+- 2026-03-04: Applied code-review fixes (stream chunk quote handling, duplicate-header validation, additional tests) and updated story status to `done`.
