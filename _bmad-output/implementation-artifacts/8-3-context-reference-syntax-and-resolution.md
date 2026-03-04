@@ -1,6 +1,6 @@
 # Story 8.3: context-reference-syntax-and-resolution
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -25,36 +25,36 @@ so that **generated data can use existing values**.
 
 ## Tasks / Subtasks
 
-- [ ] Define context-reference model and parsing/validation boundaries (AC: 1, 2, 4, 5, 8)
-  - [ ] Introduce explicit context-reference typing (resolver input/output contract) under `packages/core/src/context/` or `packages/core/src/analyzer/` with immutable readonly types.
-  - [ ] Define accepted forms for this story only: `@context.<collection>.random`, `@context.<collection>[<index>]`, optional `.fieldName` suffix.
-  - [ ] Reject unsupported forms (e.g. tag filters, where clauses) with actionable diagnostics (reserved for Story 8.4).
+- [x] Define context-reference model and parsing/validation boundaries (AC: 1, 2, 4, 5, 8)
+  - [x] Introduce explicit context-reference typing (resolver input/output contract) under `packages/core/src/context/` or `packages/core/src/analyzer/` with immutable readonly types.
+  - [x] Define accepted forms for this story only: `@context.<collection>.random`, `@context.<collection>[<index>]`, optional `.fieldName` suffix.
+  - [x] Reject unsupported forms (e.g. tag filters, where clauses) with actionable diagnostics (reserved for Story 8.4).
 
-- [ ] Add semantic validation for context references (AC: 1, 2, 8)
-  - [ ] Extend analyzer validation flow in `packages/core/src/analyzer/analyzer.ts` to parse and validate context reference expressions present in generator parameters.
-  - [ ] Add diagnostics for malformed syntax and unknown/missing context collection references.
-  - [ ] Preserve existing `Result<T, Diagnostic[]>` behavior and error accumulation.
+- [x] Add semantic validation for context references (AC: 1, 2, 8)
+  - [x] Extend analyzer validation flow in `packages/core/src/analyzer/analyzer.ts` to parse and validate context reference expressions present in generator parameters.
+  - [x] Add diagnostics for malformed syntax and unknown/missing context collection references.
+  - [x] Preserve existing `Result<T, Diagnostic[]>` behavior and error accumulation.
 
-- [ ] Implement generator-time context reference resolution (AC: 3, 4, 5, 6, 7, 8)
-  - [ ] Add deterministic context selection helper(s) using existing RNG (`packages/core/src/generator/rng.ts` usage pattern).
-  - [ ] Integrate resolution into value/parameter evaluation path in `packages/core/src/generator/generator.ts` without breaking template resolution (`{{field}}`).
-  - [ ] Support random collection pick, index access, and optional nested field extraction for selected record.
-  - [ ] Return clear runtime errors when collection/index/field is invalid and semantic validation could not preemptively detect it.
+- [x] Implement generator-time context reference resolution (AC: 3, 4, 5, 6, 7, 8)
+  - [x] Add deterministic context selection helper(s) using existing RNG (`packages/core/src/generator/rng.ts` usage pattern).
+  - [x] Integrate resolution into value/parameter evaluation path in `packages/core/src/generator/generator.ts` without breaking template resolution (`{{field}}`).
+  - [x] Support random collection pick, index access, and optional nested field extraction for selected record.
+  - [x] Return clear runtime errors when collection/index/field is invalid and semantic validation could not preemptively detect it.
 
-- [ ] Define context plumbing through generation entry points (AC: 3, 6, 7)
-  - [ ] Add/extend generation options/context input so `generate()` has access to loaded context collections.
-  - [ ] Ensure seeded runs remain deterministic when context random selection is used.
-  - [ ] Keep backwards compatibility for callers that do not provide context data.
+- [x] Define context plumbing through generation entry points (AC: 3, 6, 7)
+  - [x] Add/extend generation options/context input so `generate()` has access to loaded context collections.
+  - [x] Ensure seeded runs remain deterministic when context random selection is used.
+  - [x] Keep backwards compatibility for callers that do not provide context data.
 
-- [ ] Add unit tests for analyzer + generator context resolution (AC: 9)
-  - [ ] Add focused analyzer tests for valid/invalid context-reference syntax and diagnostics.
-  - [ ] Add generator tests for deterministic random selection, index access, field extraction, and missing collection/index/field errors.
-  - [ ] Add regression tests confirming existing generator/template behavior still passes.
+- [x] Add unit tests for analyzer + generator context resolution (AC: 9)
+  - [x] Add focused analyzer tests for valid/invalid context-reference syntax and diagnostics.
+  - [x] Add generator tests for deterministic random selection, index access, field extraction, and missing collection/index/field errors.
+  - [x] Add regression tests confirming existing generator/template behavior still passes.
 
-- [ ] Add BDD coverage using existing Screenplay structure (AC: 10)
-  - [ ] Add feature file under `packages/core/features/` for context reference resolution scenarios.
-  - [ ] Add step definitions under `packages/core/features/step_definitions/`.
-  - [ ] Add/extend Screenplay abilities/tasks/questions under `packages/core/features/support/` for context-aware generation.
+- [x] Add BDD coverage using existing Screenplay structure (AC: 10)
+  - [x] Add feature file under `packages/core/features/` for context reference resolution scenarios.
+  - [x] Add step definitions under `packages/core/features/step_definitions/`.
+  - [x] Add/extend Screenplay abilities/tasks/questions under `packages/core/features/support/` for context-aware generation.
 
 ## Dev Notes
 
@@ -166,6 +166,9 @@ GPT-5.3-Codex
 ### Debug Log References
 
 - Context assembled from sprint status, Epic 8, architecture artifacts, project context, current core source modules, and latest git commits.
+- Implemented context reference parser/resolver and generator integration in core context/analyzer/generator modules.
+- Added semantic validation diagnostics for malformed references and unavailable context collections.
+- Executed test validation: targeted unit suites and full repository tests (`658 passed, 0 failed`).
 
 ### Completion Notes List
 
@@ -173,8 +176,29 @@ GPT-5.3-Codex
 - Generated comprehensive ready-for-dev story artifact with implementation guardrails and scoped task breakdown.
 - Added previous-story and git intelligence to reduce implementation drift.
 - Added architecture/path constraints and anti-scope-creep boundaries (defer tag filters to Story 8.4).
+- Added `ContextReferenceExpression` contracts and parser/resolver support for `@context.<collection>.random`, `@context.<collection>[index]`, and optional field path suffixes.
+- Extended analyzer validation to detect malformed context syntax and undefined context collections while preserving accumulated diagnostic behavior.
+- Added context plumbing through `GenerateOptions` + `generateData`/`validateSchema` so analyzer can validate against available collections and generator can resolve expressions with seeded RNG.
+- Added unit tests for analyzer and generator context reference flows (including deterministic behavior and runtime failures for missing collection/index/field).
+- Added BDD feature and step definitions for end-to-end context reference behavior using JSON fixture-backed collections.
 
 ### File List
 
 - `_bmad-output/implementation-artifacts/8-3-context-reference-syntax-and-resolution.md`
 - `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- `packages/core/src/context/contextReference.ts`
+- `packages/core/src/context/types.ts`
+- `packages/core/src/context/index.ts`
+- `packages/core/src/analyzer/analyzer.ts`
+- `packages/core/src/analyzer/analyzer.test.ts`
+- `packages/core/src/validate.ts`
+- `packages/core/src/generateData.ts`
+- `packages/core/src/generator/generator.ts`
+- `packages/core/src/generator/generator.test.ts`
+- `packages/core/features/context-reference-resolution.feature`
+- `packages/core/features/step_definitions/context-reference-resolution.steps.ts`
+- `packages/core/features/support/abilities/UseGenerateDataAPI.ts`
+
+### Change Log
+
+- 2026-03-04: Implemented Story 8.3 context reference syntax/validation/resolution end-to-end, added unit and BDD coverage, and validated with full passing test suite.

@@ -7,6 +7,7 @@
 
 import { Ability, type UsesAbilities, type AbilityType } from '@serenity-js/core';
 import { generateData, ValidationError } from '../../../src/generateData';
+import type { ContextRecord } from '../../../src/context';
 
 /**
  * Internal state for tracking generation results
@@ -15,6 +16,7 @@ export interface GenerateDataAPIState {
   dslSource: string;
   records: Record<string, unknown>[];
   recordsSecondSequence: Record<string, unknown>[];
+  contextCollections: Record<string, readonly ContextRecord[]>;
   lastError: Error | null;
   generationStarted: boolean;
   generationDuration: number;
@@ -28,6 +30,7 @@ export class UseGenerateDataAPI extends Ability {
     dslSource: '',
     records: [],
     recordsSecondSequence: [],
+    contextCollections: {},
     lastError: null,
     generationStarted: false,
     generationDuration: 0,
@@ -48,8 +51,13 @@ export class UseGenerateDataAPI extends Ability {
     this._state.dslSource = source;
     this._state.records = [];
     this._state.recordsSecondSequence = [];
+    this._state.contextCollections = {};
     this._state.lastError = null;
     this._state.generationStarted = false;
+  }
+
+  public storeContextCollection(name: string, records: readonly ContextRecord[]): void {
+    this._state.contextCollections[name] = records;
   }
 
   /**
@@ -61,7 +69,9 @@ export class UseGenerateDataAPI extends Ability {
     this._state.records = [];
 
     try {
-      const options = seed !== undefined ? { count, seed } : { count };
+      const options = seed !== undefined
+        ? { count, seed, context: this._state.contextCollections }
+        : { count, context: this._state.contextCollections };
       const recordStream = generateData(this._state.dslSource, options);
 
       for await (const record of recordStream) {
@@ -87,7 +97,11 @@ export class UseGenerateDataAPI extends Ability {
     this._state.generationStarted = true;
 
     try {
-      const recordStream = generateData(this._state.dslSource, { count, seed });
+      const recordStream = generateData(this._state.dslSource, {
+        count,
+        seed,
+        context: this._state.contextCollections,
+      });
       const records: Record<string, unknown>[] = [];
 
       for await (const record of recordStream) {
@@ -115,7 +129,10 @@ export class UseGenerateDataAPI extends Ability {
 
     try {
       this._state.generationStarted = false; // Track if we even started
-      const recordStream = generateData(this._state.dslSource, { count });
+      const recordStream = generateData(this._state.dslSource, {
+        count,
+        context: this._state.contextCollections,
+      });
 
       // If we get here, validation passed
       this._state.generationStarted = true;

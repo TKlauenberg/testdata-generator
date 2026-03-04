@@ -274,6 +274,82 @@ describe('analyze()', () => {
     });
   });
 
+  describe('context reference validation', () => {
+    test('accepts valid random context reference when collection exists', () => {
+      const program = createProgram([
+        createSchema('User', [
+          createField('email', 'string', 'pick', [
+            { name: 'array', value: ['@context.users.random.email'] },
+          ]),
+        ]),
+      ]);
+
+      const result = analyze(program, {
+        availableContextCollections: ['users'],
+      });
+
+      expect(result.ok).toBe(true);
+    });
+
+    test('accepts valid index context reference when collection exists', () => {
+      const program = createProgram([
+        createSchema('User', [
+          createField('email', 'string', 'pick', [
+            { name: 'array', value: ['@context.users[0].email'] },
+          ]),
+        ]),
+      ]);
+
+      const result = analyze(program, {
+        availableContextCollections: ['users'],
+      });
+
+      expect(result.ok).toBe(true);
+    });
+
+    test('emits diagnostic for malformed context reference syntax', () => {
+      const program = createProgram([
+        createSchema('User', [
+          createField('email', 'string', 'pick', [
+            { name: 'array', value: ['@context.users.where(role=admin)'] },
+          ]),
+        ]),
+      ]);
+
+      const result = analyze(program, {
+        availableContextCollections: ['users'],
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        const error = result.errors.find((item) => item.code === 'analyzer.invalidContextReference');
+        expect(error).toBeDefined();
+        expect(error?.message).toContain('@context.users.where');
+      }
+    });
+
+    test('emits diagnostic for missing context collection', () => {
+      const program = createProgram([
+        createSchema('User', [
+          createField('email', 'string', 'pick', [
+            { name: 'array', value: ['@context.users.random.email'] },
+          ]),
+        ]),
+      ]);
+
+      const result = analyze(program, {
+        availableContextCollections: ['orders'],
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        const error = result.errors.find((item) => item.code === 'analyzer.undefinedContextCollection');
+        expect(error).toBeDefined();
+        expect(error?.message).toContain('users');
+      }
+    });
+  });
+
   describe('circular dependency detection', () => {
     test('detects circular dependency between two schemas', () => {
       const program = createProgram([

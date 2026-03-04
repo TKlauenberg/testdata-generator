@@ -719,6 +719,198 @@ describe('generate (streaming)', () => {
     });
   });
 
+  describe('context reference resolution', () => {
+    it('resolves @context.<collection>.random.<field> references', async () => {
+      const program = createMockProgram([
+        {
+          name: 'UserSchema',
+          fields: [
+            {
+              name: 'email',
+              type: 'pick',
+              params: [{ name: 'array', value: ['@context.users.random.email'] }],
+            },
+          ],
+        },
+      ]);
+
+      const records: Record<string, unknown>[] = [];
+      for await (const record of generate(program, {
+        count: 5,
+        seed: 42,
+        context: {
+          users: [
+            { id: 1, email: 'ada@example.com' },
+            { id: 2, email: 'grace@example.com' },
+          ],
+        },
+      })) {
+        records.push(record);
+      }
+
+      for (const record of records) {
+        expect(['ada@example.com', 'grace@example.com']).toContain(record.email);
+      }
+    });
+
+    it('resolves @context.<collection>[index].<field> references', async () => {
+      const program = createMockProgram([
+        {
+          name: 'UserSchema',
+          fields: [
+            {
+              name: 'email',
+              type: 'pick',
+              params: [{ name: 'array', value: ['@context.users[0].email'] }],
+            },
+          ],
+        },
+      ]);
+
+      const records: Record<string, unknown>[] = [];
+      for await (const record of generate(program, {
+        count: 3,
+        context: {
+          users: [
+            { id: 1, email: 'ada@example.com' },
+            { id: 2, email: 'grace@example.com' },
+          ],
+        },
+      })) {
+        records.push(record);
+      }
+
+      for (const record of records) {
+        expect(record.email).toBe('ada@example.com');
+      }
+    });
+
+    it('keeps random context selection deterministic with same seed', async () => {
+      const program = createMockProgram([
+        {
+          name: 'UserSchema',
+          fields: [
+            {
+              name: 'email',
+              type: 'pick',
+              params: [{ name: 'array', value: ['@context.users.random.email'] }],
+            },
+          ],
+        },
+      ]);
+
+      const firstRun: Record<string, unknown>[] = [];
+      for await (const record of generate(program, {
+        count: 6,
+        seed: 999,
+        context: {
+          users: [
+            { id: 1, email: 'ada@example.com' },
+            { id: 2, email: 'grace@example.com' },
+            { id: 3, email: 'linus@example.com' },
+          ],
+        },
+      })) {
+        firstRun.push(record);
+      }
+
+      const secondRun: Record<string, unknown>[] = [];
+      for await (const record of generate(program, {
+        count: 6,
+        seed: 999,
+        context: {
+          users: [
+            { id: 1, email: 'ada@example.com' },
+            { id: 2, email: 'grace@example.com' },
+            { id: 3, email: 'linus@example.com' },
+          ],
+        },
+      })) {
+        secondRun.push(record);
+      }
+
+      expect(firstRun).toEqual(secondRun);
+    });
+
+    it('throws clear runtime error when context collection is missing', async () => {
+      const program = createMockProgram([
+        {
+          name: 'UserSchema',
+          fields: [
+            {
+              name: 'email',
+              type: 'pick',
+              params: [{ name: 'array', value: ['@context.users.random.email'] }],
+            },
+          ],
+        },
+      ]);
+
+      expect(async () => {
+        for await (const _record of generate(program, {
+          count: 1,
+          context: {
+            teams: [{ id: 1, name: 'platform' }],
+          },
+        })) {
+          // consume stream
+        }
+      }).toThrow(/context collection 'users' is not available/i);
+    });
+
+    it('throws clear runtime error when index is out of range', async () => {
+      const program = createMockProgram([
+        {
+          name: 'UserSchema',
+          fields: [
+            {
+              name: 'email',
+              type: 'pick',
+              params: [{ name: 'array', value: ['@context.users[3].email'] }],
+            },
+          ],
+        },
+      ]);
+
+      expect(async () => {
+        for await (const _record of generate(program, {
+          count: 1,
+          context: {
+            users: [{ id: 1, email: 'ada@example.com' }],
+          },
+        })) {
+          // consume stream
+        }
+      }).toThrow(/out of range/i);
+    });
+
+    it('throws clear runtime error when selected field is missing', async () => {
+      const program = createMockProgram([
+        {
+          name: 'UserSchema',
+          fields: [
+            {
+              name: 'department',
+              type: 'pick',
+              params: [{ name: 'array', value: ['@context.users.random.department'] }],
+            },
+          ],
+        },
+      ]);
+
+      expect(async () => {
+        for await (const _record of generate(program, {
+          count: 1,
+          context: {
+            users: [{ id: 1, email: 'ada@example.com' }],
+          },
+        })) {
+          // consume stream
+        }
+      }).toThrow(/field 'department' not found/i);
+    });
+  });
+
   describe('memory efficiency', () => {
     it(
       '@slow @performance should handle 1M+ records without memory issues (NFR3)',

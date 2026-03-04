@@ -17,6 +17,12 @@ import type { GeneratorParameter } from '../parser/ast';
 import { GENERATOR_REGISTRY } from './generators';
 import { evaluateTemplate, hasTemplateReferences } from './template';
 import { UniquenessTracker } from './uniqueness';
+import {
+  isContextReferenceExpression,
+  parseContextReferenceExpression,
+  resolveContextReferenceExpression,
+} from '../context/contextReference';
+import type { ContextCollections } from '../context/types';
 
 const MAX_UNIQUENESS_ATTEMPTS = 100;
 
@@ -37,6 +43,7 @@ export interface GenerateOptions {
   readonly count: number;
   readonly seed?: number;
   readonly maxRelationshipDepth?: number;
+  readonly context?: ContextCollections;
 }
 
 interface RelationshipGenerationContext {
@@ -48,6 +55,7 @@ interface RelationshipGenerationContext {
 
 interface GenerationSessionContext {
   readonly uniquenessTracker: UniquenessTracker;
+  readonly contextCollections: ContextCollections;
 }
 
 /**
@@ -101,6 +109,7 @@ export async function* generate(
   const rng = createRNG(options.seed);
   const sessionContext: GenerationSessionContext = {
     uniquenessTracker: new UniquenessTracker(),
+    contextCollections: options.context ?? {},
   };
   sessionContext.uniquenessTracker.clear();
 
@@ -358,8 +367,14 @@ function generateFieldValue(
   }
 
   // Extract parameters and invoke
-  const params = extractParameters(field, generatorType, context);
-  return generator(rng, ...params);
+  const paramsWithContext = extractParameters(
+    field,
+    generatorType,
+    context,
+    rng,
+    sessionContext?.contextCollections ?? {},
+  );
+  return generator(rng, ...paramsWithContext);
 }
 
 function generateUniqueFieldValue(
@@ -439,12 +454,14 @@ function extractParameters(
   field: ValidatedField,
   generatorType: string,
   context: GeneratedRecord,
+  rng: RNG,
+  contextCollections: ContextCollections,
 ): unknown[] {
   const params = field.node.generator?.parameters ?? [];
 
   const resolvedParams = params.map((parameter) => ({
     ...parameter,
-    value: resolveTemplateValue(parameter.value, context),
+    value: resolveTemplateValue(parameter.value, context, rng, contextCollections),
   }));
 
   switch (generatorType) {
@@ -519,23 +536,37 @@ function extractParameters(
   }
 }
 
-function resolveTemplateValue(value: unknown, context: GeneratedRecord): unknown {
+function resolveTemplateValue(
+  value: unknown,
+  context: GeneratedRecord,
+  rng: RNG,
+  contextCollections: ContextCollections,
+): unknown {
   if (typeof value === 'string') {
-    if (hasTemplateReferences(value)) {
-      return evaluateTemplate(value, context);
+    const templateResolvedValue = hasTemplateReferences(value)
+      ? evaluateTemplate(value, context)
+      : value;
+
+    if (isContextReferenceExpression(templateResolvedValue)) {
+      const parsed = parseContextReferenceExpression(templateResolvedValue);
+      if (!parsed.ok) {
+        throw new Error(parsed.errors[0] ?? `Invalid context reference '${templateResolvedValue}'`);
+      }
+
+      return resolveContextReferenceExpression(parsed.value, contextCollections, rng);
     }
 
-    return value;
+    return templateResolvedValue;
   }
 
   if (Array.isArray(value)) {
-    return value.map((item) => resolveTemplateValue(item, context));
+    return value.map((item) => resolveTemplateValue(item, context, rng, contextCollections));
   }
 
   if (value !== null && typeof value === 'object') {
     const entries = Object.entries(value as Record<string, unknown>).map(([key, entryValue]) => [
       key,
-      resolveTemplateValue(entryValue, context),
+      resolveTemplateValue(entryValue, context, rng, contextCollections),
     ]);
 
     return Object.fromEntries(entries);

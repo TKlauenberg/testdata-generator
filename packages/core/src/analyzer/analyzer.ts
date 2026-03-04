@@ -14,6 +14,10 @@ import type { Diagnostic } from '../common/diagnostic';
 import type { Program, SchemaNode } from '../parser/ast';
 import { SymbolTable } from './symbolTable';
 import type { ValidatedProgram, ValidatedSchema, ValidatedField } from './types';
+import {
+  isContextReferenceExpression,
+  parseContextReferenceExpression,
+} from '../context/contextReference';
 
 // Supported primitive types in the DSL
 const SUPPORTED_TYPES = new Set(['string', 'number', 'boolean', 'uuid', 'date', 'timestamp']);
@@ -51,6 +55,10 @@ type TemplateReference = {
   readonly field: string;
 };
 
+export interface AnalyzeOptions {
+  readonly availableContextCollections?: readonly string[];
+}
+
 function parseSchemaReference(type: string): string | undefined {
   if (type.startsWith('@schema:')) {
     const schemaName = type.slice('@schema:'.length).trim();
@@ -71,8 +79,12 @@ function parseSchemaReference(type: string): string | undefined {
  * @param ast - The parsed Program AST from the parser
  * @returns Result containing ValidatedProgram on success or diagnostics on failure
  */
-export function analyze(ast: Program): Result<ValidatedProgram, Diagnostic[]> {
+export function analyze(
+  ast: Program,
+  options: AnalyzeOptions = {},
+): Result<ValidatedProgram, Diagnostic[]> {
   const errors: Diagnostic[] = [];
+  const availableContextCollections = new Set(options.availableContextCollections ?? []);
 
   // Step 1: Build symbol table
   const symbolTableResult = buildSymbolTable(ast);
@@ -117,6 +129,12 @@ export function analyze(ast: Program): Result<ValidatedProgram, Diagnostic[]> {
     const uniqueResult = validateUniqueConstraints(schema);
     if (!uniqueResult.ok) {
       errors.push(...uniqueResult.errors);
+    }
+
+    // Validate context references
+    const contextRefResult = validateContextReferences(schema, availableContextCollections);
+    if (!contextRefResult.ok) {
+      errors.push(...contextRefResult.errors);
     }
 
     // Validate composite uniqueness constraints
@@ -512,6 +530,72 @@ function getTemplateReferencesForField(field: SchemaNode['fields'][number]): Tem
   return field.generator.parameters.flatMap((parameter) =>
     extractTemplateReferencesFromValue(parameter.value),
   );
+}
+
+function extractContextReferenceExpressionsFromValue(value: unknown): string[] {
+  if (typeof value === 'string') {
+    return isContextReferenceExpression(value) ? [value] : [];
+  }
+
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => extractContextReferenceExpressionsFromValue(item));
+  }
+
+  if (value !== null && typeof value === 'object') {
+    return Object.values(value as Record<string, unknown>).flatMap((entry) =>
+      extractContextReferenceExpressionsFromValue(entry),
+    );
+  }
+
+  return [];
+}
+
+function validateContextReferences(
+  schema: SchemaNode,
+  availableContextCollections: ReadonlySet<string>,
+): Result<void, Diagnostic[]> {
+  const errors: Diagnostic[] = [];
+
+  for (const field of schema.fields) {
+    const parameters = field.generator?.parameters ?? [];
+    for (const parameter of parameters) {
+      const contextExpressions = extractContextReferenceExpressionsFromValue(parameter.value);
+      for (const expression of contextExpressions) {
+        const parseResult = parseContextReferenceExpression(expression);
+        if (!parseResult.ok) {
+          errors.push({
+            code: 'analyzer.invalidContextReference',
+            message: parseResult.errors[0] ?? `Invalid context reference '${expression}'`,
+            severity: 'error',
+            location: field.location,
+            suggestion:
+              "Supported forms: @context.<collection>.random, @context.<collection>[<index>], and optional .fieldName suffix",
+          });
+          continue;
+        }
+
+        const collectionName = parseResult.value.collection;
+        if (!availableContextCollections.has(collectionName)) {
+          errors.push({
+            code: 'analyzer.undefinedContextCollection',
+            message: `Context collection '${collectionName}' is not available for reference '${expression}'`,
+            severity: 'error',
+            location: field.location,
+            suggestion:
+              availableContextCollections.size > 0
+                ? `Available collections: ${Array.from(availableContextCollections).join(', ')}`
+                : 'Provide context collections in generation options before using @context references',
+          });
+        }
+      }
+    }
+  }
+
+  if (errors.length > 0) {
+    return { ok: false, errors };
+  }
+
+  return { ok: true, value: undefined };
 }
 
 function buildDependencyGraph(

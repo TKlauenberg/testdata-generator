@@ -128,7 +128,9 @@ export async function* generateData(
 ): AsyncIterable<Record<string, unknown>> {
   // Step 1: Validate schema FIRST (fail fast on invalid input)
   // This ensures we never start generating invalid data
-  const validationResult = validateSchema(source, 'inline-schema.td');
+  const validationResult = validateSchema(source, 'inline-schema.td', {
+    availableContextCollections: Object.keys(options.context ?? {}),
+  });
 
   if (!validationResult.ok) {
     // Validation failed - throw immediately before any generation

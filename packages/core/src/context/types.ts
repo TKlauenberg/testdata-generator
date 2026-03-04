@@ -12,3 +12,7 @@ export interface ContextData {
   readonly records: readonly ContextRecord[];
   readonly metadata: ContextMetadata;
 }
+
+export type ContextCollections = {
+  readonly [collectionName: string]: readonly ContextRecord[];
+};

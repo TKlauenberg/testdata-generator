@@ -15,6 +15,10 @@ import type { Result } from './common/result';
 import type { Diagnostic } from './common/diagnostic';
 import type { ValidatedProgram } from './analyzer/types';
 
+export interface ValidationOptions {
+  readonly availableContextCollections?: readonly string[];
+}
+
 /**
  * Validates a DSL schema source file.
  *
@@ -45,7 +49,8 @@ import type { ValidatedProgram } from './analyzer/types';
  */
 export function validateSchema(
   source: string,
-  filename: string
+  filename: string,
+  options: ValidationOptions = {},
 ): Result<ValidatedProgram, Diagnostic[]> {
   // Phase 1: Lexical Analysis
   const scanner = new Scanner(source, filename);
@@ -70,7 +75,9 @@ export function validateSchema(
   }
 
   // Phase 3: Semantic Analysis
-  const analysisResult = analyze(parseResult.value);
+  const analysisResult = analyze(parseResult.value, {
+    availableContextCollections: options.availableContextCollections,
+  });
 
   if (!analysisResult.ok) {
     return {
