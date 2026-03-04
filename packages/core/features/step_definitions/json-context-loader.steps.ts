@@ -20,7 +20,7 @@ function resolveFixturePath(fileName: string): string {
   return path.join(import.meta.dir, '../fixtures/context', fileName);
 }
 
-Given('{actor} has JSON context fixture {string}', (actorName: string, fileName: string) => {
+ Given('{actor} has JSON context fixture {string}', (actorName: string, fileName: string) => {
   fixturePathByActor[actorName] = resolveFixturePath(fileName);
 });
 

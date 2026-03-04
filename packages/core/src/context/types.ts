@@ -5,7 +5,8 @@ export interface ContextMetadata {
   readonly recordCount: number;
 }
 
-export type ContextRecord = Readonly<Record<string, unknown>>;
+export type JsonValue = string | number | boolean | null | readonly JsonValue[] | { readonly [key: string]: JsonValue };
+export type ContextRecord = { readonly [key: string]: JsonValue };
 
 export interface ContextData {
   readonly records: readonly ContextRecord[];

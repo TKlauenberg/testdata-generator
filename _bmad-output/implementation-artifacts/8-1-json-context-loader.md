@@ -1,6 +1,6 @@
 # Story 8.1: JSON Context Loader
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -179,4 +179,5 @@ GPT-5.3-Codex
 
 ## Change Log
 
+- 2026-03-04: Fixed CRITICAL and LOW issues surfaced during ADVERSARIAL Senior Developer code review. Applied `Result<T, E>` pattern to validation operations and enforced deep immutability for typed contexts. Story advanced to `done`.
 - 2026-03-04: Implemented Story 8.1 JSON context loading end-to-end (types, loader, exports, unit tests, BDD assets, and runner wiring); story advanced to `review`.
