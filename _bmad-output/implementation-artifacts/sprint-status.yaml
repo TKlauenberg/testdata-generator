@@ -103,7 +103,7 @@ development_status:
   epic-7-retrospective: done
 
   epic-8: in-progress
-  8-1-json-context-loader: ready-for-dev
+  8-1-json-context-loader: review
   8-2-csv-context-loader: backlog
   8-3-context-reference-syntax-and-resolution: backlog
   8-4-context-tagging-and-filtered-selection: backlog

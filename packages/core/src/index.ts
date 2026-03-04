@@ -24,3 +24,6 @@ export * from './analyzer';
 
 // Adapters (output formatting)
 export * from './adapters';
+
+// Context (data loading and saving)
+export * from './context';

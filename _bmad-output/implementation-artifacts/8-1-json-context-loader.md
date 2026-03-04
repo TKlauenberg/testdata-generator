@@ -1,6 +1,6 @@
 # Story 8.1: JSON Context Loader
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -25,32 +25,32 @@ so that **I can reference real data in my test data generation**.
 
 ## Tasks / Subtasks
 
-- [ ] Define context types and contracts (AC: 1, 3, 6)
-  - [ ] Add `packages/core/src/context/types.ts` defining `ContextData`, metadata shape, and normalized records collection type.
-  - [ ] Ensure types use strict readonly semantics where applicable and avoid `any`.
-  - [ ] Standardize normalization rule: single object input becomes one-record collection.
+- [x] Define context types and contracts (AC: 1, 3, 6)
+  - [x] Add `packages/core/src/context/types.ts` defining `ContextData`, metadata shape, and normalized records collection type.
+  - [x] Ensure types use strict readonly semantics where applicable and avoid `any`.
+  - [x] Standardize normalization rule: single object input becomes one-record collection.
 
-- [ ] Implement JSON loader in dedicated module (AC: 1, 2, 3, 4, 5, 6, 7)
-  - [ ] Create `packages/core/src/context/loaders/jsonLoader.ts` with `loadJsonContext(filePath: string): Promise<ContextData>`.
-  - [ ] Read file via Bun APIs and parse JSON with guarded error handling.
-  - [ ] Validate top-level shape (`object` or `object[]`) and reject primitives/mixed arrays with diagnostics-oriented messages.
-  - [ ] Normalize payload into a predictable record array and attach metadata (`source`, `format`, `loadedAt`, record count).
-  - [ ] Include file existence and permission-path failures in user-actionable error messages.
+- [x] Implement JSON loader in dedicated module (AC: 1, 2, 3, 4, 5, 6, 7)
+  - [x] Create `packages/core/src/context/loaders/jsonLoader.ts` with `loadJsonContext(filePath: string): Promise<ContextData>`.
+  - [x] Read file via Bun APIs and parse JSON with guarded error handling.
+  - [x] Validate top-level shape (`object` or `object[]`) and reject primitives/mixed arrays with diagnostics-oriented messages.
+  - [x] Normalize payload into a predictable record array and attach metadata (`source`, `format`, `loadedAt`, record count).
+  - [x] Include file existence and permission-path failures in user-actionable error messages.
 
-- [ ] Add module wiring and exports (AC: 8)
-  - [ ] Create `packages/core/src/context/index.ts` to export context types and `loadJsonContext`.
-  - [ ] Update `packages/core/src/index.ts` to export context module through public API.
-  - [ ] Keep module boundaries: core context implementation remains independent from CLI.
+- [x] Add module wiring and exports (AC: 8)
+  - [x] Create `packages/core/src/context/index.ts` to export context types and `loadJsonContext`.
+  - [x] Update `packages/core/src/index.ts` to export context module through public API.
+  - [x] Keep module boundaries: core context implementation remains independent from CLI.
 
-- [ ] Add unit tests (AC: 9)
-  - [ ] Create `packages/core/src/context/loaders/jsonLoader.test.ts`.
-  - [ ] Cover: valid single object, valid object array, malformed JSON, missing file, invalid top-level shapes.
-  - [ ] Verify metadata population and deterministic normalization behavior.
+- [x] Add unit tests (AC: 9)
+  - [x] Create `packages/core/src/context/loaders/jsonLoader.test.ts`.
+  - [x] Cover: valid single object, valid object array, malformed JSON, missing file, invalid top-level shapes.
+  - [x] Verify metadata population and deterministic normalization behavior.
 
-- [ ] Add BDD tests with Screenplay pattern (AC: 10)
-  - [ ] Add `packages/core/features/json-context-loader.feature` with scenarios for object and array JSON context files.
-  - [ ] Add step definitions under `packages/core/features/step_definitions/json-context-loader.steps.ts`.
-  - [ ] Add/extend Screenplay Abilities/Tasks/Questions under `packages/core/features/support/` for context loading behavior.
+- [x] Add BDD tests with Screenplay pattern (AC: 10)
+  - [x] Add `packages/core/features/json-context-loader.feature` with scenarios for object and array JSON context files.
+  - [x] Add step definitions under `packages/core/features/step_definitions/json-context-loader.steps.ts`.
+  - [x] Add/extend Screenplay Abilities/Tasks/Questions under `packages/core/features/support/` for context loading behavior.
 
 ## Dev Notes
 
@@ -146,15 +146,37 @@ GPT-5.3-Codex
 
 ### Debug Log References
 
-- create-story workflow execution context for Story 8.1
+- `runTests` targeted: `packages/core/src/context/loaders/jsonLoader.test.ts` + `packages/core/src/index.test.ts` → 10 passed, 0 failed
+- `runTests` targeted: `packages/core/tests/cucumber.runner.test.ts` returned no runnable tests through tool filter (runner wiring updated in `packages/core/tests/run-cucumber.ts`)
 
 ### Completion Notes List
 
-- Story scaffold generated from Epic 8 and architecture context.
-- Story status set to `ready-for-dev`.
-- Sprint tracking updated for Epic 8 transition and Story 8.1 readiness.
+- Added new context module contracts in `packages/core/src/context/types.ts` with strict readonly metadata and record collection typing.
+- Implemented `loadJsonContext(filePath)` with Bun file I/O, guarded JSON parsing, shape validation (`object` or `object[]`), normalization, and structured metadata output.
+- Added public module wiring via `packages/core/src/context/index.ts` and package exports through `packages/core/src/index.ts`.
+- Added unit tests covering happy paths, malformed JSON, missing files, invalid top-level JSON shapes, and metadata assertions.
+- Added BDD coverage with feature scenarios, step definitions, Screenplay ability/tasks/questions, fixture files, and cucumber runner registration.
 
 ### File List
 
 - `_bmad-output/implementation-artifacts/8-1-json-context-loader.md`
 - `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- `packages/core/src/context/types.ts`
+- `packages/core/src/context/index.ts`
+- `packages/core/src/context/loaders/jsonLoader.ts`
+- `packages/core/src/context/loaders/jsonLoader.test.ts`
+- `packages/core/src/index.ts`
+- `packages/core/features/json-context-loader.feature`
+- `packages/core/features/fixtures/context/users.single.json`
+- `packages/core/features/fixtures/context/users.array.json`
+- `packages/core/features/fixtures/context/users.malformed.json`
+- `packages/core/features/step_definitions/json-context-loader.steps.ts`
+- `packages/core/features/support/abilities/UseJsonContextLoader.ts`
+- `packages/core/features/support/tasks/JsonContextLoaderTasks.ts`
+- `packages/core/features/support/questions/JsonContextLoaderQuestions.ts`
+- `packages/core/features/support/screenplay/Actors.ts`
+- `packages/core/tests/run-cucumber.ts`
+
+## Change Log
+
+- 2026-03-04: Implemented Story 8.1 JSON context loading end-to-end (types, loader, exports, unit tests, BDD assets, and runner wiring); story advanced to `review`.
