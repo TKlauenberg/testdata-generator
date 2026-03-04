@@ -35,11 +35,17 @@ function createField(
 }
 
 // Helper to create test schema
-function createSchema(name: string, fields: FieldNode[], location?: SourceLocation): SchemaNode {
+function createSchema(
+  name: string,
+  fields: FieldNode[],
+  location?: SourceLocation,
+  compositeUniques?: readonly (readonly string[])[],
+): SchemaNode {
   return {
     kind: 'schema',
     name,
     fields,
+    compositeUniques,
     location: location ?? createLocation(),
   };
 }
@@ -430,6 +436,125 @@ describe('analyze()', () => {
         );
         expect(uniqueError).toBeDefined();
         expect(uniqueError?.message).toContain('score');
+      }
+    });
+  });
+
+  describe('composite uniqueness validation', () => {
+    test('accepts valid 2-field and 3-field composite constraints and propagates metadata', () => {
+      const program = createProgram([
+        createSchema(
+          'Membership',
+          [
+            createField('email', 'string'),
+            createField('tenantId', 'string'),
+            createField('resourceId', 'string'),
+          ],
+          undefined,
+          [
+            ['email', 'tenantId'],
+            ['email', 'tenantId', 'resourceId'],
+          ],
+        ),
+      ]);
+
+      const result = analyze(program);
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        const schema = result.value.schemas.get('Membership');
+        expect(schema?.compositeUniques).toEqual([
+          ['email', 'tenantId'],
+          ['email', 'tenantId', 'resourceId'],
+        ]);
+      }
+    });
+
+    test('emits analyzer.compositeUniqueFieldNotFound for unknown composite field', () => {
+      const program = createProgram([
+        createSchema(
+          'User',
+          [createField('email', 'string'), createField('tenantId', 'string')],
+          undefined,
+          [['email', 'missingField']],
+        ),
+      ]);
+
+      const result = analyze(program);
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        const error = result.errors.find(
+          (item) => item.code === 'analyzer.compositeUniqueFieldNotFound',
+        );
+        expect(error).toBeDefined();
+        expect(error?.message).toContain('missingField');
+      }
+    });
+
+    test('emits analyzer.compositeUniqueArity for more than 5 fields', () => {
+      const program = createProgram([
+        createSchema(
+          'User',
+          [
+            createField('a', 'string'),
+            createField('b', 'string'),
+            createField('c', 'string'),
+            createField('d', 'string'),
+            createField('e', 'string'),
+            createField('f', 'string'),
+          ],
+          undefined,
+          [['a', 'b', 'c', 'd', 'e', 'f']],
+        ),
+      ]);
+
+      const result = analyze(program);
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        const error = result.errors.find((item) => item.code === 'analyzer.compositeUniqueArity');
+        expect(error).toBeDefined();
+      }
+    });
+
+    test('emits analyzer.compositeUniqueArity for fewer than 2 fields', () => {
+      const program = createProgram([
+        createSchema(
+          'User',
+          [createField('email', 'string')],
+          undefined,
+          [['email']],
+        ),
+      ]);
+
+      const result = analyze(program);
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        const error = result.errors.find((item) => item.code === 'analyzer.compositeUniqueArity');
+        expect(error).toBeDefined();
+      }
+    });
+
+    test('emits analyzer.compositeUniqueDuplicateField when composite directive repeats same field', () => {
+      const program = createProgram([
+        createSchema(
+          'User',
+          [createField('email', 'string'), createField('tenantId', 'string')],
+          undefined,
+          [['email', 'email']],
+        ),
+      ]);
+
+      const result = analyze(program);
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        const error = result.errors.find(
+          (item) => item.code === 'analyzer.compositeUniqueDuplicateField',
+        );
+        expect(error).toBeDefined();
       }
     });
   });

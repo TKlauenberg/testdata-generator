@@ -93,6 +93,7 @@ export interface FieldNode extends ASTNode {
  *     { kind: 'field', name: 'id', type: 'string', generator: { name: 'uuid' }, location: {...} },
  *     { kind: 'field', name: 'email', type: 'string', generator: { name: 'email' }, location: {...} }
  *   ],
+ *   compositeUniques: [['email', 'tenantId']],
  *   location: { file: 'users.td', line: 1, column: 1, length: 50 }
  * };
  * ```
@@ -101,6 +102,7 @@ export interface SchemaNode extends ASTNode {
   readonly kind: 'schema';
   readonly name: string;
   readonly fields: readonly FieldNode[];
+  readonly compositeUniques?: readonly (readonly string[])[];
   readonly location: SourceLocation;
 }
 

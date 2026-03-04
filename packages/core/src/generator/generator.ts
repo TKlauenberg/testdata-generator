@@ -102,6 +102,7 @@ export async function* generate(
   const sessionContext: GenerationSessionContext = {
     uniquenessTracker: new UniquenessTracker(),
   };
+  sessionContext.uniquenessTracker.clear();
 
   const maxDepth = options.maxRelationshipDepth ?? 5;
 
@@ -110,14 +111,51 @@ export async function* generate(
   for (const schema of program.schemas.values()) {
     // Step 3: Generate count records for this schema
     for (let i = 0; i < options.count; i++) {
-      // Step 4: Generate single record using generateRecord
-      // This is where all field generation happens
-      const record = generateRecord(schema, rng, {
-        programSchemas: program.schemas,
-        maxDepth,
-        currentDepth: 0,
-        schemaPath: [schema.node.name],
-      }, sessionContext);
+      let record: GeneratedRecord | null = null;
+      let failingConstraint: readonly string[] | null = null;
+
+      for (let attempt = 1; attempt <= MAX_UNIQUENESS_ATTEMPTS; attempt++) {
+        // Step 4: Generate single record using generateRecord
+        // This is where all field generation happens
+        const candidate = generateRecord(schema, rng, {
+          programSchemas: program.schemas,
+          maxDepth,
+          currentDepth: 0,
+          schemaPath: [schema.node.name],
+        }, sessionContext);
+
+        let compositeAccepted = true;
+        for (const constraint of schema.compositeUniques) {
+          const values = constraint.map((fieldName) => candidate[fieldName]);
+          const accepted = sessionContext.uniquenessTracker.trackComposite(constraint, values);
+          if (!accepted) {
+            compositeAccepted = false;
+            failingConstraint = constraint;
+            break;
+          }
+        }
+
+        if (compositeAccepted) {
+          record = candidate;
+          break;
+        }
+      }
+
+      if (record === null) {
+        if (failingConstraint && failingConstraint.length > 0) {
+          const constraintLabel = failingConstraint
+            .map((fieldName) => `${schema.node.name}.${fieldName}`)
+            .join(', ');
+          throw new Error(
+            `Composite uniqueness constraint (${constraintLabel}) failed after ${MAX_UNIQUENESS_ATTEMPTS} attempts. ` +
+              'Increase generator variety (wider ranges/options) or relax uniqueness constraints.',
+          );
+        }
+
+        throw new Error(
+          `Composite uniqueness constraint failed after ${MAX_UNIQUENESS_ATTEMPTS} attempts for schema '${schema.node.name}'.`,
+        );
+      }
 
       // Step 5: Yield immediately - lazy evaluation!
       // Record is produced and consumed before next record is generated
@@ -208,7 +246,9 @@ export function sortFieldsByDependency(
  * @param relationshipContext - Optional context for nested schema generation
  * @param sessionContext - Optional session context carrying the UniquenessTracker.
  *   **WARNING:** When omitted, fields marked `isUnique` receive NO uniqueness enforcement
- *   and will silently produce duplicates. Always pass a sessionContext when generating
+ *   and will silently produce duplicates. Composite uniqueness checks also require
+ *   this context and are only enforced in the `generate()` pipeline.
+ *   Always pass a sessionContext when generating
  *   multiple records from schemas that contain unique fields. The `generate()` async
  *   generator always supplies this context automatically.
  * @returns Plain JavaScript object with all fields populated

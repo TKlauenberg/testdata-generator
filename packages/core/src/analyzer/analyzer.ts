@@ -119,6 +119,13 @@ export function analyze(ast: Program): Result<ValidatedProgram, Diagnostic[]> {
       errors.push(...uniqueResult.errors);
     }
 
+    // Validate composite uniqueness constraints
+    const fieldNames = new Set(schema.fields.map((field) => field.name));
+    const compositeUniqueResult = validateCompositeUniqueConstraints(schema, fieldNames);
+    if (!compositeUniqueResult.ok) {
+      errors.push(...compositeUniqueResult.errors);
+    }
+
     templateReferencesBySchema.set(schema.name, getTemplateReferencesForSchema(schema));
   }
 
@@ -154,6 +161,7 @@ export function analyze(ast: Program): Result<ValidatedProgram, Diagnostic[]> {
       node: schema,
       fields: validatedFields,
       dependencies,
+      compositeUniques: schema.compositeUniques ?? [],
       sortOrder: sortOrder.get(schema.name) ?? 0,
     });
 
@@ -380,6 +388,61 @@ function validateUniqueConstraints(schema: SchemaNode): Result<void, Diagnostic[
         location: field.location,
         suggestion: `Use '${field.name}: ${field.type} unique' without assigning true/false`,
       });
+    }
+  }
+
+  if (errors.length > 0) {
+    return { ok: false, errors };
+  }
+
+  return { ok: true, value: undefined };
+}
+
+function validateCompositeUniqueConstraints(
+  schema: SchemaNode,
+  fieldNames: ReadonlySet<string>,
+): Result<void, Diagnostic[]> {
+  const errors: Diagnostic[] = [];
+  const compositeUniques = schema.compositeUniques ?? [];
+  const fieldByName = new Map(schema.fields.map((field) => [field.name, field]));
+
+  for (const compositeConstraint of compositeUniques) {
+    if (compositeConstraint.length < 2 || compositeConstraint.length > 5) {
+      errors.push({
+        code: 'analyzer.compositeUniqueArity',
+        message: `Composite unique constraint in schema '${schema.name}' must reference 2 to 5 fields, but found ${compositeConstraint.length}`,
+        severity: 'error',
+        location: schema.location,
+        suggestion: 'Use unique(field1, field2[, field3, field4, field5])',
+      });
+      continue;
+    }
+
+    const seenFields = new Set<string>();
+    for (const fieldName of compositeConstraint) {
+      if (seenFields.has(fieldName)) {
+        errors.push({
+          code: 'analyzer.compositeUniqueDuplicateField',
+          message: `Composite unique constraint in schema '${schema.name}' contains duplicate field '${fieldName}'`,
+          severity: 'error',
+          location: fieldByName.get(fieldName)?.location ?? schema.location,
+          suggestion: 'Remove duplicate fields from the same unique(...) directive',
+        });
+        continue;
+      }
+
+      seenFields.add(fieldName);
+
+      if (!fieldNames.has(fieldName)) {
+        const suggestions = findSimilar(fieldName, Array.from(fieldNames));
+        errors.push({
+          code: 'analyzer.compositeUniqueFieldNotFound',
+          message: `Composite unique constraint in schema '${schema.name}' references unknown field '${fieldName}'`,
+          severity: 'error',
+          location: schema.location,
+          suggestion: suggestions.length > 0 ? `Did you mean '${suggestions[0]}'?` : undefined,
+        });
+      }
     }
   }
 

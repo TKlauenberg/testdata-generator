@@ -17,6 +17,7 @@ function createMockSchema(
     isUnique?: boolean;
   }>,
   schemaName: string = 'TestSchema',
+  compositeUniques: readonly (readonly string[])[] = [],
 ): ValidatedSchema {
   const mockLocation: SourceLocation = {
     file: 'test.td',
@@ -43,6 +44,7 @@ function createMockSchema(
     kind: 'schema',
     name: schemaName,
     fields: fieldNodes,
+    compositeUniques,
     location: mockLocation,
   };
 
@@ -61,6 +63,7 @@ function createMockSchema(
     node: schemaNode,
     fields: validatedFields,
     dependencies: new Set(),
+    compositeUniques,
     sortOrder: 0,
   };
 }
@@ -528,6 +531,7 @@ function createMockProgram(
       params?: Array<{ name: string; value: unknown }>;
       isUnique?: boolean;
     }>;
+    compositeUniques?: readonly (readonly string[])[];
   }>
 ): ValidatedProgram {
   const mockLocation: SourceLocation = {
@@ -540,7 +544,7 @@ function createMockProgram(
   const schemaMap = new Map<string, ValidatedSchema>();
 
   for (const s of schemas) {
-    const schema = createMockSchema(s.fields, s.name);
+    const schema = createMockSchema(s.fields, s.name, s.compositeUniques ?? []);
     schemaMap.set(s.name, schema);
   }
 
@@ -999,6 +1003,175 @@ describe('generate (streaming)', () => {
           // consume
         }
       }).toThrow(/depth exceeded max depth 1/i);
+    });
+  });
+
+  describe('composite uniqueness enforcement', () => {
+    it('enforces unique 2-field composite combinations', async () => {
+      const program = createMockProgram([
+        {
+          name: 'User',
+          fields: [
+            {
+              name: 'email',
+              type: 'pick',
+              params: [{ name: 'array', value: ['a@test.com', 'b@test.com', 'c@test.com'] }],
+            },
+            {
+              name: 'tenantId',
+              type: 'pick',
+              params: [{ name: 'array', value: ['t1', 't2', 't3'] }],
+            },
+          ],
+          compositeUniques: [['email', 'tenantId']],
+        },
+      ]);
+
+      const records: Record<string, unknown>[] = [];
+      for await (const record of generate(program, { count: 8, seed: 321 })) {
+        records.push(record);
+      }
+
+      const combinations = records.map((record) => JSON.stringify([record.email, record.tenantId]));
+      expect(new Set(combinations).size).toBe(combinations.length);
+    });
+
+    it('enforces unique 3-field composite combinations', async () => {
+      const program = createMockProgram([
+        {
+          name: 'Audit',
+          fields: [
+            {
+              name: 'userId',
+              type: 'pick',
+              params: [{ name: 'array', value: ['u1', 'u2', 'u3'] }],
+            },
+            {
+              name: 'resourceId',
+              type: 'pick',
+              params: [{ name: 'array', value: ['r1', 'r2', 'r3'] }],
+            },
+            {
+              name: 'action',
+              type: 'pick',
+              params: [{ name: 'array', value: ['read', 'write', 'delete'] }],
+            },
+          ],
+          compositeUniques: [['userId', 'resourceId', 'action']],
+        },
+      ]);
+
+      const records: Record<string, unknown>[] = [];
+      for await (const record of generate(program, { count: 20, seed: 654 })) {
+        records.push(record);
+      }
+
+      const combinations = records.map((record) =>
+        JSON.stringify([record.userId, record.resourceId, record.action]),
+      );
+      expect(new Set(combinations).size).toBe(combinations.length);
+    });
+
+    it('retries when a composite collision occurs and eventually succeeds', async () => {
+      const program = createMockProgram([
+        {
+          name: 'User',
+          fields: [
+            {
+              name: 'email',
+              type: 'pick',
+              params: [{ name: 'array', value: ['dup@test.com', 'dup@test.com', 'alt@test.com'] }],
+            },
+            {
+              name: 'tenantId',
+              type: 'pick',
+              params: [{ name: 'array', value: ['tenant-a', 'tenant-a', 'tenant-b'] }],
+            },
+          ],
+          compositeUniques: [['email', 'tenantId']],
+        },
+      ]);
+
+      const records: Record<string, unknown>[] = [];
+      for await (const record of generate(program, { count: 2, seed: 987 })) {
+        records.push(record);
+      }
+
+      const combinations = records.map((record) => JSON.stringify([record.email, record.tenantId]));
+      expect(new Set(combinations).size).toBe(2);
+    });
+
+    it('fails with schema-qualified composite error after retry exhaustion', async () => {
+      const program = createMockProgram([
+        {
+          name: 'User',
+          fields: [
+            {
+              name: 'email',
+              type: 'pick',
+              params: [{ name: 'array', value: ['same-email@test.com'] }],
+            },
+            {
+              name: 'tenantId',
+              type: 'pick',
+              params: [{ name: 'array', value: ['tenant-only'] }],
+            },
+          ],
+          compositeUniques: [['email', 'tenantId']],
+        },
+      ]);
+
+      await expect(async () => {
+        for await (const _record of generate(program, { count: 2, seed: 77 })) {
+          // consume stream
+        }
+      }).toThrow(/Composite uniqueness constraint/);
+
+      await expect(async () => {
+        for await (const _record of generate(program, { count: 2, seed: 77 })) {
+          // consume stream
+        }
+      }).toThrow(/User\.email, User\.tenantId/);
+
+      await expect(async () => {
+        for await (const _record of generate(program, { count: 2, seed: 77 })) {
+          // consume stream
+        }
+      }).toThrow(/100 attempts/);
+    });
+
+    it('resets composite uniqueness tracking between separate generate() sessions', async () => {
+      const program = createMockProgram([
+        {
+          name: 'User',
+          fields: [
+            {
+              name: 'email',
+              type: 'pick',
+              params: [{ name: 'array', value: ['only@test.com'] }],
+            },
+            {
+              name: 'tenantId',
+              type: 'pick',
+              params: [{ name: 'array', value: ['tenant-only'] }],
+            },
+          ],
+          compositeUniques: [['email', 'tenantId']],
+        },
+      ]);
+
+      const firstSession: Record<string, unknown>[] = [];
+      for await (const record of generate(program, { count: 1, seed: 55 })) {
+        firstSession.push(record);
+      }
+
+      const secondSession: Record<string, unknown>[] = [];
+      for await (const record of generate(program, { count: 1, seed: 55 })) {
+        secondSession.push(record);
+      }
+
+      expect(firstSession).toEqual([{ email: 'only@test.com', tenantId: 'tenant-only' }]);
+      expect(secondSession).toEqual([{ email: 'only@test.com', tenantId: 'tenant-only' }]);
     });
   });
 

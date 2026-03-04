@@ -43,6 +43,9 @@ export interface ValidatedSchema {
   /** Names of schemas this schema depends on */
   readonly dependencies: ReadonlySet<string>;
 
+  /** Schema-level composite uniqueness constraints (2-5 fields each) */
+  readonly compositeUniques: readonly (readonly string[])[];
+
   /** Topological sort order (for generation) */
   readonly sortOrder: number;
 }

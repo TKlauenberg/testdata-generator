@@ -451,14 +451,29 @@ export class Parser {
 
     // Parse fields
     const fields: FieldNode[] = [];
+    const compositeUniques: string[][] = [];
     while (!this._check('operator', '}') && !this._isAtEnd()) {
-      const fieldResult = this._parseFieldDeclaration();
-
-      if (fieldResult.ok) {
-        fields.push(fieldResult.value);
+      const nextToken = this._peek();
+      if (
+        this._check('keyword', 'unique') &&
+        nextToken.kind === 'operator' &&
+        nextToken.value === '('
+      ) {
+        const compositeResult = this._parseCompositeUniqueDirective();
+        if (compositeResult.ok) {
+          compositeUniques.push([...compositeResult.value]);
+        } else {
+          this._synchronizeToNextField();
+        }
       } else {
-        // Skip to next field or closing brace
-        this._synchronizeToNextField();
+        const fieldResult = this._parseFieldDeclaration();
+
+        if (fieldResult.ok) {
+          fields.push(fieldResult.value);
+        } else {
+          // Skip to next field or closing brace
+          this._synchronizeToNextField();
+        }
       }
     }
 
@@ -491,9 +506,79 @@ export class Parser {
         kind: 'schema',
         name,
         fields,
+        compositeUniques,
         location,
       },
     };
+  }
+
+  private _parseCompositeUniqueDirective(): Result<readonly string[], Diagnostic[]> {
+    const directiveToken = this._currentToken();
+
+    const uniqueResult = this._expect('keyword', 'unique');
+    if (!uniqueResult.ok) {
+      return uniqueResult;
+    }
+
+    const openParenResult = this._expect('operator', '(');
+    if (!openParenResult.ok) {
+      this._addError(
+        `Expected '(' after 'unique' directive at line ${directiveToken.location.line}`,
+        this._currentToken().location,
+        ['Composite uniqueness syntax: unique(field1, field2)'],
+      );
+      return { ok: false, errors: this._errors };
+    }
+
+    const fields: string[] = [];
+
+    const firstFieldResult = this._expect('identifier');
+    if (!firstFieldResult.ok || firstFieldResult.value.kind !== 'identifier') {
+      this._addError(
+        'Expected at least two field names in composite unique constraint',
+        this._currentToken().location,
+        ['Composite uniqueness syntax: unique(field1, field2)'],
+      );
+      return { ok: false, errors: this._errors };
+    }
+    fields.push(firstFieldResult.value.value);
+
+    while (this._check('operator', ',')) {
+      this._advance();
+
+      const fieldResult = this._expect('identifier');
+      if (!fieldResult.ok || fieldResult.value.kind !== 'identifier') {
+        this._addError(
+          'Expected field name after comma in composite unique constraint',
+          this._currentToken().location,
+          ['Composite uniqueness syntax: unique(field1, field2, field3)'],
+        );
+        return { ok: false, errors: this._errors };
+      }
+
+      fields.push(fieldResult.value.value);
+    }
+
+    const closeParenResult = this._expect('operator', ')');
+    if (!closeParenResult.ok) {
+      this._addError(
+        "Expected ')' to close composite unique constraint",
+        this._currentToken().location,
+        ['Composite uniqueness syntax: unique(field1, field2)'],
+      );
+      return { ok: false, errors: this._errors };
+    }
+
+    if (fields.length < 2) {
+      this._addError(
+        'Composite unique constraint must include at least two fields',
+        directiveToken.location,
+        ['Use syntax like unique(field1, field2)'],
+      );
+      return { ok: false, errors: this._errors };
+    }
+
+    return { ok: true, value: fields };
   }
 
   /**
@@ -501,6 +586,15 @@ export class Parser {
    */
   private _synchronizeToNextField(): void {
     while (!this._isAtEnd() && !this._check('operator', '}')) {
+      const nextToken = this._peek();
+      if (
+        this._check('keyword', 'unique') &&
+        nextToken.kind === 'operator' &&
+        nextToken.value === '('
+      ) {
+        return;
+      }
+
       // Field declarations start with an identifier, but NOT if it's 'generator'
       // because generator is part of the current field
       const tok = this._currentToken();
@@ -563,7 +657,11 @@ export class Parser {
 
     // Parse optional constraints
     let constraints: FieldConstraints | undefined;
-    if (this._check('keyword', 'unique')) {
+    const nextToken = this._peek();
+    if (
+      this._check('keyword', 'unique') &&
+      !(nextToken.kind === 'operator' && nextToken.value === '(')
+    ) {
       const constraintResult = this._parseConstraints();
       if (constraintResult.ok) {
         constraints = constraintResult.value;

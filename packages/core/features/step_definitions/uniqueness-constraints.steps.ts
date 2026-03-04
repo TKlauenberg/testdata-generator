@@ -110,6 +110,26 @@ Then('all generated values for field {string} should be unique', async (fieldNam
   );
 });
 
+Then(
+  'all generated composite values for fields {string} should be unique',
+  async (fieldsCsv: string) => {
+    const actorName = 'Dev';
+    const records = await actorCalled(actorName).answer(GeneratedRecords());
+    const fields = fieldsCsv
+      .split(',')
+      .map((field) => field.trim())
+      .filter((field) => field.length > 0);
+
+    const serializedCombinations = records.map((record) =>
+      JSON.stringify(fields.map((fieldName) => record[fieldName])),
+    );
+
+    await actorCalled(actorName).attemptsTo(
+      Ensure.that(new Set(serializedCombinations).size, equals(serializedCombinations.length)),
+    );
+  },
+);
+
 Then('uniqueness generation should fail', async () => {
   const actorName = 'Dev';
   await actorCalled(actorName).attemptsTo(Ensure.that(ErrorWasThrown(), isTrue()));
@@ -118,6 +138,18 @@ Then('uniqueness generation should fail', async () => {
 Then('uniqueness failure should mention field {string}', async (fieldName: string) => {
   const actorName = 'Dev';
   await actorCalled(actorName).attemptsTo(Ensure.that(ErrorMessageContains(fieldName), isTrue()));
+});
+
+Then('uniqueness failure should mention composite fields {string}', async (fieldsCsv: string) => {
+  const actorName = 'Dev';
+  const fields = fieldsCsv
+    .split(',')
+    .map((field) => field.trim())
+    .filter((field) => field.length > 0);
+
+  for (const field of fields) {
+    await actorCalled(actorName).attemptsTo(Ensure.that(ErrorMessageContains(field), isTrue()));
+  }
 });
 
 Then('uniqueness failure should suggest increasing value variety', async () => {

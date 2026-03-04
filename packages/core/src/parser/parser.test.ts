@@ -469,6 +469,107 @@ describe('Parser - Constraints', () => {
       expect(field.constraints?.unique).toBe(true);
     }
   });
+
+  test('parses schema-level composite unique directive', () => {
+    // schema User { email: string tenantId: string unique(email, tenantId) }
+    const tokens: Token[] = [
+      keyword('schema', 1, 1),
+      ident('User', 1, 8),
+      op('{', 1, 13),
+      ident('email', 2, 3),
+      op(':', 2, 8),
+      ident('string', 2, 10),
+      ident('tenantId', 3, 3),
+      op(':', 3, 11),
+      ident('string', 3, 13),
+      keyword('unique', 4, 3),
+      op('(', 4, 9),
+      ident('email', 4, 10),
+      op(',', 4, 15),
+      ident('tenantId', 4, 17),
+      op(')', 4, 25),
+      op('}', 5, 1),
+      eof(5, 2),
+    ];
+
+    const result = parse(tokens);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const schema = result.value.declarations[0] as SchemaNode;
+      expect(schema.compositeUniques).toEqual([['email', 'tenantId']]);
+    }
+  });
+
+  test('parses multiple schema-level composite unique directives', () => {
+    const tokens: Token[] = [
+      keyword('schema', 1, 1),
+      ident('User', 1, 8),
+      op('{', 1, 13),
+      ident('email', 2, 3),
+      op(':', 2, 8),
+      ident('string', 2, 10),
+      ident('tenantId', 3, 3),
+      op(':', 3, 11),
+      ident('string', 3, 13),
+      ident('region', 4, 3),
+      op(':', 4, 9),
+      ident('string', 4, 11),
+      keyword('unique', 5, 3),
+      op('(', 5, 9),
+      ident('email', 5, 10),
+      op(',', 5, 15),
+      ident('tenantId', 5, 17),
+      op(')', 5, 25),
+      keyword('unique', 6, 3),
+      op('(', 6, 9),
+      ident('tenantId', 6, 10),
+      op(',', 6, 18),
+      ident('region', 6, 20),
+      op(')', 6, 26),
+      op('}', 7, 1),
+      eof(7, 2),
+    ];
+
+    const result = parse(tokens);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const schema = result.value.declarations[0] as SchemaNode;
+      expect(schema.compositeUniques).toEqual([
+        ['email', 'tenantId'],
+        ['tenantId', 'region'],
+      ]);
+    }
+  });
+
+  test('reports parse error when composite unique directive has fewer than 2 fields', () => {
+    const tokens: Token[] = [
+      keyword('schema', 1, 1),
+      ident('User', 1, 8),
+      op('{', 1, 13),
+      ident('email', 2, 3),
+      op(':', 2, 8),
+      ident('string', 2, 10),
+      keyword('unique', 3, 3),
+      op('(', 3, 9),
+      ident('email', 3, 10),
+      op(')', 3, 15),
+      op('}', 4, 1),
+      eof(4, 2),
+    ];
+
+    const result = parse(tokens);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(
+        result.errors.some((error) =>
+          error.message.toLowerCase().includes('at least two fields'),
+        ),
+      ).toBe(true);
+    }
+  });
 });
 
 describe('Parser - Error Detection', () => {

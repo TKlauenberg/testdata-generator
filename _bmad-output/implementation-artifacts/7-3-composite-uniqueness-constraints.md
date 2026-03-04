@@ -1,6 +1,6 @@
 # Story 7.3: Composite Uniqueness Constraints
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -25,57 +25,57 @@ so that **I can model composite keys like email+tenantId**.
 
 ## Tasks / Subtasks
 
-- [ ] Extend AST to represent schema-level composite uniqueness directives (AC: 1)
-  - [ ] Add `readonly compositeUniques?: readonly (readonly string[])[]` to `SchemaNode` in `packages/core/src/parser/ast.ts`.
-  - [ ] Update JSDoc on `SchemaNode` with example showing the new field.
+- [x] Extend AST to represent schema-level composite uniqueness directives (AC: 1)
+  - [x] Add `readonly compositeUniques?: readonly (readonly string[])[]` to `SchemaNode` in `packages/core/src/parser/ast.ts`.
+  - [x] Update JSDoc on `SchemaNode` with example showing the new field.
 
-- [ ] Extend parser to parse `unique(field1, field2, ...)` inside the schema body (AC: 1)
-  - [ ] In `_parseSchemaDeclaration` field loop (`while !}` block in `parser.ts`), before calling `_parseFieldDeclaration`, check for `keyword: 'unique'` AND `_peek()` is `operator: '('`. If matched, call a new `_parseCompositeUniqueDirective()` instead.
-  - [ ] Implement `_parseCompositeUniqueDirective(): Result<readonly string[], Diagnostic[]>`:
+- [x] Extend parser to parse `unique(field1, field2, ...)` inside the schema body (AC: 1)
+  - [x] In `_parseSchemaDeclaration` field loop (`while !}` block in `parser.ts`), before calling `_parseFieldDeclaration`, check for `keyword: 'unique'` AND `_peek()` is `operator: '('`. If matched, call a new `_parseCompositeUniqueDirective()` instead.
+  - [x] Implement `_parseCompositeUniqueDirective(): Result<readonly string[], Diagnostic[]>`:
     - Consume `unique` keyword.
     - Consume `(`.
     - Parse comma-separated identifiers (2 or more; enforce ≥2 at parse time with a clear error).
     - Consume `)`.
     - Return the list of field name strings.
-  - [ ] Collect parsed composite directives in a local `compositeUniques: string[][]` array and include in the returned `SchemaNode`.
-  - [ ] Handle parse errors gracefully: skip to `}` (via `_synchronizeToNextField`) and continue collecting remaining fields/directives.
+  - [x] Collect parsed composite directives in a local `compositeUniques: string[][]` array and include in the returned `SchemaNode`.
+  - [x] Handle parse errors gracefully: skip to `}` (via `_synchronizeToNextField`) and continue collecting remaining fields/directives.
 
-- [ ] Add analyzer validation for composite uniqueness constraints (AC: 2, 3)
-  - [ ] Add `readonly compositeUniques: readonly (readonly string[])[]` to `ValidatedSchema` in `packages/core/src/analyzer/types.ts`.
-  - [ ] In `analyzer.ts`, add a new `validateCompositeUniqueConstraints(schema: SchemaNode, fieldNames: Set<string>): Result<void, Diagnostic[]>` function that:
+- [x] Add analyzer validation for composite uniqueness constraints (AC: 2, 3)
+  - [x] Add `readonly compositeUniques: readonly (readonly string[])[]` to `ValidatedSchema` in `packages/core/src/analyzer/types.ts`.
+  - [x] In `analyzer.ts`, add a new `validateCompositeUniqueConstraints(schema: SchemaNode, fieldNames: Set<string>): Result<void, Diagnostic[]>` function that:
     - For each composite constraint, validates arity (2–5 fields) → diagnostic code `analyzer.compositeUniqueArity`.
     - For each composite constraint, validates all named fields exist in the schema → diagnostic code `analyzer.compositeUniqueFieldNotFound`.
     - Validates no duplicate field names within a single constraint → diagnostic code `analyzer.compositeUniqueDuplicateField`.
-  - [ ] Call this validation inside `analyzeSchema()` alongside existing `validateUniqueConstraints()`.
-  - [ ] Propagate `compositeUniques: schema.node.compositeUniques ?? []` into the returned `ValidatedSchema`.
+  - [x] Call this validation inside `analyzeSchema()` alongside existing `validateUniqueConstraints()`.
+  - [x] Propagate `compositeUniques: schema.node.compositeUniques ?? []` into the returned `ValidatedSchema`.
 
-- [ ] Integrate composite uniqueness enforcement in the generator (AC: 4, 5, 6, 8)
-  - [ ] In `generate()` in `packages/core/src/generator/generator.ts`, after each `generateRecord()` call, for each composite constraint in `validatedSchema.compositeUniques`:
+- [x] Integrate composite uniqueness enforcement in the generator (AC: 4, 5, 6, 8)
+  - [x] In `generate()` in `packages/core/src/generator/generator.ts`, after each `generateRecord()` call, for each composite constraint in `validatedSchema.compositeUniques`:
     - Extract the field values from the generated record for the composite fields.
     - Call `sessionContext.uniquenessTracker.trackComposite(fields, values)`.
     - If `trackComposite` returns `false`, the record is rejected → break inner constraint loop and retry.
-  - [ ] Wrap the single `generateRecord()` call in a per-record retry loop (up to `MAX_UNIQUENESS_ATTEMPTS = 100` attempts). On each retry, call `generateRecord()` again (the existing per-field uniqueness enforcement inside `generateRecord` ensures single-field constraints still hold).
-  - [ ] On retry exhaustion: throw with a schema-qualified error message, e.g.:
+  - [x] Wrap the single `generateRecord()` call in a per-record retry loop (up to `MAX_UNIQUENESS_ATTEMPTS = 100` attempts). On each retry, call `generateRecord()` again (the existing per-field uniqueness enforcement inside `generateRecord` ensures single-field constraints still hold).
+  - [x] On retry exhaustion: throw with a schema-qualified error message, e.g.:
     `Composite uniqueness constraint (User.email, User.tenantId) failed after 100 attempts. Increase generator variety (wider ranges/options) or relax uniqueness constraints.`
-  - [ ] Composite uniqueness reset relies on the existing `UniquenessTracker.clear()` inside `generate()` session context — no additional changes needed.
+  - [x] Composite uniqueness reset relies on the existing `UniquenessTracker.clear()` inside `generate()` session context — no additional changes needed.
 
-- [ ] Add unit tests for all new behaviors (AC: 9)
-  - [ ] **Parser tests** (`packages/core/src/parser/parser.test.ts`): verify `unique(f1, f2)` inside schema body parses to `compositeUniques: [['f1', 'f2']]`; verify multi-directive schemas; verify parse errors for arity < 2.
-  - [ ] **Analyzer tests** (`packages/core/src/analyzer/analyzer.test.ts`): verify valid 2-field and 3-field composites pass; verify non-existent field names emit `analyzer.compositeUniqueFieldNotFound`; verify arity > 5 emits `analyzer.compositeUniqueArity`; verify arity < 2 emits `analyzer.compositeUniqueArity` (or rejected at parse time).
-  - [ ] **Generator tests** (`packages/core/src/generator/generator.test.ts`):
+- [x] Add unit tests for all new behaviors (AC: 9)
+  - [x] **Parser tests** (`packages/core/src/parser/parser.test.ts`): verify `unique(f1, f2)` inside schema body parses to `compositeUniques: [['f1', 'f2']]`; verify multi-directive schemas; verify parse errors for arity < 2.
+  - [x] **Analyzer tests** (`packages/core/src/analyzer/analyzer.test.ts`): verify valid 2-field and 3-field composites pass; verify non-existent field names emit `analyzer.compositeUniqueFieldNotFound`; verify arity > 5 emits `analyzer.compositeUniqueArity`; verify arity < 2 emits `analyzer.compositeUniqueArity` (or rejected at parse time).
+  - [x] **Generator tests** (`packages/core/src/generator/generator.test.ts`):
     - 2-field composite uniqueness: generate N records, assert no duplicate (email, tenantId) combinations.
     - 3-field composite uniqueness: generate N records, assert no duplicate (userId, resourceId, action) combinations.
     - Retry path: use a constrained generator where collision is guaranteed within first few attempts, assert eventual success.
     - Exhaustion failure: use a generator where composite can never be unique, assert error message is schema-qualified and mentions both field names and retry count.
     - Session reset: two separate `generate()` calls on the same schema; assert composite combinations can repeat across calls.
 
-- [ ] Add BDD scenarios for composite uniqueness (AC: 10)
-  - [ ] Extend `packages/core/features/uniqueness-constraints.feature` with:
+- [x] Add BDD scenarios for composite uniqueness (AC: 10)
+  - [x] Extend `packages/core/features/uniqueness-constraints.feature` with:
     - Scenario: composite `email+tenantId` generates no duplicate pairs over 50 records.
     - Scenario: composite `userId+resourceId` generates no duplicate pairs over 30 records.
     - Scenario: composite uniqueness with exhaustible generator reports clear error with field list.
-  - [ ] Add/extend step definitions in `packages/core/features/step_definitions/uniqueness-constraints.steps.ts` for "composite" DSL source code and "composite uniqueness" generation/assertion steps.
-  - [ ] Reuse existing Screenplay `Ability` / `Tasks` / `Questions` pattern established in Stories 7.1 and 7.2.
+  - [x] Add/extend step definitions in `packages/core/features/step_definitions/uniqueness-constraints.steps.ts` for "composite" DSL source code and "composite uniqueness" generation/assertion steps.
+  - [x] Reuse existing Screenplay `Ability` / `Tasks` / `Questions` pattern established in Stories 7.1 and 7.2.
 
 ## Dev Notes
 
@@ -264,10 +264,34 @@ Continue this cadence. Run `bun test` (all ~592 tests) before marking `review`.
 
 ### Agent Model Used
 
-Claude Sonnet 4.6
+GPT-5.3-Codex
 
 ### Debug Log References
 
+- `runTests` targeted: `parser.test.ts`, `analyzer.test.ts`, `generator.test.ts` → 104 passed, 0 failed
+- `runTests` full suite: 627 passed, 0 failed
+
 ### Completion Notes List
 
+- Implemented schema-level composite uniqueness syntax parsing: `unique(field1, field2, ...)` within schema bodies.
+- Added analyzer validations for composite arity (2–5), unknown fields, and duplicate names with new diagnostics.
+- Extended validated schema metadata to carry `compositeUniques` into generation.
+- Implemented generator-level composite uniqueness enforcement with retry loop up to `MAX_UNIQUENESS_ATTEMPTS` and schema-qualified exhaustion errors.
+- Added parser/analyzer/generator unit tests and BDD feature/steps for 2-field + 3-field composite constraints, retry success, and exhaustion failure.
+
 ### File List
+
+- packages/core/src/parser/ast.ts
+- packages/core/src/parser/parser.ts
+- packages/core/src/parser/parser.test.ts
+- packages/core/src/analyzer/types.ts
+- packages/core/src/analyzer/analyzer.ts
+- packages/core/src/analyzer/analyzer.test.ts
+- packages/core/src/generator/generator.ts
+- packages/core/src/generator/generator.test.ts
+- packages/core/features/uniqueness-constraints.feature
+- packages/core/features/step_definitions/uniqueness-constraints.steps.ts
+
+## Change Log
+
+- 2026-02-20: Implemented composite uniqueness constraints end-to-end (parser, analyzer, generator, tests, BDD) and marked story ready for review.
