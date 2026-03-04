@@ -125,6 +125,10 @@ export async function* generate(
         }, sessionContext);
 
         let compositeAccepted = true;
+        const acceptedCompositeEntries: Array<{
+          readonly fields: readonly string[];
+          readonly values: readonly unknown[];
+        }> = [];
         for (const constraint of schema.compositeUniques) {
           const values = constraint.map((fieldName) => candidate[fieldName]);
           const accepted = sessionContext.uniquenessTracker.trackComposite(constraint, values);
@@ -133,6 +137,18 @@ export async function* generate(
             failingConstraint = constraint;
             break;
           }
+
+          acceptedCompositeEntries.push({
+            fields: constraint,
+            values,
+          });
+        }
+
+        if (!compositeAccepted) {
+          for (const entry of acceptedCompositeEntries) {
+            sessionContext.uniquenessTracker.untrackComposite(entry.fields, entry.values);
+          }
+          continue;
         }
 
         if (compositeAccepted) {

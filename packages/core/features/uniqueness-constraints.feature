@@ -102,4 +102,4 @@ Feature: Uniqueness Constraint Tracking
       """
     When Dev attempts to generate 2 records for uniqueness constraints
     Then uniqueness generation should fail
-    And uniqueness failure should mention composite fields "email,tenantId"
+    And uniqueness failure should mention composite fields "User.email,User.tenantId"

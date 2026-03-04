@@ -154,6 +154,29 @@ export class UniquenessTracker {
     return true;
   }
 
+  public untrackComposite(fields: readonly string[], values: readonly unknown[]): void {
+    if (fields.length === 0 || values.length === 0 || fields.length !== values.length) {
+      return;
+    }
+
+    const signature = stableSerialize(fields);
+    const seenForComposite = this._seenCompositeValues.get(signature);
+    if (!seenForComposite) {
+      return;
+    }
+
+    const compositeEntries = fields.map((field, index) => ({
+      field,
+      value: values[index],
+    }));
+    const serializedComposite = stableSerialize(compositeEntries);
+
+    seenForComposite.delete(serializedComposite);
+    if (seenForComposite.size === 0) {
+      this._seenCompositeValues.delete(signature);
+    }
+  }
+
   public clear(): void {
     this._seenFieldValues = new Map();
     this._seenCompositeValues = new Map();

@@ -1,6 +1,6 @@
 # Story 7.3: Composite Uniqueness Constraints
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -170,10 +170,10 @@ records.push(record);
 
 ### Analyzer Diagnostic Codes
 
-| Code | When |
-|---|---|
-| `analyzer.compositeUniqueArity` | Fewer than 2 or more than 5 fields in a composite constraint |
-| `analyzer.compositeUniqueFieldNotFound` | A named field in `unique(...)` does not exist in the schema |
+| Code                                     | When                                                                  |
+| ---------------------------------------- | --------------------------------------------------------------------- |
+| `analyzer.compositeUniqueArity`          | Fewer than 2 or more than 5 fields in a composite constraint          |
+| `analyzer.compositeUniqueFieldNotFound`  | A named field in `unique(...)` does not exist in the schema           |
 | `analyzer.compositeUniqueDuplicateField` | The same field name appears twice in a single `unique(...)` directive |
 
 Follow the existing diagnostic shape from `analyzer.ts` (message, code, location from `field.location`, suggestion).
@@ -281,6 +281,8 @@ GPT-5.3-Codex
 
 ### File List
 
+- _bmad-output/implementation-artifacts/7-3-composite-uniqueness-constraints.md
+- _bmad-output/implementation-artifacts/sprint-status.yaml
 - packages/core/src/parser/ast.ts
 - packages/core/src/parser/parser.ts
 - packages/core/src/parser/parser.test.ts
@@ -289,9 +291,24 @@ GPT-5.3-Codex
 - packages/core/src/analyzer/analyzer.test.ts
 - packages/core/src/generator/generator.ts
 - packages/core/src/generator/generator.test.ts
+- packages/core/src/generator/uniqueness.ts
+- packages/core/src/generator/uniqueness.test.ts
 - packages/core/features/uniqueness-constraints.feature
 - packages/core/features/step_definitions/uniqueness-constraints.steps.ts
+
+### Senior Developer Review (AI)
+
+**Reviewer:** Tobi (via code-review workflow) · **Date:** 2026-03-03
+
+**Result:** ✅ APPROVED — 1 HIGH, 2 MEDIUM (all fixed)
+
+**Fixes applied:**
+
+- **H1 (HIGH)** — Fixed non-atomic composite uniqueness enforcement in `generate()`. Composite constraints are now treated atomically per candidate: if a later constraint fails, earlier successful `trackComposite(...)` reservations for that same candidate are rolled back via `untrackComposite(...)`.
+- **M1 (MEDIUM)** — Story `File List` now reflects all changed files, including the story artifact and sprint tracking file.
+- **M2 (MEDIUM)** — Strengthened BDD failure scenario assertion to require schema-qualified composite fields (`User.email,User.tenantId`) in the error message.
 
 ## Change Log
 
 - 2026-02-20: Implemented composite uniqueness constraints end-to-end (parser, analyzer, generator, tests, BDD) and marked story ready for review.
+- 2026-03-03: Code review fixes applied — atomic composite uniqueness rollback in generator, stronger composite failure BDD assertion, updated File List and review notes; story advanced to `done`.

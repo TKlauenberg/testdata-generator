@@ -67,6 +67,27 @@ describe('UniquenessTracker', () => {
     expect(tracker.trackComposite(['country', 'city', 'zip'], ['US', 'New York', '10002'])).toBe(true);
   });
 
+  it('rolls back composite values with untrackComposite()', () => {
+    const tracker = new UniquenessTracker();
+
+    expect(tracker.trackComposite(['email', 'tenantId'], ['ada@test.com', 'tenant-1'])).toBe(true);
+    tracker.untrackComposite(['email', 'tenantId'], ['ada@test.com', 'tenant-1']);
+
+    expect(tracker.trackComposite(['email', 'tenantId'], ['ada@test.com', 'tenant-1'])).toBe(true);
+  });
+
+  it('only rolls back the specific composite tuple for a signature', () => {
+    const tracker = new UniquenessTracker();
+
+    expect(tracker.trackComposite(['email', 'tenantId'], ['ada@test.com', 'tenant-1'])).toBe(true);
+    expect(tracker.trackComposite(['email', 'tenantId'], ['ada@test.com', 'tenant-2'])).toBe(true);
+
+    tracker.untrackComposite(['email', 'tenantId'], ['ada@test.com', 'tenant-1']);
+
+    expect(tracker.trackComposite(['email', 'tenantId'], ['ada@test.com', 'tenant-1'])).toBe(true);
+    expect(tracker.trackComposite(['email', 'tenantId'], ['ada@test.com', 'tenant-2'])).toBe(false);
+  });
+
   it('rejects invalid composite tracking inputs', () => {
     const tracker = new UniquenessTracker();
 
