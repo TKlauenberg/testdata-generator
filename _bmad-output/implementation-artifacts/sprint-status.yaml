@@ -96,11 +96,11 @@ development_status:
   6-3-schema-relationship-support: done
   epic-6-retrospective: done
 
-  epic-7: in-progress
+  epic-7: done
   7-1-uniqueness-constraint-tracker: done
   7-2-single-field-uniqueness-enforcement: done
   7-3-composite-uniqueness-constraints: done
-  epic-7-retrospective: optional
+  epic-7-retrospective: done
 
   epic-8: backlog
   8-1-json-context-loader: backlog
