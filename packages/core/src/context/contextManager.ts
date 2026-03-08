@@ -6,6 +6,30 @@ import { loadJsonContext } from './loaders/jsonLoader';
 import type { ContextData, ContextRecord, SavedContextEnvelope } from './types';
 
 const DEFAULT_CONTEXT_DIRECTORY = './contexts';
+const WINDOWS_RESERVED_CONTEXT_NAMES = new Set([
+  'CON',
+  'PRN',
+  'AUX',
+  'NUL',
+  'COM1',
+  'COM2',
+  'COM3',
+  'COM4',
+  'COM5',
+  'COM6',
+  'COM7',
+  'COM8',
+  'COM9',
+  'LPT1',
+  'LPT2',
+  'LPT3',
+  'LPT4',
+  'LPT5',
+  'LPT6',
+  'LPT7',
+  'LPT8',
+  'LPT9',
+]);
 
 function hasValidContextTags(tags: unknown): tags is readonly string[] {
   return Array.isArray(tags) && tags.every((tag) => typeof tag === 'string');
@@ -29,6 +53,7 @@ function normalizeContextName(name: string): string {
   const withoutJsonExtension = trimmedName.toLowerCase().endsWith('.json')
     ? trimmedName.slice(0, -5)
     : trimmedName;
+  const rootName = withoutJsonExtension.split('.')[0]?.toUpperCase() ?? '';
 
   if (
     withoutJsonExtension.length === 0
@@ -36,6 +61,8 @@ function normalizeContextName(name: string): string {
     || withoutJsonExtension === '..'
     || path.basename(withoutJsonExtension) !== withoutJsonExtension
     || /[^A-Za-z0-9._-]/.test(withoutJsonExtension)
+    || /[. ]$/.test(withoutJsonExtension)
+    || WINDOWS_RESERVED_CONTEXT_NAMES.has(rootName)
   ) {
     throw new Error(
       `Invalid context name '${name}'. Use letters, numbers, dots, underscores, and hyphens only.`,

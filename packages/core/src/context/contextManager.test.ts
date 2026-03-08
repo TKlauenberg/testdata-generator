@@ -133,4 +133,16 @@ describe('loadContext', () => {
       saveAsContext([{ id: 'u-1' }], '../outside', [], { directory: TEST_DIR }),
     ).rejects.toThrow(/invalid context name/i);
   });
+
+  test('rejects platform-invalid reserved context names', () => {
+    expect(
+      saveAsContext([{ id: 'u-1' }], 'CON', [], { directory: TEST_DIR }),
+    ).rejects.toThrow(/invalid context name/i);
+  });
+
+  test('rejects context names with trailing dots', () => {
+    expect(
+      saveAsContext([{ id: 'u-1' }], 'baseline-users.', [], { directory: TEST_DIR }),
+    ).rejects.toThrow(/invalid context name/i);
+  });
 });

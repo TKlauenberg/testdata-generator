@@ -1,6 +1,6 @@
 # Story 8.5: Save Generated Data as Context
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -184,7 +184,7 @@ GPT-5.4
 - External web lookup was not available in this environment.
 - Added a saved-context envelope contract plus `saveAsContext()` in the core context manager, and updated `loadContext()`/`loadJsonContext()` to preserve saved metadata while remaining backward compatible with raw JSON context files.
 - Added CLI `--save-context` and `--save-context-dir` support in `td generate` without changing existing stdout or `--output` behavior, using the already generated record collection.
-- Verified Story 8.5 with focused unit tests, the core Cucumber runner, a full `bun test packages/` regression run, and targeted ESLint over the files changed for this story. Repository-wide `bun run lint` still reports unrelated pre-existing issues outside the Story 8.5 files.
+- Verified Story 8.5 with focused unit tests, the core and CLI Cucumber runners, and a full `bun test packages/` regression run after code-review fixes.
 
 ### Implementation Plan
 
@@ -199,14 +199,32 @@ GPT-5.4
 - Extended `td generate` with `--save-context` plus `--save-context-dir`, writing `<name>.json` into a default `./contexts/` directory or a caller-provided override without re-running generation.
 - Added unit coverage for save/load roundtrip, legacy JSON compatibility, malformed envelopes, empty saved contexts, and CLI save-context behavior.
 - Added a core BDD roundtrip scenario covering generate, save, load, and reuse through an `@context` reference in a follow-up generation.
-- Full regression tests passed with `bun test packages/`, and the Story 8.5 changed files passed targeted ESLint validation.
+- Applied code review fixes for legacy JSON envelope detection, platform-safe context-name validation, and real CLI command-boundary BDD coverage for `--save-context`.
+- Full regression tests passed with `bun test packages/`, alongside the core and CLI Cucumber runners.
+
+### Senior Developer Review (AI)
+
+- Outcome: **Approved after fixes**
+- Issues fixed automatically (HIGH/MEDIUM):
+  - Tightened saved-context envelope detection so legacy single-object JSON payloads that happen to contain `metadata` and `data` fields still load as raw context records unless they actually look like saved-context envelopes.
+  - Hardened context-name validation against Windows-reserved device names and trailing-dot filenames so CLI-supplied names do not succeed on one platform and fail on another.
+  - Added executable CLI BDD coverage for `td generate --save-context` at the command boundary while retaining the core BDD roundtrip that proves saved context can be reloaded and referenced in later generations.
+- Validation:
+  - Focused unit suites passed for `jsonLoader`, `contextManager`, and CLI `generate`.
+  - Core Cucumber runner passed 57 scenarios / 289 steps.
+  - CLI Cucumber runner passed 1 scenario / 7 steps.
+  - Full repository test suite passed (`681 passed, 0 failed`).
 
 ### File List
 
 - `_bmad-output/implementation-artifacts/8-5-save-generated-data-as-context.md`
 - `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- `packages/cli/package.json`
+- `packages/cli/features/saveGeneratedContext.feature`
+- `packages/cli/features/step_definitions/saveGeneratedContext.steps.ts`
 - `packages/cli/src/commands/generate.ts`
 - `packages/cli/src/commands/generate.test.ts`
+- `packages/cli/tests/run-cucumber.ts`
 - `packages/core/src/adapters/jsonAdapter.ts`
 - `packages/core/features/generated-context-roundtrip.feature`
 - `packages/core/features/step_definitions/generated-context-roundtrip.steps.ts`
@@ -224,3 +242,4 @@ GPT-5.4
 
 - 2026-03-08: Created Story 8.5 context artifact via create-story workflow and set sprint status to `ready-for-dev`.
 - 2026-03-08: Implemented Story 8.5 saved-context persistence, CLI save-context support, roundtrip unit coverage, and generated-context BDD coverage; set story and sprint status to `review`.
+- 2026-03-08: Applied code review fixes for legacy JSON compatibility, platform-safe context naming, and CLI command-boundary BDD coverage; revalidated the story and advanced it to `done`.

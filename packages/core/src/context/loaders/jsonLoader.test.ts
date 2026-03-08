@@ -92,6 +92,25 @@ describe('loadJsonContext', () => {
     expect(context.metadata.version).toBe('0.1.0');
   });
 
+  test('keeps legacy single-object payloads with metadata and data fields loadable', async () => {
+    const filePath = await writeJsonFixture('legacy-object.json', {
+      id: 'u-1',
+      metadata: { sourceSystem: 'legacy-import' },
+      data: { role: 'admin' },
+    });
+
+    const context = await loadJsonContext(filePath);
+
+    expect(context.records).toEqual([
+      {
+        id: 'u-1',
+        metadata: { sourceSystem: 'legacy-import' },
+        data: { role: 'admin' },
+      },
+    ]);
+    expect(context.metadata.recordCount).toBe(1);
+  });
+
   test('rejects malformed JSON with clear parse error', async () => {
     const filePath = await writeRawFixture('malformed.json', '{"id": "u-1"');
 

@@ -1,0 +1,18 @@
+Feature: Save generated data as reusable context through the CLI
+  As a QA tester
+  I want td generate to persist generated records as reusable context
+  So that the command-line workflow proves the save-context path works end to end
+
+  Scenario: Save generated records into the default contexts directory
+    Given a temporary CLI workspace
+    And a DSL schema file "seed-users.td" with contents:
+      """
+      schema SeedUser {
+        email: string generator=pick(array=["qa.one@example.com", "qa.two@example.com"])
+      }
+      """
+    When the tester runs "td generate seed-users.td --count 2 --save-context generated-users"
+    Then the CLI exit code should be 0
+    And the saved context file "contexts/generated-users.json" should exist
+    And the saved context file "contexts/generated-users.json" should contain 2 records
+    And the saved context file "contexts/generated-users.json" should record source pattern "seed-users.td"

@@ -32,8 +32,19 @@ function normalizeContextTags(tags: readonly string[] = []): readonly string[] {
   return normalizedTags;
 }
 
+function isSavedContextMetadataCandidate(value: unknown): boolean {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    return false;
+  }
+
+  return 'timestamp' in value || 'sourcePattern' in value || 'version' in value || 'count' in value || 'tags' in value;
+}
+
 function isSavedContextEnvelopeCandidate(value: unknown): value is SavedContextEnvelope {
-  return isObjectRecord(value) && 'metadata' in value && 'data' in value;
+  return isObjectRecord(value)
+    && 'metadata' in value
+    && 'data' in value
+    && (Array.isArray(value.data) || isSavedContextMetadataCandidate(value.metadata));
 }
 
 function validateSavedContextMetadata(

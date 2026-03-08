@@ -7,7 +7,8 @@
   },
   "scripts": {
     "build": "bun build ./bin/td.ts --outdir ./dist --target bun --format esm",
-    "test": "bun test"
+    "test": "bun test",
+    "test:bdd": "bun ./tests/run-cucumber.ts"
   },
   "dependencies": {
     "@testdata-ai/core": "workspace:*",
@@ -15,6 +16,7 @@
     "commander": "^14.0.2"
   },
   "devDependencies": {
+    "@cucumber/cucumber": "^12.5.0",
     "@types/bun": "^1.0.0"
   }
 }
