@@ -4,8 +4,16 @@ export type {
 	ContextData,
 	ContextMetadata,
 	ContextRecord,
+	SavedContextEnvelope,
+	SavedContextMetadata,
 } from './types';
-export { isContextData, loadContext, normalizeContextTags } from './contextManager';
+export {
+	isContextData,
+	loadContext,
+	normalizeContextTags,
+	saveAsContext,
+	type SaveContextOptions,
+} from './contextManager';
 export { loadJsonContext } from './loaders/jsonLoader';
 export { loadCsvContext } from './loaders/csvLoader';
 export { filterContextRecords, selectContextRecord } from './selector';

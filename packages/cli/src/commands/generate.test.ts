@@ -5,7 +5,20 @@ import * as path from 'path';
 
 const CLI_ROOT = path.resolve(import.meta.dir, '../..');
 const CLI_PATH = path.join(CLI_ROOT, 'bin/td.ts');
-const fixture = (name: string) => path.join(CLI_ROOT, 'fixtures', name);
+
+function fixture(name: string): string {
+  return path.join(CLI_ROOT, 'fixtures', name);
+}
+
+function parseJson<T>(input: string): T {
+  const parsed: unknown = JSON.parse(input);
+  return parsed as T;
+}
+
+function isRecordArray(value: unknown): value is Array<Record<string, unknown>> {
+  return Array.isArray(value)
+    && value.every((item) => item !== null && typeof item === 'object' && !Array.isArray(item));
+}
 
 describe('Generate Command - File Reading', () => {
   test('reads and generates from valid .td file', async () => {
@@ -20,10 +33,15 @@ describe('Generate Command - File Reading', () => {
     const exitCode = await proc.exited;
 
     expect(exitCode).toBe(0);
-    expect(() => JSON.parse(output)).not.toThrow();
+    expect(() => {
+      parseJson<unknown>(output);
+    }).not.toThrow();
 
-    const records = JSON.parse(output);
-    expect(Array.isArray(records)).toBe(true);
+    const records = parseJson<unknown>(output);
+    expect(isRecordArray(records)).toBe(true);
+    if (!isRecordArray(records)) {
+      throw new Error('Expected generated output to be a JSON array of records');
+    }
     expect(records.length).toBe(10); // Default count
   });
 
@@ -135,7 +153,11 @@ describe('Generate Command - Generation Options', () => {
     ]);
 
     const output = await new Response(proc.stdout).text();
-    const records = JSON.parse(output);
+    const records = parseJson<unknown>(output);
+
+    if (!isRecordArray(records)) {
+      throw new Error('Expected generated output to be a JSON array of records');
+    }
 
     expect(records).toHaveLength(10);
   });
@@ -151,7 +173,11 @@ describe('Generate Command - Generation Options', () => {
     ]);
 
     const output = await new Response(proc.stdout).text();
-    const records = JSON.parse(output);
+    const records = parseJson<unknown>(output);
+
+    if (!isRecordArray(records)) {
+      throw new Error('Expected generated output to be a JSON array of records');
+    }
 
     expect(records).toHaveLength(50);
   });
@@ -167,7 +193,11 @@ describe('Generate Command - Generation Options', () => {
     ]);
 
     const output = await new Response(proc.stdout).text();
-    const records = JSON.parse(output);
+    const records = parseJson<unknown>(output);
+
+    if (!isRecordArray(records)) {
+      throw new Error('Expected generated output to be a JSON array of records');
+    }
 
     expect(records).toHaveLength(25);
   });
@@ -239,7 +269,9 @@ describe('Generate Command - Output Handling', () => {
     ]);
 
     const output = await new Response(proc.stdout).text();
-    expect(() => JSON.parse(output)).not.toThrow();
+    expect(() => {
+      parseJson<unknown>(output);
+    }).not.toThrow();
   });
 
   test('writes to file with --output', async () => {
@@ -257,7 +289,9 @@ describe('Generate Command - Output Handling', () => {
     expect(exitCode).toBe(0);
 
     const content = await fs.readFile(outputFile, 'utf-8');
-    expect(() => JSON.parse(content)).not.toThrow();
+    expect(() => {
+      parseJson<unknown>(content);
+    }).not.toThrow();
   });
 
   test('writes to file with -o shorthand', async () => {
@@ -300,6 +334,103 @@ describe('Generate Command - Output Handling', () => {
       .then(() => true)
       .catch(() => false);
     expect(exists).toBe(true);
+  });
+
+  test('saves generated records as reusable context in the default contexts directory', async () => {
+    const proc = spawn([
+      'bun',
+      CLI_PATH,
+      'generate',
+      fixture('valid-simple.td'),
+      '--count',
+      '3',
+      '--save-context',
+      'baseline-users',
+    ], {
+      cwd: outputDir,
+    });
+
+    const stdout = await new Response(proc.stdout).text();
+    const exitCode = await proc.exited;
+
+    expect(exitCode).toBe(0);
+    const generatedRecords = parseJson<unknown>(stdout);
+    if (!isRecordArray(generatedRecords)) {
+      throw new Error('Expected generated output to be a JSON array of records');
+    }
+
+    expect(generatedRecords).toHaveLength(3);
+
+    const contextFile = path.join(outputDir, 'contexts', 'baseline-users.json');
+    const content = await fs.readFile(contextFile, 'utf-8');
+    const saved = parseJson<{
+      readonly metadata: {
+        readonly sourcePattern?: string;
+        readonly version: string;
+        readonly count: number;
+      };
+      readonly data: readonly unknown[];
+    }>(content);
+
+    expect(saved.metadata.sourcePattern).toContain('valid-simple.td');
+    expect(saved.metadata.version).toBe('0.1.0');
+    expect(saved.metadata.count).toBe(3);
+    expect(saved.data).toHaveLength(3);
+  });
+
+  test('supports overriding the saved-context directory', async () => {
+    const proc = spawn([
+      'bun',
+      CLI_PATH,
+      'generate',
+      fixture('valid-simple.td'),
+      '--count',
+      '2',
+      '--save-context',
+      'regional-users',
+      '--save-context-dir',
+      'custom-contexts',
+    ], {
+      cwd: outputDir,
+    });
+
+    const exitCode = await proc.exited;
+    expect(exitCode).toBe(0);
+
+    const exists = await fs
+      .access(path.join(outputDir, 'custom-contexts', 'regional-users.json'))
+      .then(() => true)
+      .catch(() => false);
+    expect(exists).toBe(true);
+  });
+
+  test('keeps normal output behavior when saving context and writing --output', async () => {
+    const outputFile = path.join(outputDir, 'generated.json');
+    const proc = spawn([
+      'bun',
+      CLI_PATH,
+      'generate',
+      fixture('valid-simple.td'),
+      '--count',
+      '4',
+      '--output',
+      outputFile,
+      '--save-context',
+      'baseline-with-output',
+    ], {
+      cwd: outputDir,
+    });
+
+    const exitCode = await proc.exited;
+    expect(exitCode).toBe(0);
+
+    const generatedOutput = parseJson<readonly unknown[]>(await fs.readFile(outputFile, 'utf-8'));
+    const savedContext = parseJson<{ readonly data: readonly unknown[] }>(
+      await fs.readFile(path.join(outputDir, 'contexts', 'baseline-with-output.json'), 'utf-8'),
+    );
+
+    expect(generatedOutput).toHaveLength(4);
+    expect(savedContext.data).toEqual(generatedOutput);
   });
 });
 

@@ -1,17 +1,129 @@
 import { err, ok } from '../../common/result';
 import type { Result } from '../../common/result';
-import type { ContextData, ContextRecord } from '../types';
+import type {
+  ContextData,
+  ContextRecord,
+  SavedContextEnvelope,
+  SavedContextMetadata,
+} from '../types';
 
 function isObjectRecord(value: unknown): value is ContextRecord {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
+function hasValidContextTags(tags: unknown): tags is readonly string[] {
+  return Array.isArray(tags) && tags.every((tag) => typeof tag === 'string');
+}
+
+function normalizeContextTags(tags: readonly string[] = []): readonly string[] {
+  const normalizedTags: string[] = [];
+  const seen = new Set<string>();
+
+  for (const tag of tags) {
+    const normalizedTag = tag.trim().toLowerCase();
+    if (normalizedTag.length === 0 || seen.has(normalizedTag)) {
+      continue;
+    }
+
+    seen.add(normalizedTag);
+    normalizedTags.push(normalizedTag);
+  }
+
+  return normalizedTags;
+}
+
+function isSavedContextEnvelopeCandidate(value: unknown): value is SavedContextEnvelope {
+  return isObjectRecord(value) && 'metadata' in value && 'data' in value;
+}
+
+function validateSavedContextMetadata(
+  metadata: unknown,
+  filePath: string,
+): Result<SavedContextMetadata, string> {
+  if (metadata === null || typeof metadata !== 'object' || Array.isArray(metadata)) {
+    return err(`Invalid saved context metadata in "${filePath}": expected an object`);
+  }
+
+  const candidate = metadata as Partial<SavedContextMetadata>;
+
+  if (typeof candidate.timestamp !== 'string') {
+    return err(`Invalid saved context metadata in "${filePath}": missing string timestamp`);
+  }
+
+  if (candidate.sourcePattern !== undefined && typeof candidate.sourcePattern !== 'string') {
+    return err(`Invalid saved context metadata in "${filePath}": sourcePattern must be a string when provided`);
+  }
+
+  if (typeof candidate.version !== 'string') {
+    return err(`Invalid saved context metadata in "${filePath}": missing string version`);
+  }
+
+  if (typeof candidate.count !== 'number' || !Number.isInteger(candidate.count) || candidate.count < 0) {
+    return err(`Invalid saved context metadata in "${filePath}": count must be a non-negative integer`);
+  }
+
+  if (!hasValidContextTags(candidate.tags)) {
+    return err(`Invalid saved context metadata in "${filePath}": tags must be an array of strings`);
+  }
+
+  return ok({
+    timestamp: candidate.timestamp,
+    sourcePattern: candidate.sourcePattern,
+    version: candidate.version,
+    count: candidate.count,
+    tags: normalizeContextTags(candidate.tags),
+  });
+}
+
+function normalizeSavedContextEnvelope(
+  parsedJson: SavedContextEnvelope,
+  filePath: string,
+): Result<{
+  readonly records: readonly ContextRecord[];
+  readonly savedMetadata: SavedContextMetadata;
+}, string> {
+  const metadataResult = validateSavedContextMetadata(parsedJson.metadata, filePath);
+  if (!metadataResult.ok) {
+    return metadataResult;
+  }
+
+  if (!Array.isArray(parsedJson.data)) {
+    return err(`Invalid saved context envelope in "${filePath}": data must be an array of objects`);
+  }
+
+  for (const [index, item] of parsedJson.data.entries()) {
+    if (!isObjectRecord(item)) {
+      return err(
+        `Invalid saved context envelope in "${filePath}": expected only objects in data, found non-object at index ${index}`,
+      );
+    }
+  }
+
+  if (metadataResult.value.count !== parsedJson.data.length) {
+    return err(
+      `Invalid saved context envelope in "${filePath}": metadata count ${metadataResult.value.count} does not match data length ${parsedJson.data.length}`,
+    );
+  }
+
+  return ok({
+    records: parsedJson.data,
+    savedMetadata: metadataResult.value,
+  });
+}
+
 function normalizeContextPayload(
   parsedJson: unknown,
   filePath: string,
-): Result<readonly ContextRecord[], string> {
+): Result<{
+  readonly records: readonly ContextRecord[];
+  readonly savedMetadata?: SavedContextMetadata;
+}, string> {
+  if (isSavedContextEnvelopeCandidate(parsedJson)) {
+    return normalizeSavedContextEnvelope(parsedJson, filePath);
+  }
+
   if (isObjectRecord(parsedJson)) {
-    return ok([parsedJson]);
+    return ok({ records: [parsedJson] });
   }
 
   if (Array.isArray(parsedJson)) {
@@ -23,7 +135,7 @@ function normalizeContextPayload(
       }
     }
 
-    return ok(parsedJson);
+    return ok({ records: parsedJson });
   }
 
   return err(
@@ -59,7 +171,7 @@ export async function loadJsonContext(filePath: string): Promise<ContextData> {
     throw new Error(recordsResult.errors);
   }
 
-  const records = recordsResult.value;
+  const { records, savedMetadata } = recordsResult.value;
 
   return {
     records,
@@ -68,7 +180,10 @@ export async function loadJsonContext(filePath: string): Promise<ContextData> {
       format: 'json',
       loadedAt: new Date().toISOString(),
       recordCount: records.length,
-      tags: [],
+      tags: savedMetadata?.tags ?? [],
+      timestamp: savedMetadata?.timestamp,
+      sourcePattern: savedMetadata?.sourcePattern,
+      version: savedMetadata?.version,
     },
   };
 }

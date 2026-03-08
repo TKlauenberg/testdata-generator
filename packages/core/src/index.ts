@@ -1,5 +1,5 @@
 // Public API exports - will be expanded in future stories
-export const version = '0.1.0';
+export { version } from './version';
 
 // Public API - Data Generation
 export { generateData, ValidationError } from './generateData';

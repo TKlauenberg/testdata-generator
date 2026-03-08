@@ -1,6 +1,6 @@
 # Story 8.5: Save Generated Data as Context
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -23,42 +23,42 @@ so that **I can build incremental test scenarios**.
 
 ## Tasks / Subtasks
 
-- [ ] Add saved-context persistence contracts in the core context module (AC: 1, 2, 3, 4)
-  - [ ] Extend `packages/core/src/context/types.ts` with a saved-context envelope/type that can represent `{ metadata, data }` without weakening existing `ContextData` contracts.
-  - [ ] Keep the required `saveAsContext(records, name, tags?)` public API in `packages/core/src/context/contextManager.ts`; if extra inputs such as destination directory or source pattern are needed, add them via an optional fourth options parameter or an internal helper without breaking the required call shape.
-  - [ ] Sanitize or validate context names so CLI-provided names cannot escape the target directory or create invalid filenames.
+- [x] Add saved-context persistence contracts in the core context module (AC: 1, 2, 3, 4)
+  - [x] Extend `packages/core/src/context/types.ts` with a saved-context envelope/type that can represent `{ metadata, data }` without weakening existing `ContextData` contracts.
+  - [x] Keep the required `saveAsContext(records, name, tags?)` public API in `packages/core/src/context/contextManager.ts`; if extra inputs such as destination directory or source pattern are needed, add them via an optional fourth options parameter or an internal helper without breaking the required call shape.
+  - [x] Sanitize or validate context names so CLI-provided names cannot escape the target directory or create invalid filenames.
 
-- [ ] Implement JSON save and backward-compatible JSON load behavior (AC: 1, 2, 3, 4, 7)
-  - [ ] Implement `saveAsContext()` in `packages/core/src/context/contextManager.ts` using Bun file APIs and the existing normalized tag behavior.
-  - [ ] Persist saved context as a JSON object with top-level `metadata` and `data` fields rather than a raw array.
-  - [ ] Update `packages/core/src/context/loaders/jsonLoader.ts` so it can load both legacy raw object/array JSON and the new saved-context envelope while preserving clear errors for malformed files.
-  - [ ] Ensure metadata round-trips into `ContextData.metadata` so later loads can retain source, tags, and record count from saved context files.
+- [x] Implement JSON save and backward-compatible JSON load behavior (AC: 1, 2, 3, 4, 7)
+  - [x] Implement `saveAsContext()` in `packages/core/src/context/contextManager.ts` using Bun file APIs and the existing normalized tag behavior.
+  - [x] Persist saved context as a JSON object with top-level `metadata` and `data` fields rather than a raw array.
+  - [x] Update `packages/core/src/context/loaders/jsonLoader.ts` so it can load both legacy raw object/array JSON and the new saved-context envelope while preserving clear errors for malformed files.
+  - [x] Ensure metadata round-trips into `ContextData.metadata` so later loads can retain source, tags, and record count from saved context files.
 
-- [ ] Reuse existing metadata/version sources instead of inventing a second format (AC: 2, 3)
-  - [ ] Reuse the existing version export from `packages/core/src/index.ts` and align saved-context metadata naming with established adapter metadata semantics from `packages/core/src/adapters/types.ts` / `packages/core/src/adapters/jsonAdapter.ts`.
-  - [ ] Include source-pattern metadata from the generating schema path when the save is initiated from the CLI.
-  - [ ] Keep timestamp fields ISO 8601 and tag normalization case-insensitive, matching Story 8.4 behavior.
+- [x] Reuse existing metadata/version sources instead of inventing a second format (AC: 2, 3)
+  - [x] Reuse the existing version export from `packages/core/src/index.ts` and align saved-context metadata naming with established adapter metadata semantics from `packages/core/src/adapters/types.ts` / `packages/core/src/adapters/jsonAdapter.ts`.
+  - [x] Include source-pattern metadata from the generating schema path when the save is initiated from the CLI.
+  - [x] Keep timestamp fields ISO 8601 and tag normalization case-insensitive, matching Story 8.4 behavior.
 
-- [ ] Wire save-context support into the CLI generate flow without duplicating generation work (AC: 4, 5, 6)
-  - [ ] Extend `packages/cli/src/commands/generate.ts` with `--save-context <name>` and a directory control that keeps the default at `./contexts/` while remaining intentionally scoped for this story.
-  - [ ] Use the records already collected by `td generate`; do not re-run generation just to save context.
-  - [ ] Resolve the destination directory relative to the CLI working directory, create it when missing, and write `<name>.json` into it.
-  - [ ] Keep the main generate command output behavior unchanged: saving context is an additional side effect, not a replacement for stdout or `--output`.
+- [x] Wire save-context support into the CLI generate flow without duplicating generation work (AC: 4, 5, 6)
+  - [x] Extend `packages/cli/src/commands/generate.ts` with `--save-context <name>` and a directory control that keeps the default at `./contexts/` while remaining intentionally scoped for this story.
+  - [x] Use the records already collected by `td generate`; do not re-run generation just to save context.
+  - [x] Resolve the destination directory relative to the CLI working directory, create it when missing, and write `<name>.json` into it.
+  - [x] Keep the main generate command output behavior unchanged: saving context is an additional side effect, not a replacement for stdout or `--output`.
 
-- [ ] Keep implementation scoped and compatible with existing context features (AC: 4, 5, 6)
-  - [ ] Preserve Story 8.1-8.4 behavior for loading JSON/CSV context, tagged context selection, and context references.
-  - [ ] Do not introduce the broader workspace/global configuration system planned for Epic 9 just to satisfy the configurable-directory requirement; implement the smallest focused path needed here.
-  - [ ] Ensure generated context saved from one run can be passed back through existing `loadContext()` and `GenerateOptions.context` flows without special-case consumer code.
+- [x] Keep implementation scoped and compatible with existing context features (AC: 4, 5, 6)
+  - [x] Preserve Story 8.1-8.4 behavior for loading JSON/CSV context, tagged context selection, and context references.
+  - [x] Do not introduce the broader workspace/global configuration system planned for Epic 9 just to satisfy the configurable-directory requirement; implement the smallest focused path needed here.
+  - [x] Ensure generated context saved from one run can be passed back through existing `loadContext()` and `GenerateOptions.context` flows without special-case consumer code.
 
-- [ ] Add focused core and CLI unit coverage (AC: 7)
-  - [ ] Add roundtrip tests in `packages/core/src/context/contextManager.test.ts` and/or loader tests covering save, reload, metadata preservation, normalized tags, empty records, and malformed envelope handling.
-  - [ ] Add CLI tests in `packages/cli/src/commands/generate.test.ts` covering `--save-context`, default directory creation, configurable directory override, and coexistence with `--output`.
-  - [ ] Add regression tests proving legacy raw JSON context files still load after the envelope format is introduced.
+- [x] Add focused core and CLI unit coverage (AC: 7)
+  - [x] Add roundtrip tests in `packages/core/src/context/contextManager.test.ts` and/or loader tests covering save, reload, metadata preservation, normalized tags, empty records, and malformed envelope handling.
+  - [x] Add CLI tests in `packages/cli/src/commands/generate.test.ts` covering `--save-context`, default directory creation, configurable directory override, and coexistence with `--output`.
+  - [x] Add regression tests proving legacy raw JSON context files still load after the envelope format is introduced.
 
-- [ ] Add BDD coverage for the user workflow (AC: 8)
-  - [ ] Add a core feature under `packages/core/features/` for generated-context roundtrip behavior and register it in `packages/core/tests/run-cucumber.ts`.
-  - [ ] Add any required step definitions and Screenplay support under `packages/core/features/step_definitions/` and `packages/core/features/support/`.
-  - [ ] Add or extend CLI feature coverage under `packages/cli/features/` if the flag behavior is best proven at the command boundary.
+- [x] Add BDD coverage for the user workflow (AC: 8)
+  - [x] Add a core feature under `packages/core/features/` for generated-context roundtrip behavior and register it in `packages/core/tests/run-cucumber.ts`.
+  - [x] Add any required step definitions and Screenplay support under `packages/core/features/step_definitions/` and `packages/core/features/support/`.
+  - [x] Add or extend CLI feature coverage under `packages/cli/features/` if the flag behavior is best proven at the command boundary.
 
 ## Dev Notes
 
@@ -182,6 +182,9 @@ GPT-5.4
 - Discovery results used for this story: Epic 8 loaded from `_bmad-output/planning-artifacts/epics/epic-8-context-management.md`, PRD from `_bmad-output/planning-artifacts/prd.md`, architecture from `_bmad-output/planning-artifacts/architecture/`, project rules from `_bmad-output/planning-artifacts/project-context.md`, previous story from `_bmad-output/implementation-artifacts/8-4-context-tagging-and-filtered-selection.md`, and current implementation paths from `packages/core/src/context/` plus `packages/cli/src/commands/generate.ts`.
 - No UX-specific artifact was present for this story.
 - External web lookup was not available in this environment.
+- Added a saved-context envelope contract plus `saveAsContext()` in the core context manager, and updated `loadContext()`/`loadJsonContext()` to preserve saved metadata while remaining backward compatible with raw JSON context files.
+- Added CLI `--save-context` and `--save-context-dir` support in `td generate` without changing existing stdout or `--output` behavior, using the already generated record collection.
+- Verified Story 8.5 with focused unit tests, the core Cucumber runner, a full `bun test packages/` regression run, and targeted ESLint over the files changed for this story. Repository-wide `bun run lint` still reports unrelated pre-existing issues outside the Story 8.5 files.
 
 ### Implementation Plan
 
@@ -192,16 +195,32 @@ GPT-5.4
 
 ### Completion Notes List
 
-- Auto-selected the first backlog story from sprint tracking: `8-5-save-generated-data-as-context`.
-- Generated a ready-for-dev story artifact with explicit guardrails for backward-compatible JSON loading, reusable metadata formatting, and CLI save-context integration.
-- Scoped the configurable-directory requirement to a focused Story 8.5 implementation rather than the broader configuration work planned for Epic 9.
-- Updated sprint tracking for Story 8.5 to `ready-for-dev`.
+- Implemented saved-context persistence in `packages/core/src/context/` with validated names, JSON envelope output, metadata/version reuse, and metadata-preserving reload behavior for subsequent context usage.
+- Extended `td generate` with `--save-context` plus `--save-context-dir`, writing `<name>.json` into a default `./contexts/` directory or a caller-provided override without re-running generation.
+- Added unit coverage for save/load roundtrip, legacy JSON compatibility, malformed envelopes, empty saved contexts, and CLI save-context behavior.
+- Added a core BDD roundtrip scenario covering generate, save, load, and reuse through an `@context` reference in a follow-up generation.
+- Full regression tests passed with `bun test packages/`, and the Story 8.5 changed files passed targeted ESLint validation.
 
 ### File List
 
 - `_bmad-output/implementation-artifacts/8-5-save-generated-data-as-context.md`
 - `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- `packages/cli/src/commands/generate.ts`
+- `packages/cli/src/commands/generate.test.ts`
+- `packages/core/src/adapters/jsonAdapter.ts`
+- `packages/core/features/generated-context-roundtrip.feature`
+- `packages/core/features/step_definitions/generated-context-roundtrip.steps.ts`
+- `packages/core/src/context/contextManager.ts`
+- `packages/core/src/context/contextManager.test.ts`
+- `packages/core/src/context/index.ts`
+- `packages/core/src/context/loaders/jsonLoader.ts`
+- `packages/core/src/context/loaders/jsonLoader.test.ts`
+- `packages/core/src/context/types.ts`
+- `packages/core/src/index.ts`
+- `packages/core/src/version.ts`
+- `packages/core/tests/run-cucumber.ts`
 
 ### Change Log
 
 - 2026-03-08: Created Story 8.5 context artifact via create-story workflow and set sprint status to `ready-for-dev`.
+- 2026-03-08: Implemented Story 8.5 saved-context persistence, CLI save-context support, roundtrip unit coverage, and generated-context BDD coverage; set story and sprint status to `review`.

@@ -1,5 +1,5 @@
 import type { IAdapter, AdapterMetadata, JsonAdapterOptions } from './types';
-import { version } from '../index';
+import { version } from '../version';
 
 /**
  * JSON Output Adapter

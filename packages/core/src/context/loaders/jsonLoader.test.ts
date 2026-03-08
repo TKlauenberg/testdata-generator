@@ -64,28 +64,69 @@ describe('loadJsonContext', () => {
     expect(context.metadata.recordCount).toBe(2);
   });
 
+  test('loads a saved-context envelope and preserves saved metadata', async () => {
+    const filePath = await writeJsonFixture('saved-envelope.json', {
+      metadata: {
+        timestamp: '2026-03-08T10:00:00.000Z',
+        sourcePattern: 'schemas/users.td',
+        version: '0.1.0',
+        tags: ['staging', 'smoke'],
+        count: 2,
+      },
+      data: [
+        { id: 'u-1', email: 'qa.one@example.com' },
+        { id: 'u-2', email: 'qa.two@example.com' },
+      ],
+    });
+
+    const context = await loadJsonContext(filePath);
+
+    expect(context.records).toEqual([
+      { id: 'u-1', email: 'qa.one@example.com' },
+      { id: 'u-2', email: 'qa.two@example.com' },
+    ]);
+    expect(context.metadata.recordCount).toBe(2);
+    expect(context.metadata.tags).toEqual(['staging', 'smoke']);
+    expect(context.metadata.timestamp).toBe('2026-03-08T10:00:00.000Z');
+    expect(context.metadata.sourcePattern).toBe('schemas/users.td');
+    expect(context.metadata.version).toBe('0.1.0');
+  });
+
   test('rejects malformed JSON with clear parse error', async () => {
     const filePath = await writeRawFixture('malformed.json', '{"id": "u-1"');
 
-    await expect(loadJsonContext(filePath)).rejects.toThrow(/invalid json/i);
+    expect(loadJsonContext(filePath)).rejects.toThrow(/invalid json/i);
   });
 
-  test('rejects missing files with actionable message', async () => {
+  test('rejects missing files with actionable message', () => {
     const missingPath = path.join(TEST_DIR, 'missing.json');
 
-    await expect(loadJsonContext(missingPath)).rejects.toThrow(/not found|missing/i);
+    expect(loadJsonContext(missingPath)).rejects.toThrow(/not found|missing/i);
   });
 
   test('rejects primitive top-level JSON payloads', async () => {
     const filePath = await writeJsonFixture('primitive.json', 42);
 
-    await expect(loadJsonContext(filePath)).rejects.toThrow(/top-level|object|array/i);
+    expect(loadJsonContext(filePath)).rejects.toThrow(/top-level|object|array/i);
   });
 
   test('rejects arrays with non-object entries', async () => {
     const filePath = await writeJsonFixture('mixed.json', [{ id: 'ok' }, 'bad-entry']);
 
-    await expect(loadJsonContext(filePath)).rejects.toThrow(/array|objects|index 1/i);
+    expect(loadJsonContext(filePath)).rejects.toThrow(/array|objects|index 1/i);
+  });
+
+  test('rejects malformed saved-context envelopes with clear errors', async () => {
+    const filePath = await writeJsonFixture('invalid-envelope.json', {
+      metadata: {
+        timestamp: '2026-03-08T10:00:00.000Z',
+        version: '0.1.0',
+        tags: ['staging'],
+      },
+      data: ['not-an-object'],
+    });
+
+    expect(loadJsonContext(filePath)).rejects.toThrow(/saved context|metadata|data|index 0/i);
   });
 
   test('returns a strongly-typed context contract', async () => {

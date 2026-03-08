@@ -7,7 +7,7 @@
  */
 
 import { Command } from 'commander';
-import { generateData, ValidationError } from '@testdata-ai/core';
+import { generateData, saveAsContext, ValidationError } from '@testdata-ai/core';
 import type { Diagnostic, GenerateOptions } from '@testdata-ai/core';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -40,6 +40,8 @@ export const generateCommand = new Command('generate')
   .option('-f, --format <format>', 'Output format (json)', 'json')
   .option('-o, --output <file>', 'Output file (default: stdout)')
   .option('-s, --seed <number>', 'Random seed for reproducibility')
+  .option('--save-context <name>', 'Save generated records as reusable context')
+  .option('--save-context-dir <directory>', 'Directory for saved context files (default: ./contexts/)')
   .action(async (file: string, options: CommandOptions) => {
     try {
       // Parse options
@@ -137,6 +139,30 @@ export const generateCommand = new Command('generate')
           console.log(output);
         }
 
+        if (options.saveContext) {
+          try {
+            const contextDirectory = path.resolve(
+              process.cwd(),
+              options.saveContextDir ?? './contexts',
+            );
+            const sourcePattern = path.relative(process.cwd(), path.resolve(file));
+
+            await saveAsContext(records, options.saveContext, [], {
+              directory: contextDirectory,
+              sourcePattern,
+            });
+          } catch (err: unknown) {
+            if (isNodeError(err)) {
+              console.error(`Error saving context file: ${err.message}`);
+            } else if (err instanceof Error) {
+              console.error(`Error saving context file: ${err.message}`);
+            } else {
+              console.error(`Error saving context file: ${String(err)}`);
+            }
+            process.exit(3);
+          }
+        }
+
         // Step 5: Display summary
         console.error(`Generated ${count} records in ${duration}s`);
 
@@ -189,4 +215,6 @@ interface CommandOptions {
   format: string;
   output?: string;
   seed?: string;
+  saveContext?: string;
+  saveContextDir?: string;
 }

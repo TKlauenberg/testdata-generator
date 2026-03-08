@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
-import { mkdir, rm } from 'node:fs/promises';
+import { mkdir, readFile, rm } from 'node:fs/promises';
 import * as path from 'node:path';
-import { isContextData, loadContext } from './contextManager';
+import { isContextData, loadContext, saveAsContext } from './contextManager';
 
 const TEST_DIR = path.join(import.meta.dir, '../../__test-output__/context-manager');
 
@@ -31,6 +31,48 @@ describe('loadContext', () => {
     expect(context.records).toHaveLength(1);
     expect(context.metadata.format).toBe('json');
     expect(context.metadata.tags).toEqual(['staging', 'region-us']);
+  });
+
+  test('preserves saved-context metadata and merges stored tags with load-time tags', async () => {
+    const records = [
+      { id: 'u-1', email: 'qa.one@example.com' },
+      { id: 'u-2', email: 'qa.two@example.com' },
+    ];
+
+    await saveAsContext(records, 'baseline-users', [' Regression ', 'staging', 'REGRESSION'], {
+      directory: TEST_DIR,
+      sourcePattern: 'schemas/users.td',
+    });
+
+    const filePath = path.join(TEST_DIR, 'baseline-users.json');
+    const fileContent = await readFile(filePath, 'utf-8');
+    const savedEnvelope = JSON.parse(fileContent) as {
+      readonly metadata: {
+        readonly timestamp: string;
+        readonly sourcePattern?: string;
+        readonly version: string;
+        readonly tags: readonly string[];
+        readonly count: number;
+      };
+      readonly data: readonly unknown[];
+    };
+
+    expect(savedEnvelope.metadata.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(savedEnvelope.metadata.sourcePattern).toBe('schemas/users.td');
+    expect(savedEnvelope.metadata.version).toBe('0.1.0');
+    expect(savedEnvelope.metadata.tags).toEqual(['regression', 'staging']);
+    expect(savedEnvelope.metadata.count).toBe(2);
+    expect(savedEnvelope.data).toEqual(records);
+
+    const context = await loadContext(filePath, ['smoke', 'STAGING']);
+
+    expect(context.records).toEqual(records);
+    expect(context.metadata.format).toBe('json');
+    expect(context.metadata.recordCount).toBe(2);
+    expect(context.metadata.tags).toEqual(['regression', 'staging', 'smoke']);
+    expect(context.metadata.sourcePattern).toBe('schemas/users.td');
+    expect(context.metadata.version).toBe('0.1.0');
+    expect(context.metadata.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 
   test('loads CSV context through the orchestrating entry point', async () => {
@@ -71,5 +113,24 @@ describe('loadContext', () => {
     };
 
     expect(isContextData(candidate)).toBe(false);
+  });
+
+  test('writes empty saved contexts as valid envelopes', async () => {
+    await saveAsContext([], 'empty-context', [], {
+      directory: TEST_DIR,
+      sourcePattern: 'schemas/empty.td',
+    });
+
+    const context = await loadContext(path.join(TEST_DIR, 'empty-context.json'));
+
+    expect(context.records).toEqual([]);
+    expect(context.metadata.recordCount).toBe(0);
+    expect(context.metadata.sourcePattern).toBe('schemas/empty.td');
+  });
+
+  test('rejects context names that could escape the destination directory', () => {
+    expect(
+      saveAsContext([{ id: 'u-1' }], '../outside', [], { directory: TEST_DIR }),
+    ).rejects.toThrow(/invalid context name/i);
   });
 });
