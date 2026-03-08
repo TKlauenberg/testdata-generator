@@ -26,4 +26,26 @@ describe('parseContextReferenceExpression', () => {
       expect(result.errors[0]).toMatch(/AND logic only/i);
     }
   });
+
+  test('accepts lowercase and for multi-tag filters', () => {
+    const result = parseContextReferenceExpression(
+      '@context.users@staging and @region-us.random.email',
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.tags).toEqual(['staging', 'region-us']);
+    }
+  });
+
+  test('rejects lowercase or syntax with the explicit OR diagnostic', () => {
+    const result = parseContextReferenceExpression(
+      '@context.users@staging or @region-us.random.email',
+    );
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors[0]).toMatch(/AND logic only/i);
+    }
+  });
 });

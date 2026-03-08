@@ -23,11 +23,11 @@ Feature: Context tagging and filtered selection
     Given QATester has DSL source code:
       ```
       schema User {
-        email: string generator=pick(array=["@context.users.random.email"])
+        email: string generator=pick(array=["@context.users[3].email"])
       }
       ```
-    When QATester generates 3 records using the public generateData API
-    Then each generated record should have field "email" in set "staging.us.one@example.com,staging.us.two@example.com,staging.eu.one@example.com,untagged.one@example.com"
+    When QATester generates 1 records using the public generateData API
+    Then each generated record should have field "email" in set "untagged.one@example.com"
 
   Scenario: Missing tag matches surface a runtime error
     Given QATester has DSL source code with semantic error:

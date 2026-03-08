@@ -156,17 +156,20 @@ function parseTagFilters(
     }
 
     next = tagMatch[2];
-    if (next.startsWith(' OR ')) {
-      return {
-        ok: false,
-        errors: [
-          `Invalid context reference '${raw}': tag filters support AND logic only; use '@tagOne AND @tagTwo'`,
-        ],
-      };
-    }
+    const operatorMatch = next.match(/^\s+(AND|OR)\s+/i);
+    if (operatorMatch) {
+      const operator = operatorMatch[1].toUpperCase();
+      next = next.slice(operatorMatch[0].length);
 
-    if (next.startsWith(' AND ')) {
-      next = next.slice(' AND '.length);
+      if (operator === 'OR') {
+        return {
+          ok: false,
+          errors: [
+            `Invalid context reference '${raw}': tag filters support AND logic only; use '@tagOne AND @tagTwo'`,
+          ],
+        };
+      }
+
       if (!next.startsWith('@')) {
         return {
           ok: false,
@@ -175,7 +178,17 @@ function parseTagFilters(
           ],
         };
       }
+
       continue;
+    }
+
+    if (next.startsWith(' OR ')) {
+      return {
+        ok: false,
+        errors: [
+          `Invalid context reference '${raw}': tag filters support AND logic only; use '@tagOne AND @tagTwo'`,
+        ],
+      };
     }
 
     break;

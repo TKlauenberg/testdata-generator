@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { mkdir, rm } from 'node:fs/promises';
 import * as path from 'node:path';
-import { loadContext } from './contextManager';
+import { isContextData, loadContext } from './contextManager';
 
 const TEST_DIR = path.join(import.meta.dir, '../../__test-output__/context-manager');
 
@@ -56,5 +56,20 @@ describe('loadContext', () => {
       const message = error instanceof Error ? error.message : String(error);
       expect(message).toMatch(/unsupported context file type/i);
     }
+  });
+
+  test('rejects context-like objects whose metadata tags are not strings', () => {
+    const candidate = {
+      records: [{ id: 'u-1' }],
+      metadata: {
+        source: 'users.json',
+        format: 'json',
+        loadedAt: '2026-03-08T00:00:00.000Z',
+        recordCount: 1,
+        tags: [123],
+      },
+    };
+
+    expect(isContextData(candidate)).toBe(false);
   });
 });

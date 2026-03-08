@@ -3,6 +3,10 @@ import { loadCsvContext } from './loaders/csvLoader';
 import { loadJsonContext } from './loaders/jsonLoader';
 import type { ContextData } from './types';
 
+function hasValidContextTags(tags: unknown): tags is readonly string[] {
+  return Array.isArray(tags) && tags.every((tag) => typeof tag === 'string');
+}
+
 export function normalizeContextTags(tags: readonly string[] = []): readonly string[] {
   const normalizedTags: string[] = [];
   const seen = new Set<string>();
@@ -26,13 +30,16 @@ export function isContextData(value: unknown): value is ContextData {
   }
 
   const candidate = value as Partial<ContextData>;
+  const metadata = candidate.metadata;
+
   return Array.isArray(candidate.records)
-    && candidate.metadata !== undefined
-    && typeof candidate.metadata.source === 'string'
-    && (candidate.metadata.format === 'json' || candidate.metadata.format === 'csv')
-    && typeof candidate.metadata.loadedAt === 'string'
-    && typeof candidate.metadata.recordCount === 'number'
-    && Array.isArray(candidate.metadata.tags);
+    && metadata !== undefined
+    && typeof metadata === 'object'
+    && typeof metadata.source === 'string'
+    && (metadata.format === 'json' || metadata.format === 'csv')
+    && typeof metadata.loadedAt === 'string'
+    && typeof metadata.recordCount === 'number'
+    && hasValidContextTags(metadata.tags);
 }
 
 export async function loadContext(

@@ -1,6 +1,6 @@
 # Story 8.4: Context Tagging and Filtered Selection
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -191,8 +191,22 @@ GPT-5.4
 - Extended context-reference parsing and runtime resolution to support `@context.<collection>@tag.random` and `@tagOne AND @tagTwo` filters with case-insensitive matching and explicit `OR` rejection.
 - Added selector-based runtime filtering so tagged sources are filtered before deterministic random selection, while untagged Story 8.3 references continue to work unchanged.
 - Added unit and BDD coverage for tagged selection, untagged fallback, deterministic seeded behavior, and missing-match runtime errors.
-- Validated the change with 664 passing repository tests, targeted Cucumber coverage, and targeted ESLint across the Story 8.4 code paths.
+- Applied code review fixes for context-metadata tag validation, case-insensitive tag-operator parsing diagnostics, and stricter BDD proof that untagged context remains reachable without filters.
+- Validated the change with 631 passing repository tests, targeted Cucumber coverage, and targeted Story 8.4 unit suites.
 - Repository-wide `bun run lint` still reports pre-existing failures outside Story 8.4; no remaining lint errors were present in the Story 8.4 code paths after targeted verification.
+
+### Senior Developer Review (AI)
+
+- Outcome: **Approved after fixes**
+- Issues fixed automatically (HIGH/MEDIUM):
+  - Hardened `isContextData()` so malformed `metadata.tags` arrays are rejected before selector code calls string operations on them.
+  - Improved tag-filter parsing so `AND` / `OR` operators are handled case-insensitively and `or` still yields the explicit AND-only diagnostic.
+  - Tightened the BDD scenario for untagged access to prove an untagged record can be selected without tag filters instead of accepting any mixed-source value.
+  - Corrected stale validation evidence in this story's implementation record.
+- Validation:
+  - Targeted unit suites passed for context manager, selector, context reference, analyzer, and generateData.
+  - Cucumber runner passed 56 scenarios / 278 steps.
+  - Full repository test suite passed (`631 passed, 0 failed`).
 
 ### File List
 
@@ -220,6 +234,8 @@ GPT-5.4
 - `packages/core/tests/run-cucumber.ts`
 
 ### Change Log
+
+- 2026-03-08: Applied code review fixes for Story 8.4, revalidated targeted and full test coverage, and advanced the story to `done`.
 
 - 2026-03-06: Implemented tagged context loading and filtered selection with parser/runtime support, added Story 8.4 unit and BDD coverage, and moved the story to `review`.
 
