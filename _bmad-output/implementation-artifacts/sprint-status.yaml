@@ -102,13 +102,13 @@ development_status:
   7-3-composite-uniqueness-constraints: done
   epic-7-retrospective: done
 
-  epic-8: in-progress
+  epic-8: done
   8-1-json-context-loader: done
   8-2-csv-context-loader: done
   8-3-context-reference-syntax-and-resolution: done
   8-4-context-tagging-and-filtered-selection: done
   8-5-save-generated-data-as-context: done
-  epic-8-retrospective: optional
+  epic-8-retrospective: done
 
   epic-9: backlog
   9-1-global-configuration-defaults: backlog

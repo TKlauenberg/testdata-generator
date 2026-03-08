@@ -2,6 +2,18 @@
 
 Teams can establish shared test data standards while individuals maintain flexibility for specific test scenarios.
 
+## Epic 8 Retrospective Follow-Through
+
+Epic 8 introduced configuration-sensitive behavior before the full configuration system was defined. Epic 9 must resolve that gap by defining one explicit model for where configuration lives, how it overrides, and how users understand the effective result.
+
+**Epic 9 must explicitly cover:**
+
+- built-in defaults, global config, workspace config, schema defaults, field-level settings, and CLI flags
+- ownership boundaries between CLI/workspace configuration and schema semantics
+- Epic 8 context-related behavior such as default context storage and `--save-context-dir`
+- user-visible explainability for resolved configuration values and their source layers
+- documentation that future config work can extend without inventing special cases
+
 ## Story 9.1: Global Configuration Defaults
 
 As a **QA tester**,
@@ -15,6 +27,7 @@ So that **I don't repeat common settings in every schema**.
 **Then** a global config file location is defined (e.g., `~/.tdconfig.json`)
 **And** global config supports default generator settings
 **And** global config supports default output format and count
+**And** global config supports user-scope context defaults where appropriate
 **And** global config is loaded automatically by the CLI
 **And** global config values have lowest priority (overridden by all other levels)
 **And** missing global config file is not an error (use built-in defaults)
@@ -34,6 +47,7 @@ So that **all team members use consistent test data standards**.
 **Then** a `.tdconfig.json` file in project root is recognized as workspace config
 **And** workspace config overrides global defaults
 **And** workspace config supports all same options as global config
+**And** workspace config can define team-shared context defaults without conflicting with schema semantics
 **And** workspace config can specify default generator mappings
 **And** workspace config is version-controlled with the project
 **And** the CLI automatically discovers workspace config from current directory or parent directories
@@ -66,6 +80,8 @@ As a **developer**,
 I want **clear configuration priority rules**,
 So that **configuration merging is predictable and correct**.
 
+This story also closes the Epic 8 retrospective gap by defining the canonical configuration model for the product.
+
 **Acceptance Criteria:**
 
 **Given** I have configuration at multiple levels
@@ -73,8 +89,12 @@ So that **configuration merging is predictable and correct**.
 **Then** configuration priority is: field-level > schema-level > workspace > global > built-in
 **And** higher priority config completely overrides lower priority (no deep merging)
 **And** the merger validates configuration values are valid
+**And** the implementation defines a canonical configuration model describing which settings belong at each layer
+**And** the model explicitly covers Epic 8 context settings such as default context storage and `--save-context-dir`
+**And** the model distinguishes CLI/workspace configuration from schema-level semantics
 **And** the CLI displays effective configuration with `td config show` command
 **And** the config show command indicates source of each setting
+**And** documentation includes a configuration scope matrix and precedence examples for common workflows
 **And** unit tests verify priority order for all config options
 **And** documentation clearly explains cascading rules
 
