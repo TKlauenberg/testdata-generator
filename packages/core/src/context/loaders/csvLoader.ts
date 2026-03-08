@@ -313,6 +313,7 @@ export async function loadCsvContext(filePath: string): Promise<ContextData> {
       format: 'csv',
       loadedAt: new Date().toISOString(),
       recordCount: records.length,
+      tags: [],
     },
   };
 }

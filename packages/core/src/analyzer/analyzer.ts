@@ -394,7 +394,7 @@ function validateUniqueConstraints(schema: SchemaNode): Result<void, Diagnostic[
   const errors: Diagnostic[] = [];
 
   for (const field of schema.fields) {
-    if (!field.constraints || field.constraints.unique === undefined) {
+    if (field.constraints?.unique === undefined) {
       continue;
     }
 
@@ -569,7 +569,7 @@ function validateContextReferences(
             severity: 'error',
             location: field.location,
             suggestion:
-              "Supported forms: @context.<collection>.random, @context.<collection>[<index>], and optional .fieldName suffix",
+              "Supported forms: @context.<collection>.random, @context.<collection>[<index>], @context.<collection>@tag.random, @context.<collection>@tagOne AND @tagTwo.random, and optional .fieldName suffix",
           });
           continue;
         }

@@ -7,7 +7,12 @@
 
 import { Ability, type UsesAbilities, type AbilityType } from '@serenity-js/core';
 import { generateData, ValidationError } from '../../../src/generateData';
-import type { ContextRecord } from '../../../src/context';
+import {
+  isContextData,
+  type ContextCollectionInput,
+  type ContextData,
+  type ContextRecord,
+} from '../../../src/context';
 
 /**
  * Internal state for tracking generation results
@@ -16,7 +21,7 @@ export interface GenerateDataAPIState {
   dslSource: string;
   records: Record<string, unknown>[];
   recordsSecondSequence: Record<string, unknown>[];
-  contextCollections: Record<string, readonly ContextRecord[]>;
+  contextCollections: Record<string, ContextCollectionInput>;
   lastError: Error | null;
   generationStarted: boolean;
   generationDuration: number;
@@ -57,6 +62,38 @@ export class UseGenerateDataAPI extends Ability {
 
   public storeContextCollection(name: string, records: readonly ContextRecord[]): void {
     this._state.contextCollections[name] = records;
+  }
+
+  public storeTaggedContextCollection(name: string, context: ContextData): void {
+    const current = this._state.contextCollections[name];
+    if (current === undefined) {
+      this._state.contextCollections[name] = [context];
+      return;
+    }
+
+    if (isContextData(current)) {
+      this._state.contextCollections[name] = [current, context];
+      return;
+    }
+
+    if (Array.isArray(current) && current.every((item) => isContextData(item))) {
+      this._state.contextCollections[name] = [...current, context];
+      return;
+    }
+
+    this._state.contextCollections[name] = [
+      {
+        records: current as readonly ContextRecord[],
+        metadata: {
+          source: `${name}:inline`,
+          format: 'json',
+          loadedAt: new Date().toISOString(),
+          recordCount: (current as readonly ContextRecord[]).length,
+          tags: [],
+        },
+      },
+      context,
+    ];
   }
 
   /**

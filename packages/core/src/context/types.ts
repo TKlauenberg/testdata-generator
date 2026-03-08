@@ -3,6 +3,7 @@ export interface ContextMetadata {
   readonly format: 'json' | 'csv';
   readonly loadedAt: string;
   readonly recordCount: number;
+  readonly tags: readonly string[];
 }
 
 export type JsonValue = string | number | boolean | null | readonly JsonValue[] | { readonly [key: string]: JsonValue };
@@ -13,6 +14,11 @@ export interface ContextData {
   readonly metadata: ContextMetadata;
 }
 
+export type ContextCollectionInput =
+  | readonly ContextRecord[]
+  | ContextData
+  | readonly ContextData[];
+
 export type ContextCollections = {
-  readonly [collectionName: string]: readonly ContextRecord[];
+  readonly [collectionName: string]: ContextCollectionInput;
 };

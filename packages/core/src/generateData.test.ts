@@ -7,6 +7,24 @@
 
 import { describe, test, expect } from 'bun:test';
 import { generateData } from './generateData';
+import type { ContextData } from './context';
+
+function createTaggedContext(
+  source: string,
+  records: Array<Record<string, string>>,
+  tags: readonly string[] = [],
+): ContextData {
+  return {
+    records,
+    metadata: {
+      source,
+      format: 'json',
+      loadedAt: '2026-03-06T00:00:00.000Z',
+      recordCount: records.length,
+      tags,
+    },
+  };
+}
 
 describe('generateData()', () => {
   describe('Basic Generation', () => {
@@ -128,6 +146,79 @@ describe('generateData()', () => {
     // timestamp-based seeding, so we skip this test here to avoid flakiness.
   });
 
+  describe('Tagged Context References', () => {
+    test('filters tagged context before random selection while preserving deterministic output', async () => {
+      const source = `
+        schema User {
+          email: string generator=pick(array=["@context.users@staging AND @region-us.random.email"])
+        }
+      `;
+
+      const context = {
+        users: [
+          createTaggedContext(
+            'staging-us.json',
+            [
+              { email: 'staging.us.one@example.com' },
+              { email: 'staging.us.two@example.com' },
+            ],
+            ['staging', 'region-us'],
+          ),
+          createTaggedContext(
+            'staging-eu.json',
+            [{ email: 'staging.eu@example.com' }],
+            ['staging', 'region-eu'],
+          ),
+        ],
+      };
+
+      const recordsA = [];
+      for await (const record of generateData(source, { count: 4, seed: 17, context })) {
+        recordsA.push(record);
+      }
+
+      const recordsB = [];
+      for await (const record of generateData(source, { count: 4, seed: 17, context })) {
+        recordsB.push(record);
+      }
+
+      expect(recordsA).toEqual(recordsB);
+      for (const record of recordsA) {
+        expect([
+          'staging.us.one@example.com',
+          'staging.us.two@example.com',
+        ]).toContain(record.email);
+      }
+    });
+
+    test('preserves existing untagged context usage without requiring filters', async () => {
+      const source = `
+        schema User {
+          email: string generator=pick(array=["@context.users.random.email"])
+        }
+      `;
+
+      const records = [];
+      for await (const record of generateData(source, {
+        count: 3,
+        seed: 9,
+        context: {
+          users: [
+            { email: 'qa.one@example.com' },
+            { email: 'qa.two@example.com' },
+          ],
+        },
+      })) {
+        records.push(record);
+      }
+
+      expect(records).toHaveLength(3);
+      for (const record of records) {
+        expect(['qa.one@example.com', 'qa.two@example.com']).toContain(record.email);
+      }
+    });
+  });
+
   describe('Multi-Schema Support', () => {
     test('generates records from multiple schemas', async () => {
       const source = `
@@ -161,21 +252,23 @@ describe('generateData()', () => {
     test('throws ValidationError for invalid schema', async () => {
       const invalidSource = `schema User { id: whoops }`;
 
-      expect(async () => {
-        for await (const _record of generateData(invalidSource, { count: 1 })) {
-          // Should not reach here
-        }
-      }).toThrow();
+      expect.assertions(1);
+      try {
+        await Array.fromAsync(generateData(invalidSource, { count: 1 }));
+      } catch (error) {
+        expect(error).toBeInstanceOf(Error);
+      }
     });
 
     test('throws ValidationError for syntax errors', async () => {
       const invalidSource = `schema User { id int }`;  // Missing colon
 
-      expect(async () => {
-        for await (const _record of generateData(invalidSource, { count: 1 })) {
-          // Should not reach here
-        }
-      }).toThrow();
+      expect.assertions(1);
+      try {
+        await Array.fromAsync(generateData(invalidSource, { count: 1 }));
+      } catch (error) {
+        expect(error).toBeInstanceOf(Error);
+      }
     });
 
     test('throws ValidationError for semantic errors', async () => {
@@ -185,11 +278,12 @@ describe('generateData()', () => {
         }
       `;
 
-      expect(async () => {
-        for await (const _record of generateData(invalidSource, { count: 1 })) {
-          // Should not reach here
-        }
-      }).toThrow();
+      expect.assertions(1);
+      try {
+        await Array.fromAsync(generateData(invalidSource, { count: 1 }));
+      } catch (error) {
+        expect(error).toBeInstanceOf(Error);
+      }
     });
 
     test('ValidationError includes diagnostic information', async () => {
@@ -218,7 +312,7 @@ describe('generateData()', () => {
           generationStarted = true;
         }
         expect.unreachable('Should have thrown');
-      } catch (error) {
+      } catch {
         // Validation should fail BEFORE any generation
         expect(generationStarted).toBe(false);
       }

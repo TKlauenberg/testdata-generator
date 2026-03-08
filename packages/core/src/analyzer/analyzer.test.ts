@@ -275,6 +275,22 @@ describe('analyze()', () => {
   });
 
   describe('context reference validation', () => {
+    test('accepts tagged context reference syntax when collection exists', () => {
+      const program = createProgram([
+        createSchema('User', [
+          createField('email', 'string', 'pick', [
+            { name: 'array', value: ['@context.users@staging AND @region-us.random.email'] },
+          ]),
+        ]),
+      ]);
+
+      const result = analyze(program, {
+        availableContextCollections: ['users'],
+      });
+
+      expect(result.ok).toBe(true);
+    });
+
     test('accepts valid random context reference when collection exists', () => {
       const program = createProgram([
         createSchema('User', [
@@ -346,6 +362,27 @@ describe('analyze()', () => {
         const error = result.errors.find((item) => item.code === 'analyzer.undefinedContextCollection');
         expect(error).toBeDefined();
         expect(error?.message).toContain('users');
+      }
+    });
+
+    test('rejects unsupported OR tag syntax with a diagnostic', () => {
+      const program = createProgram([
+        createSchema('User', [
+          createField('email', 'string', 'pick', [
+            { name: 'array', value: ['@context.users@staging OR @region-us.random.email'] },
+          ]),
+        ]),
+      ]);
+
+      const result = analyze(program, {
+        availableContextCollections: ['users'],
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        const error = result.errors.find((item) => item.code === 'analyzer.invalidContextReference');
+        expect(error).toBeDefined();
+        expect(error?.message).toContain('AND');
       }
     });
   });

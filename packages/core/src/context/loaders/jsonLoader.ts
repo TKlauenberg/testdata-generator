@@ -68,6 +68,7 @@ export async function loadJsonContext(filePath: string): Promise<ContextData> {
       format: 'json',
       loadedAt: new Date().toISOString(),
       recordCount: records.length,
+      tags: [],
     },
   };
 }

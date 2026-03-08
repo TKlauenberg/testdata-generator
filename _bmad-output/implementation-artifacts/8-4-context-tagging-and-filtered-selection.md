@@ -1,6 +1,6 @@
 # Story 8.4: Context Tagging and Filtered Selection
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -23,35 +23,35 @@ so that **I can organize context by environment or region**.
 
 ## Tasks / Subtasks
 
-- [ ] Establish tagged context contracts and a context-manager API (AC: 1, 4, 5, 6)
-  - [ ] Introduce `packages/core/src/context/contextManager.ts` as the orchestration layer that wraps the existing JSON/CSV loaders instead of replacing them.
-  - [ ] Add a public `loadContext(path, tags?: string[])` entry point that infers the loader from file type and attaches normalized tag metadata.
-  - [ ] Evolve `packages/core/src/context/types.ts` so tagged context can carry normalized tag data without breaking existing untagged callers.
+- [x] Establish tagged context contracts and a context-manager API (AC: 1, 4, 5, 6)
+  - [x] Introduce `packages/core/src/context/contextManager.ts` as the orchestration layer that wraps the existing JSON/CSV loaders instead of replacing them.
+  - [x] Add a public `loadContext(path, tags?: string[])` entry point that infers the loader from file type and attaches normalized tag metadata.
+  - [x] Evolve `packages/core/src/context/types.ts` so tagged context can carry normalized tag data without breaking existing untagged callers.
 
-- [ ] Extend context-reference parsing for tag filters (AC: 2, 3, 5, 6)
-  - [ ] Update `packages/core/src/context/contextReference.ts` to parse optional tag filters between collection and selector, supporting `@context.<collection>@tag.random` and `@tagOne AND @tagTwo` semantics.
-  - [ ] Keep matching case-insensitive by normalizing tags once and comparing normalized values only.
-  - [ ] Continue rejecting unsupported filter forms such as `where(...)`, arbitrary predicates, or `OR` syntax with actionable diagnostics; Story 8.4 only requires AND logic.
+- [x] Extend context-reference parsing for tag filters (AC: 2, 3, 5, 6)
+  - [x] Update `packages/core/src/context/contextReference.ts` to parse optional tag filters between collection and selector, supporting `@context.<collection>@tag.random` and `@tagOne AND @tagTwo` semantics.
+  - [x] Keep matching case-insensitive by normalizing tags once and comparing normalized values only.
+  - [x] Continue rejecting unsupported filter forms such as `where(...)`, arbitrary predicates, or `OR` syntax with actionable diagnostics; Story 8.4 only requires AND logic.
 
-- [ ] Implement tagged selection helpers and runtime filtering (AC: 2, 3, 4, 5, 6)
-  - [ ] Add a dedicated helper such as `packages/core/src/context/selector.ts` for filtering candidate context collections by tag set before random selection.
-  - [ ] Preserve Story 8.3 behavior for untagged references and existing `.random` resolution, including deterministic RNG usage.
-  - [ ] Return clear runtime errors when tag filters resolve to no matching context data.
+- [x] Implement tagged selection helpers and runtime filtering (AC: 2, 3, 4, 5, 6)
+  - [x] Add a dedicated helper such as `packages/core/src/context/selector.ts` for filtering candidate context collections by tag set before random selection.
+  - [x] Preserve Story 8.3 behavior for untagged references and existing `.random` resolution, including deterministic RNG usage.
+  - [x] Return clear runtime errors when tag filters resolve to no matching context data.
 
-- [ ] Wire validation and public API surfaces without breaking existing callers (AC: 1, 2, 4, 6)
-  - [ ] Export new context-manager and selector contracts through `packages/core/src/context/index.ts` and the core public API as needed.
-  - [ ] Ensure analyzer/generation entry points still validate and resolve context references against available collections while remaining backward-compatible with existing `GenerateOptions.context` usage.
-  - [ ] Avoid scanner/parser refactors unless the current grammar demonstrably blocks the tagged-reference syntax; Story 8.3 already resolves context references from string-valued generator parameters.
+- [x] Wire validation and public API surfaces without breaking existing callers (AC: 1, 2, 4, 6)
+  - [x] Export new context-manager and selector contracts through `packages/core/src/context/index.ts` and the core public API as needed.
+  - [x] Ensure analyzer/generation entry points still validate and resolve context references against available collections while remaining backward-compatible with existing `GenerateOptions.context` usage.
+  - [x] Avoid scanner/parser refactors unless the current grammar demonstrably blocks the tagged-reference syntax; Story 8.3 already resolves context references from string-valued generator parameters.
 
-- [ ] Add focused unit tests for tagged selection behavior (AC: 5, 6, 7)
-  - [ ] Cover case-insensitive tag normalization, AND filtering, untagged fallback access, and empty-match error behavior.
-  - [ ] Cover deterministic random selection from filtered candidates under a fixed seed.
-  - [ ] Add regressions proving existing Story 8.3 untagged context-reference behavior still passes.
+- [x] Add focused unit tests for tagged selection behavior (AC: 5, 6, 7)
+  - [x] Cover case-insensitive tag normalization, AND filtering, untagged fallback access, and empty-match error behavior.
+  - [x] Cover deterministic random selection from filtered candidates under a fixed seed.
+  - [x] Add regressions proving existing Story 8.3 untagged context-reference behavior still passes.
 
-- [ ] Add BDD coverage for QA-facing tag-selection scenarios (AC: 8)
-  - [ ] Add a feature file under `packages/core/features/` covering environment/region tag combinations and untagged access.
-  - [ ] Add step definitions under `packages/core/features/step_definitions/` and Screenplay support files under `packages/core/features/support/` as needed.
-  - [ ] Update the Cucumber runner allowlist if new feature/step files must be registered explicitly.
+- [x] Add BDD coverage for QA-facing tag-selection scenarios (AC: 8)
+  - [x] Add a feature file under `packages/core/features/` covering environment/region tag combinations and untagged access.
+  - [x] Add step definitions under `packages/core/features/step_definitions/` and Screenplay support files under `packages/core/features/support/` as needed.
+  - [x] Update the Cucumber runner allowlist if new feature/step files must be registered explicitly.
 
 ## Dev Notes
 
@@ -172,6 +172,7 @@ GPT-5.4
 - Context assembled from sprint status, Epic 8, PRD, architecture shards, project context, live core context/generator sources, previous story artifact, and recent git history.
 - Discovery results used for this story: PRD loaded from `_bmad-output/planning-artifacts/prd.md`, Epic 8 loaded from `_bmad-output/planning-artifacts/epics/epic-8-context-management.md`, architecture loaded from sharded files under `_bmad-output/planning-artifacts/architecture/`, and project rules loaded from `_bmad-output/planning-artifacts/project-context.md`.
 - No UX-specific artifact was present for this story.
+- Validation executed: focused unit tests for context manager/selector/reference/analyzer/generateData, the Cucumber runner test, full repository test suite, and targeted ESLint on Story 8.4 code paths.
 
 ### Implementation Plan
 
@@ -185,13 +186,41 @@ GPT-5.4
 - Auto-selected the first backlog story from sprint tracking: `8-4-context-tagging-and-filtered-selection`.
 - Generated a ready-for-dev story artifact with explicit guardrails for the missing `contextManager.ts` / `loadContext()` layer in the current repo.
 - Scoped Story 8.4 to tag-based filtering with AND logic only, deferring persistence, `OR`, and generic predicate filtering to later work.
-- Marked sprint tracking for Story 8.4 as `ready-for-dev`.
+- Updated sprint tracking for Story 8.4 to `review` after implementation and validation.
+- Added `loadContext()` orchestration plus tag normalization, backward-compatible tagged context collection inputs, and tag metadata on loaded context.
+- Extended context-reference parsing and runtime resolution to support `@context.<collection>@tag.random` and `@tagOne AND @tagTwo` filters with case-insensitive matching and explicit `OR` rejection.
+- Added selector-based runtime filtering so tagged sources are filtered before deterministic random selection, while untagged Story 8.3 references continue to work unchanged.
+- Added unit and BDD coverage for tagged selection, untagged fallback, deterministic seeded behavior, and missing-match runtime errors.
+- Validated the change with 664 passing repository tests, targeted Cucumber coverage, and targeted ESLint across the Story 8.4 code paths.
+- Repository-wide `bun run lint` still reports pre-existing failures outside Story 8.4; no remaining lint errors were present in the Story 8.4 code paths after targeted verification.
 
 ### File List
 
 - `_bmad-output/implementation-artifacts/8-4-context-tagging-and-filtered-selection.md`
 - `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- `packages/core/features/context-tagging-and-selection.feature`
+- `packages/core/features/fixtures/context/users.staging.eu.json`
+- `packages/core/features/fixtures/context/users.staging.us.json`
+- `packages/core/features/fixtures/context/users.untagged.json`
+- `packages/core/features/step_definitions/context-tagging-and-selection.steps.ts`
+- `packages/core/features/support/abilities/UseGenerateDataAPI.ts`
+- `packages/core/src/analyzer/analyzer.test.ts`
+- `packages/core/src/analyzer/analyzer.ts`
+- `packages/core/src/context/contextManager.test.ts`
+- `packages/core/src/context/contextManager.ts`
+- `packages/core/src/context/contextReference.test.ts`
+- `packages/core/src/context/contextReference.ts`
+- `packages/core/src/context/index.ts`
+- `packages/core/src/context/loaders/csvLoader.ts`
+- `packages/core/src/context/loaders/jsonLoader.ts`
+- `packages/core/src/context/selector.test.ts`
+- `packages/core/src/context/selector.ts`
+- `packages/core/src/context/types.ts`
+- `packages/core/src/generateData.test.ts`
+- `packages/core/tests/run-cucumber.ts`
 
 ### Change Log
+
+- 2026-03-06: Implemented tagged context loading and filtered selection with parser/runtime support, added Story 8.4 unit and BDD coverage, and moved the story to `review`.
 
 - 2026-03-06: Created Story 8.4 context artifact via create-story workflow and set sprint status to `ready-for-dev`.
