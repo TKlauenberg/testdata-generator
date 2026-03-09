@@ -67,6 +67,12 @@ export const generateCommand = new Command('generate')
         throw error;
       }
 
+      if (globalConfig.generatorDefaults.length > 0) {
+        console.error(
+          'Note: global config generatorDefaults are validated but not applied by td generate yet; application is planned in later Epic 9 stories.',
+        );
+      }
+
       // Parse options
       const count = parsePositiveIntegerOption(
         options.count ?? String(globalConfig.defaults.count),
@@ -237,9 +243,9 @@ interface CommandOptions {
 }
 
 function parsePositiveIntegerOption(rawValue: string, optionName: string): number {
-  const value = Number.parseInt(rawValue, 10);
+  const value = parseIntegerOption(rawValue, optionName);
 
-  if (Number.isNaN(value) || value <= 0) {
+  if (value <= 0) {
     console.error(`Error: ${optionName} must be a positive integer`);
     process.exit(1);
   }
@@ -248,12 +254,13 @@ function parsePositiveIntegerOption(rawValue: string, optionName: string): numbe
 }
 
 function parseIntegerOption(rawValue: string, optionName: string): number {
-  const value = Number.parseInt(rawValue, 10);
-
-  if (Number.isNaN(value)) {
+  const normalized = rawValue.trim();
+  if (!/^[+-]?\d+$/.test(normalized)) {
     console.error(`Error: ${optionName} must be an integer`);
     process.exit(1);
   }
+
+  const value = Number.parseInt(normalized, 10);
 
   return value;
 }

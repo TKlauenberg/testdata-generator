@@ -1,6 +1,6 @@
 # Story 9.1: Global Configuration Defaults
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -208,3 +208,26 @@ GPT-5.4
 - 2026-03-08: Created Story 9.1 context artifact via create-story workflow and set sprint status to `ready-for-dev`.
 - 2026-03-08: Implemented global CLI defaults loading, validation, generate-command integration, tests, and README documentation for Story 9.1.
 - 2026-03-08: Marked Story 9.1 `review` after passing full tests, focused CLI coverage, BDD scenarios, and targeted lint validation for changed files.
+- 2026-03-09: Senior developer review issues fixed: strict integer parsing for CLI numeric flags, clearer global-config path resolution failure handling, integration test coverage for malformed global config, and explicit documentation/runtime note that `generatorDefaults` are validated in 9.1 but applied in later Epic 9 stories.
+
+## Senior Developer Review (AI)
+
+### Outcome
+
+Approved after fixes.
+
+### Findings Resolved
+
+- HIGH: Clarified generator-default behavior to avoid misleading runtime expectations.
+  - Runtime note added in `packages/cli/src/commands/generate.ts` when `generatorDefaults` are present.
+  - README now explicitly states `generatorDefaults` are parsed/validated in Story 9.1 and applied in later Epic 9 stories.
+- MEDIUM: Global-config path bootstrap failures are now translated to `CliConfigError` with CLI-consistent exit behavior.
+- MEDIUM: `--count`/`--seed` parsing now rejects malformed integer strings (for example `10abc`) instead of coercing prefixes.
+- MEDIUM: Added command-boundary integration coverage for malformed global config behavior.
+- LOW: Removed accidental root API widening in `packages/cli/src/index.ts`.
+
+### Verification
+
+- `packages/cli/src/config/configLoader.test.ts`: passing
+- `packages/cli/src/commands/generate.test.ts`: passing
+- `bun run --cwd packages/cli test:bdd`: passing (3 scenarios / 21 steps)

@@ -328,6 +328,44 @@ describe('Generate Command - Generation Options', () => {
       await fs.rm(homeDirectory, { recursive: true, force: true });
     }
   });
+
+  test('fails with exit code 1 when global config JSON is invalid', async () => {
+    const homeDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-cli-home-'));
+    await fs.writeFile(path.join(homeDirectory, '.tdconfig.json'), '{"defaults":', 'utf-8');
+
+    try {
+      const proc = spawn([
+        'bun',
+        CLI_PATH,
+        'generate',
+        fixture('valid-simple.td'),
+      ], {
+        env: {
+          ...process.env,
+          HOME: homeDirectory,
+        },
+      });
+
+      const exitCode = await proc.exited;
+      expect(exitCode).toBe(1);
+    } finally {
+      await fs.rm(homeDirectory, { recursive: true, force: true });
+    }
+  });
+
+  test('rejects malformed integer values that include trailing characters', async () => {
+    const proc = spawn([
+      'bun',
+      CLI_PATH,
+      'generate',
+      fixture('valid-simple.td'),
+      '--count',
+      '10abc',
+    ]);
+
+    const exitCode = await proc.exited;
+    expect(exitCode).toBe(1);
+  });
 });
 
 describe('Generate Command - Output Handling', () => {

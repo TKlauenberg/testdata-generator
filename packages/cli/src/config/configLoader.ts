@@ -24,7 +24,13 @@ export class CliConfigError extends Error {
 export async function loadGlobalConfig(
   options: { readonly homeDirectory?: string } = {},
 ): Promise<LoadedCliGlobalConfig> {
-  const configPath = resolveGlobalConfigPath(options.homeDirectory);
+  let configPath: string;
+  try {
+    configPath = resolveGlobalConfigPath(options.homeDirectory);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new CliConfigError(`Error resolving global config path: ${message}`, 3);
+  }
 
   let rawContent: string;
   try {
