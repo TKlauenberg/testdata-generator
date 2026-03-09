@@ -5,6 +5,7 @@ import * as path from 'node:path';
 
 interface CliBddState {
   workspaceDir?: string;
+  homeDir?: string;
   exitCode?: number;
   stdout?: string;
   stderr?: string;
@@ -54,6 +55,12 @@ Given('a DSL schema file {string} with contents:', async (fileName: string, cont
   await writeFile(filePath, `${contents.trim()}\n`, 'utf-8');
 });
 
+Given('a global CLI config file with contents:', async (contents: string) => {
+  const workspaceDir = requireWorkspaceDir();
+  state.homeDir = path.join(workspaceDir, 'home');
+  await Bun.write(path.join(state.homeDir, '.tdconfig.json'), `${contents.trim()}\n`);
+});
+
 When('the tester runs {string}', async (command: string) => {
   const args = tokenizeCommand(command);
   if (args[0] !== 'td') {
@@ -62,6 +69,10 @@ When('the tester runs {string}', async (command: string) => {
 
   const proc = Bun.spawn(['bun', CLI_PATH, ...args.slice(1)], {
     cwd: requireWorkspaceDir(),
+    env: {
+      ...process.env,
+      HOME: state.homeDir ?? process.env.HOME,
+    },
     stdout: 'pipe',
     stderr: 'pipe',
   });
@@ -110,12 +121,26 @@ Then('the saved context file {string} should record source pattern {string}', as
   }
 });
 
+Then('stdout should contain {int} generated records', (count: number) => {
+  const stdout = state.stdout ?? '';
+  const parsed = JSON.parse(stdout) as unknown;
+
+  if (!Array.isArray(parsed)) {
+    throw new Error(`Expected stdout to contain a JSON array, received: ${stdout}`);
+  }
+
+  if (parsed.length !== count) {
+    throw new Error(`Expected ${count} generated records, received ${parsed.length}`);
+  }
+});
+
 After(async () => {
   if (state.workspaceDir) {
     await rm(state.workspaceDir, { recursive: true, force: true });
   }
 
   state.workspaceDir = undefined;
+  state.homeDir = undefined;
   state.exitCode = undefined;
   state.stdout = undefined;
   state.stderr = undefined;

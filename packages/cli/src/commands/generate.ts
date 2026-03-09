@@ -11,6 +11,7 @@ import { generateData, saveAsContext, ValidationError } from '@testdata-ai/core'
 import type { Diagnostic, GenerateOptions } from '@testdata-ai/core';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { BUILT_IN_CLI_CONFIG, CliConfigError, loadGlobalConfig, validateOutputFormat } from '../config';
 import { formatErrors } from '../formatters';
 
 /**
@@ -36,32 +37,48 @@ function isNodeError(err: unknown): err is NodeJS.ErrnoException {
 export const generateCommand = new Command('generate')
   .description('Generate test data from DSL schema')
   .argument('<file>', 'DSL schema file (.td)')
-  .option('-c, --count <number>', 'Number of records to generate', '10')
-  .option('-f, --format <format>', 'Output format (json)', 'json')
+  .option(
+    '-c, --count <number>',
+    `Number of records to generate (default: global config or built-in ${BUILT_IN_CLI_CONFIG.defaults.count})`,
+  )
+  .option(
+    '-f, --format <format>',
+    `Output format (default: global config or built-in ${BUILT_IN_CLI_CONFIG.defaults.format})`,
+  )
   .option('-o, --output <file>', 'Output file (default: stdout)')
   .option('-s, --seed <number>', 'Random seed for reproducibility')
   .option('--save-context <name>', 'Save generated records as reusable context')
-  .option('--save-context-dir <directory>', 'Directory for saved context files (default: ./contexts/)')
+  .option(
+    '--save-context-dir <directory>',
+    `Directory for saved context files (default: global config or built-in ${BUILT_IN_CLI_CONFIG.context.saveDirectory})`,
+  )
   .action(async (file: string, options: CommandOptions) => {
     try {
-      // Parse options
-      const count = parseInt(options.count, 10);
-      const seed = options.seed ? parseInt(options.seed, 10) : undefined;
-
-      // Validate count
-      if (isNaN(count) || count <= 0) {
-        console.error('Error: --count must be a positive integer');
-        process.exit(1);
-      }
-
-      // Validate seed if provided
-      if (options.seed !== undefined) {
-        const parsedSeed = parseInt(options.seed, 10);
-        if (isNaN(parsedSeed)) {
-          console.error('Error: --seed must be an integer');
-          process.exit(1);
+      let globalConfig = BUILT_IN_CLI_CONFIG;
+      try {
+        const loadedGlobalConfig = await loadGlobalConfig();
+        globalConfig = loadedGlobalConfig.config;
+      } catch (error: unknown) {
+        if (error instanceof CliConfigError) {
+          console.error(`Error: ${error.message}`);
+          process.exit(error.exitCode);
         }
+
+        throw error;
       }
+
+      // Parse options
+      const count = parsePositiveIntegerOption(
+        options.count ?? String(globalConfig.defaults.count),
+        '--count',
+      );
+      const format = validateOutputFormat(
+        options.format ?? globalConfig.defaults.format,
+        options.format === undefined ? 'global config defaults.format' : '--format',
+      );
+      const seed = options.seed ? parseIntegerOption(options.seed, '--seed') : undefined;
+
+      const saveContextDirectory = options.saveContextDir ?? globalConfig.context.saveDirectory;
 
       // Step 1: Read file
       let source: string;
@@ -116,7 +133,7 @@ export const generateCommand = new Command('generate')
         const duration = ((endTime - startTime) / 1000).toFixed(1);
 
         // Step 3: Format output
-        const output = JSON.stringify(records, null, 2);
+        const output = formatRecords(records, format);
 
         // Step 4: Write output
         if (options.output) {
@@ -143,7 +160,7 @@ export const generateCommand = new Command('generate')
           try {
             const contextDirectory = path.resolve(
               process.cwd(),
-              options.saveContextDir ?? './contexts',
+              saveContextDirectory,
             );
             const sourcePattern = path.relative(process.cwd(), path.resolve(file));
 
@@ -211,10 +228,40 @@ function displayDiagnostics(diagnostics: Diagnostic[], source: string): void {
  * Command options from Commander.js
  */
 interface CommandOptions {
-  count: string;
-  format: string;
+  count?: string;
+  format?: string;
   output?: string;
   seed?: string;
   saveContext?: string;
   saveContextDir?: string;
+}
+
+function parsePositiveIntegerOption(rawValue: string, optionName: string): number {
+  const value = Number.parseInt(rawValue, 10);
+
+  if (Number.isNaN(value) || value <= 0) {
+    console.error(`Error: ${optionName} must be a positive integer`);
+    process.exit(1);
+  }
+
+  return value;
+}
+
+function parseIntegerOption(rawValue: string, optionName: string): number {
+  const value = Number.parseInt(rawValue, 10);
+
+  if (Number.isNaN(value)) {
+    console.error(`Error: ${optionName} must be an integer`);
+    process.exit(1);
+  }
+
+  return value;
+}
+
+function formatRecords(records: readonly Record<string, unknown>[], format: 'json'): string {
+  if (format === 'json') {
+    return JSON.stringify(records, null, 2);
+  }
+
+  return JSON.stringify(records, null, 2);
 }

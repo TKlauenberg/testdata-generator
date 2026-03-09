@@ -69,6 +69,66 @@ bun packages/cli/bin/td.ts --version
 
 # Show help
 bun packages/cli/bin/td.ts --help
+
+# Generate data with built-in defaults
+bun packages/cli/bin/td.ts generate schema.td
+```
+
+### Global CLI Configuration
+
+The CLI automatically loads user-level defaults from `~/.tdconfig.json` when the file exists. If the file is missing, the CLI falls back to built-in defaults and continues without error.
+
+Current supported keys:
+
+```json
+{
+	"defaults": {
+		"count": 25,
+		"format": "json"
+	},
+	"context": {
+		"saveDirectory": "./shared-contexts"
+	},
+	"generatorDefaults": [
+		{
+			"fieldType": "string",
+			"generator": {
+				"name": "pick",
+				"parameters": [
+					{
+						"name": "array",
+						"value": ["alpha", "beta"]
+					}
+				]
+			}
+		}
+	]
+}
+```
+
+Built-in defaults today are:
+
+- `defaults.count`: `10`
+- `defaults.format`: `json`
+- `context.saveDirectory`: `./contexts`
+
+Precedence for Story 9.1 is intentionally narrow:
+
+- Explicit CLI flags override global defaults.
+- Global defaults override built-in defaults.
+- Workspace and schema-level config precedence are not implemented yet.
+
+Examples:
+
+```bash
+# Use the global default count and format
+bun packages/cli/bin/td.ts generate schema.td
+
+# Override the global default count for one run
+bun packages/cli/bin/td.ts generate schema.td --count 5
+
+# Use the global default save directory when persisting generated context
+bun packages/cli/bin/td.ts generate schema.td --save-context baseline-users
 ```
 
 ## Development

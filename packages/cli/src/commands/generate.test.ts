@@ -1,6 +1,7 @@
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
 import { spawn } from 'bun';
 import * as fs from 'fs/promises';
+import * as os from 'node:os';
 import * as path from 'path';
 
 const CLI_ROOT = path.resolve(import.meta.dir, '../..');
@@ -18,6 +19,16 @@ function parseJson<T>(input: string): T {
 function isRecordArray(value: unknown): value is Array<Record<string, unknown>> {
   return Array.isArray(value)
     && value.every((item) => item !== null && typeof item === 'object' && !Array.isArray(item));
+}
+
+async function createGlobalConfigHome(config: unknown): Promise<string> {
+  const homeDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-cli-home-'));
+  await fs.writeFile(
+    path.join(homeDirectory, '.tdconfig.json'),
+    `${JSON.stringify(config, null, 2)}\n`,
+    'utf-8',
+  );
+  return homeDirectory;
 }
 
 describe('Generate Command - File Reading', () => {
@@ -247,6 +258,76 @@ describe('Generate Command - Generation Options', () => {
     const exitCode = await proc.exited;
     expect(exitCode).toBe(0);
   });
+
+  test('uses global defaults when flags are omitted', async () => {
+    const homeDirectory = await createGlobalConfigHome({
+      defaults: {
+        count: 3,
+        format: 'json',
+      },
+    });
+
+    try {
+      const proc = spawn([
+        'bun',
+        CLI_PATH,
+        'generate',
+        fixture('valid-simple.td'),
+      ], {
+        env: {
+          ...process.env,
+          HOME: homeDirectory,
+        },
+      });
+
+      const output = await new Response(proc.stdout).text();
+      const records = parseJson<unknown>(output);
+
+      if (!isRecordArray(records)) {
+        throw new Error('Expected generated output to be a JSON array of records');
+      }
+
+      expect(records).toHaveLength(3);
+    } finally {
+      await fs.rm(homeDirectory, { recursive: true, force: true });
+    }
+  });
+
+  test('keeps explicit flags higher priority than global defaults', async () => {
+    const homeDirectory = await createGlobalConfigHome({
+      defaults: {
+        count: 7,
+        format: 'json',
+      },
+    });
+
+    try {
+      const proc = spawn([
+        'bun',
+        CLI_PATH,
+        'generate',
+        fixture('valid-simple.td'),
+        '--count',
+        '2',
+      ], {
+        env: {
+          ...process.env,
+          HOME: homeDirectory,
+        },
+      });
+
+      const output = await new Response(proc.stdout).text();
+      const records = parseJson<unknown>(output);
+
+      if (!isRecordArray(records)) {
+        throw new Error('Expected generated output to be a JSON array of records');
+      }
+
+      expect(records).toHaveLength(2);
+    } finally {
+      await fs.rm(homeDirectory, { recursive: true, force: true });
+    }
+  });
 });
 
 describe('Generate Command - Output Handling', () => {
@@ -431,6 +512,44 @@ describe('Generate Command - Output Handling', () => {
 
     expect(generatedOutput).toHaveLength(4);
     expect(savedContext.data).toEqual(generatedOutput);
+  });
+
+  test('uses the global default save-context directory when the flag is omitted', async () => {
+    const homeDirectory = await createGlobalConfigHome({
+      context: {
+        saveDirectory: 'global-contexts',
+      },
+    });
+
+    try {
+      const proc = spawn([
+        'bun',
+        CLI_PATH,
+        'generate',
+        fixture('valid-simple.td'),
+        '--count',
+        '2',
+        '--save-context',
+        'configured-users',
+      ], {
+        cwd: outputDir,
+        env: {
+          ...process.env,
+          HOME: homeDirectory,
+        },
+      });
+
+      const exitCode = await proc.exited;
+      expect(exitCode).toBe(0);
+
+      const exists = await fs
+        .access(path.join(outputDir, 'global-contexts', 'configured-users.json'))
+        .then(() => true)
+        .catch(() => false);
+      expect(exists).toBe(true);
+    } finally {
+      await fs.rm(homeDirectory, { recursive: true, force: true });
+    }
   });
 });
 

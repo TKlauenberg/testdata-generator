@@ -111,7 +111,7 @@ development_status:
   epic-8-retrospective: done
 
   epic-9: in-progress
-  9-1-global-configuration-defaults: ready-for-dev
+  9-1-global-configuration-defaults: review
   9-2-workspace-configuration: backlog
   9-3-schema-level-defaults: backlog
   9-4-configuration-priority-and-merging: backlog

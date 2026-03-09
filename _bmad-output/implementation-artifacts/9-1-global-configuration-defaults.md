@@ -1,6 +1,6 @@
 # Story 9.1: Global Configuration Defaults
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -24,44 +24,44 @@ so that **I don't repeat common settings in every schema**.
 
 ## Tasks / Subtasks
 
-- [ ] Establish a focused CLI global-config contract and built-in defaults layer (AC: 1, 2, 3, 4, 6, 7)
-  - [ ] Add `packages/cli/src/config/defaults.ts` to define the built-in defaults, the global config filename/path resolver, and the normalized config shape used by the CLI.
-  - [ ] Add `packages/cli/src/config/types.ts` if needed so config data remains explicit, readonly, and future-safe for Stories 9.2-9.4.
-  - [ ] Keep the initial contract intentionally scoped to user-level concerns already present in the repo: record count, output format, and context-directory defaults, while also defining a validated place for generator-default mappings that later stories can apply more broadly.
-  - [ ] Treat global config as the lowest-priority layer only. Do not implement workspace or schema merging logic in this story beyond establishing a clean boundary for future composition.
+- [x] Establish a focused CLI global-config contract and built-in defaults layer (AC: 1, 2, 3, 4, 6, 7)
+  - [x] Add `packages/cli/src/config/defaults.ts` to define the built-in defaults, the global config filename/path resolver, and the normalized config shape used by the CLI.
+  - [x] Add `packages/cli/src/config/types.ts` if needed so config data remains explicit, readonly, and future-safe for Stories 9.2-9.4.
+  - [x] Keep the initial contract intentionally scoped to user-level concerns already present in the repo: record count, output format, and context-directory defaults, while also defining a validated place for generator-default mappings that later stories can apply more broadly.
+  - [x] Treat global config as the lowest-priority layer only. Do not implement workspace or schema merging logic in this story beyond establishing a clean boundary for future composition.
 
-- [ ] Implement global-config loading and validation in a dedicated CLI config module (AC: 1, 2, 3, 4, 5, 6, 7, 8)
-  - [ ] Add `packages/cli/src/config/configLoader.ts` to resolve the user home directory, read the global config JSON if it exists, and return built-in defaults when it does not.
-  - [ ] Use Bun/Node standard library path utilities only; no external config dependency is needed.
-  - [ ] Fail clearly when the file exists but contains invalid JSON or unsupported values, with actionable error messages that match the CLI's existing style.
-  - [ ] Validate supported values explicitly, including the currently supported output format(s), positive integer count semantics, and any context-directory path string fields.
-  - [ ] Preserve a normalized config object that carries generator-default mappings even if some generator-level application remains limited until later Epic 9 stories.
+- [x] Implement global-config loading and validation in a dedicated CLI config module (AC: 1, 2, 3, 4, 5, 6, 7, 8)
+  - [x] Add `packages/cli/src/config/configLoader.ts` to resolve the user home directory, read the global config JSON if it exists, and return built-in defaults when it does not.
+  - [x] Use Bun/Node standard library path utilities only; no external config dependency is needed.
+  - [x] Fail clearly when the file exists but contains invalid JSON or unsupported values, with actionable error messages that match the CLI's existing style.
+  - [x] Validate supported values explicitly, including the currently supported output format(s), positive integer count semantics, and any context-directory path string fields.
+  - [x] Preserve a normalized config object that carries generator-default mappings even if some generator-level application remains limited until later Epic 9 stories.
 
-- [ ] Wire global defaults into the live CLI command flow without broad refactors (AC: 3, 4, 5, 6, 7)
-  - [ ] Update `packages/cli/src/commands/generate.ts` so omitted CLI flags fall back to resolved global defaults instead of hard-coded literals.
-  - [ ] Keep explicit CLI flags as higher priority than global config.
-  - [ ] Reconcile global context defaults with the existing `--save-context-dir` behavior introduced in Story 8.5 so user-level defaults can supply the directory when the flag is omitted.
-  - [ ] Keep current generate behavior intact for validation, stdout/output-file handling, and save-context side effects.
-  - [ ] Avoid introducing config side effects into commands that do not need them yet unless a small shared helper materially reduces duplication.
+- [x] Wire global defaults into the live CLI command flow without broad refactors (AC: 3, 4, 5, 6, 7)
+  - [x] Update `packages/cli/src/commands/generate.ts` so omitted CLI flags fall back to resolved global defaults instead of hard-coded literals.
+  - [x] Keep explicit CLI flags as higher priority than global config.
+  - [x] Reconcile global context defaults with the existing `--save-context-dir` behavior introduced in Story 8.5 so user-level defaults can supply the directory when the flag is omitted.
+  - [x] Keep current generate behavior intact for validation, stdout/output-file handling, and save-context side effects.
+  - [x] Avoid introducing config side effects into commands that do not need them yet unless a small shared helper materially reduces duplication.
 
-- [ ] Define generator-default support in a way that does not break current architecture (AC: 2, 6)
-  - [ ] Reuse existing concepts already present in the repo, especially `DefaultSpec` / profile-style default mappings in `packages/core/src/parser/ast.ts`, instead of inventing a second generator-default vocabulary.
-  - [ ] Keep ownership boundaries clear: the CLI global config may define user-level generator defaults, but schema-level application and precedence against schema and field defaults belong to later Epic 9 stories.
-  - [ ] If any generator-default behavior is surfaced in this story, keep it additive and forward-compatible with the future precedence model `field > schema > workspace > global > built-in`.
+- [x] Define generator-default support in a way that does not break current architecture (AC: 2, 6)
+  - [x] Reuse existing concepts already present in the repo, especially `DefaultSpec` / profile-style default mappings in `packages/core/src/parser/ast.ts`, instead of inventing a second generator-default vocabulary.
+  - [x] Keep ownership boundaries clear: the CLI global config may define user-level generator defaults, but schema-level application and precedence against schema and field defaults belong to later Epic 9 stories.
+  - [x] If any generator-default behavior is surfaced in this story, keep it additive and forward-compatible with the future precedence model `field > schema > workspace > global > built-in`.
 
-- [ ] Add focused unit coverage for global-config loading and command integration (AC: 7, 8)
-  - [ ] Add tests alongside the new CLI config module for path resolution, missing-file fallback, invalid JSON handling, invalid value handling, and normalization of supported config fields.
-  - [ ] Extend `packages/cli/src/commands/generate.test.ts` to prove global defaults are used when flags are omitted and overridden when flags are provided.
-  - [ ] Add regression coverage proving Story 8.5 save-context behavior still works when the save directory comes from global config defaults.
+- [x] Add focused unit coverage for global-config loading and command integration (AC: 7, 8)
+  - [x] Add tests alongside the new CLI config module for path resolution, missing-file fallback, invalid JSON handling, invalid value handling, and normalization of supported config fields.
+  - [x] Extend `packages/cli/src/commands/generate.test.ts` to prove global defaults are used when flags are omitted and overridden when flags are provided.
+  - [x] Add regression coverage proving Story 8.5 save-context behavior still works when the save directory comes from global config defaults.
 
-- [ ] Document the user-facing global config surface (AC: 9)
-  - [ ] Update `README.md` and any relevant docs with the global config location, supported keys, and examples.
-  - [ ] Document that missing global config is allowed, global config is the lowest-priority layer, and this story does not yet include workspace/schema precedence.
-  - [ ] Include at least one example showing how a user can set default count, default format, and a default context/save directory.
+- [x] Document the user-facing global config surface (AC: 9)
+  - [x] Update `README.md` and any relevant docs with the global config location, supported keys, and examples.
+  - [x] Document that missing global config is allowed, global config is the lowest-priority layer, and this story does not yet include workspace/schema precedence.
+  - [x] Include at least one example showing how a user can set default count, default format, and a default context/save directory.
 
-- [ ] Add acceptance-focused BDD coverage where it adds clear value (AC: 5, 7, 9)
-  - [ ] Add or extend CLI feature coverage if command-boundary behavior is the clearest way to prove automatic loading and CLI-overrides-global precedence.
-  - [ ] Keep BDD scope focused on user-visible behavior; detailed config parsing edge cases should remain unit tests.
+- [x] Add acceptance-focused BDD coverage where it adds clear value (AC: 5, 7, 9)
+  - [x] Add or extend CLI feature coverage if command-boundary behavior is the clearest way to prove automatic loading and CLI-overrides-global precedence.
+  - [x] Keep BDD scope focused on user-visible behavior; detailed config parsing edge cases should remain unit tests.
 
 ## Dev Notes
 
@@ -180,12 +180,31 @@ GPT-5.4
 - Ultimate context engine analysis completed - comprehensive developer guide created.
 - Auto-selected the first backlog story from sprint tracking: `9-1-global-configuration-defaults`.
 - Marked Story 9.1 as `ready-for-dev` and advanced sprint tracking from `backlog` to `ready-for-dev` for this story while setting Epic 9 to `in-progress`.
+- Added a dedicated CLI config module with built-in defaults, home-directory global config resolution, explicit validation, and forward-compatible generator-default mappings.
+- Wired `td generate` to load global config automatically, apply global defaults only when flags are omitted, and preserve existing save-context/output behavior.
+- Added unit coverage for config loading and generate-command precedence, plus CLI acceptance coverage for automatic global loading and explicit override behavior.
+- Documented the global config contract in the README, including supported keys, examples, and the current precedence boundary.
+- Validation completed: full repository test suite passed (`654` tests), focused CLI tests passed (`36` tests), and CLI BDD coverage passed (`3` scenarios / `21` steps).
+- Targeted ESLint over Story 9.1 changed files passed cleanly; repository-wide `bun run lint` still reports pre-existing unrelated issues outside this story's scope.
 
 ### File List
 
 - `_bmad-output/implementation-artifacts/9-1-global-configuration-defaults.md`
 - `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- `README.md`
+- `packages/cli/features/saveGeneratedContext.feature`
+- `packages/cli/features/step_definitions/saveGeneratedContext.steps.ts`
+- `packages/cli/src/commands/generate.test.ts`
+- `packages/cli/src/commands/generate.ts`
+- `packages/cli/src/config/configLoader.test.ts`
+- `packages/cli/src/config/configLoader.ts`
+- `packages/cli/src/config/defaults.ts`
+- `packages/cli/src/config/index.ts`
+- `packages/cli/src/config/types.ts`
+- `packages/cli/src/index.ts`
 
 ### Change Log
 
 - 2026-03-08: Created Story 9.1 context artifact via create-story workflow and set sprint status to `ready-for-dev`.
+- 2026-03-08: Implemented global CLI defaults loading, validation, generate-command integration, tests, and README documentation for Story 9.1.
+- 2026-03-08: Marked Story 9.1 `review` after passing full tests, focused CLI coverage, BDD scenarios, and targeted lint validation for changed files.
