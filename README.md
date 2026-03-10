@@ -78,6 +78,8 @@ bun packages/cli/bin/td.ts generate schema.td
 
 The CLI automatically loads user-level defaults from `~/.tdconfig.json` when the file exists. If the file is missing, the CLI falls back to built-in defaults and continues without error.
 
+The CLI also discovers a workspace `.tdconfig.json` by searching from the current working directory up through parent directories. This workspace file is intended for version-controlled, team-shared defaults.
+
 Current supported keys:
 
 ```json
@@ -114,22 +116,59 @@ Built-in defaults today are:
 - `defaults.format`: `json`
 - `context.saveDirectory`: `./contexts`
 
-Precedence for Story 9.1 is intentionally narrow:
+Current precedence is:
 
 - Explicit CLI flags override global defaults.
+- Explicit CLI flags override workspace defaults.
+- Workspace defaults override global defaults.
 - Global defaults override built-in defaults.
-- Workspace and schema-level config precedence are not implemented yet.
+
+Workspace config supports the same keys as the global file:
+
+```json
+{
+	"defaults": {
+		"count": 12,
+		"format": "json"
+	},
+	"context": {
+		"saveDirectory": "./team-contexts"
+	},
+	"generatorDefaults": [
+		{
+			"fieldType": "string",
+			"generator": {
+				"name": "pick",
+				"parameters": [
+					{
+						"name": "array",
+						"value": ["staging", "production"]
+					}
+				]
+			}
+		}
+	]
+}
+```
+
+Workspace overrides are shallow by top-level section. If a workspace file provides `defaults`, that section replaces the global `defaults` section rather than deep-merging individual nested keys.
 
 Examples:
 
 ```bash
-# Use the global default count and format
+# Use workspace defaults when running inside a project that contains .tdconfig.json
 bun packages/cli/bin/td.ts generate schema.td
 
-# Override the global default count for one run
+# Discover workspace defaults from a nested directory inside the repository
+cd apps/qa/e2e
+bun packages/cli/bin/td.ts generate schema.td
+
+# Override the workspace or global default count for one run
 bun packages/cli/bin/td.ts generate schema.td --count 5
 
-# Use the global default save directory when persisting generated context
+# Use a team-shared workspace save directory when persisting generated context
+echo '{"context":{"saveDirectory":"./team-contexts"}}' > .tdconfig.json
+git add .tdconfig.json
 bun packages/cli/bin/td.ts generate schema.td --save-context baseline-users
 ```
 

@@ -28,13 +28,6 @@ import {
   AllValuesInRange,
   AllHaveLength,
   ErrorWasThrown,
-  RecordCount,
-  RecordsWithField,
-  RecordsWithFields,
-  AllRecordsHaveField,
-  StreamingSuccessful,
-  MemoryUsageAcceptable,
-  StreamSequencesIdentical,
 } from '../support/questions/RecordGenerationQuestions';
 import {
   WriteRecordsToJson,

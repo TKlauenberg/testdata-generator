@@ -564,6 +564,21 @@ function createMockProgram(
   };
 }
 
+async function expectAsyncError(action: () => Promise<void>, matcher: RegExp): Promise<void> {
+  try {
+    await action();
+  } catch (error: unknown) {
+    if (!(error instanceof Error)) {
+      throw error;
+    }
+
+    expect(error.message).toMatch(matcher);
+    return;
+  }
+
+  throw new Error(`Expected async action to fail with ${matcher.toString()}`);
+}
+
 describe('generate (streaming)', () => {
   describe('basic streaming behavior', () => {
     it('should yield exactly count records', async () => {
@@ -846,7 +861,7 @@ describe('generate (streaming)', () => {
         },
       ]);
 
-      expect(async () => {
+      await expectAsyncError(async () => {
         for await (const _record of generate(program, {
           count: 1,
           context: {
@@ -855,7 +870,7 @@ describe('generate (streaming)', () => {
         })) {
           // consume stream
         }
-      }).toThrow(/context collection 'users' is not available/i);
+      }, /context collection 'users' is not available/i);
     });
 
     it('throws clear runtime error when index is out of range', async () => {
@@ -872,7 +887,7 @@ describe('generate (streaming)', () => {
         },
       ]);
 
-      expect(async () => {
+      await expectAsyncError(async () => {
         for await (const _record of generate(program, {
           count: 1,
           context: {
@@ -881,7 +896,7 @@ describe('generate (streaming)', () => {
         })) {
           // consume stream
         }
-      }).toThrow(/out of range/i);
+      }, /out of range/i);
     });
 
     it('throws clear runtime error when selected field is missing', async () => {
@@ -898,7 +913,7 @@ describe('generate (streaming)', () => {
         },
       ]);
 
-      expect(async () => {
+      await expectAsyncError(async () => {
         for await (const _record of generate(program, {
           count: 1,
           context: {
@@ -907,7 +922,7 @@ describe('generate (streaming)', () => {
         })) {
           // consume stream
         }
-      }).toThrow(/field 'department' not found/i);
+      }, /field 'department' not found/i);
     });
   });
 
@@ -1050,6 +1065,40 @@ describe('generate (streaming)', () => {
       expect(records1).toEqual(records2);
     });
 
+    it('exhausts an exact integer range without failing on the final unseen value', async () => {
+      const program = createMockProgram([
+        {
+          name: 'User',
+          fields: [
+            {
+              name: 'id',
+              type: 'randomInt',
+              params: [
+                { name: 'min', value: 1 },
+                { name: 'max', value: 50 },
+              ],
+              isUnique: true,
+            },
+          ],
+        },
+      ]);
+
+      const records: Record<string, unknown>[] = [];
+      for await (const record of generate(program, { count: 50, seed: 20260309 })) {
+        records.push(record);
+      }
+
+      const ids = records.map((record) => record.id);
+      expect(ids).toHaveLength(50);
+      expect(new Set(ids).size).toBe(50);
+      if (!ids.every((id): id is number => typeof id === 'number')) {
+        throw new Error('Expected all generated ids to be numbers');
+      }
+
+      expect(Math.min(...ids)).toBe(1);
+      expect(Math.max(...ids)).toBe(50);
+    });
+
     it('fails with field-scoped guidance after exhausting uniqueness retries', async () => {
       const program = createMockProgram([
         {
@@ -1065,17 +1114,17 @@ describe('generate (streaming)', () => {
         },
       ]);
 
-      await expect(async () => {
+      await expectAsyncError(async () => {
         for await (const _record of generate(program, { count: 2, seed: 111 })) {
           // consume stream
         }
-      }).toThrow(/status/i);
+      }, /status/i);
 
-      await expect(async () => {
+      await expectAsyncError(async () => {
         for await (const _record of generate(program, { count: 2, seed: 111 })) {
           // consume stream
         }
-      }).toThrow(/increase.*variety|relax.*constraint/i);
+      }, /increase.*variety|relax.*constraint/i);
     });
 
     it('resets uniqueness tracking between separate generate() sessions', async () => {
@@ -1132,10 +1181,12 @@ describe('generate (streaming)', () => {
         records.push(record);
       }
 
-      const userRecord = records.find((record) => 'profile' in record) as
-        | Record<string, unknown>
-        | undefined;
+      const userRecord = records.find((record) => 'profile' in record);
       expect(userRecord).toBeDefined();
+      if (userRecord === undefined) {
+        throw new Error('Expected a generated user record with profile');
+      }
+
       const profile = userRecord?.profile as Record<string, unknown>;
       expect(typeof profile).toBe('object');
       expect(profile.bio).toBe('hello-world');
@@ -1190,11 +1241,11 @@ describe('generate (streaming)', () => {
 
       const stream = generate(program, { count: 1, seed: 42, maxRelationshipDepth: 1 });
 
-      await expect(async () => {
+      await expectAsyncError(async () => {
         for await (const _record of stream) {
           // consume
         }
-      }).toThrow(/depth exceeded max depth 1/i);
+      }, /depth exceeded max depth 1/i);
     });
   });
 
@@ -1313,23 +1364,23 @@ describe('generate (streaming)', () => {
         },
       ]);
 
-      await expect(async () => {
+      await expectAsyncError(async () => {
         for await (const _record of generate(program, { count: 2, seed: 77 })) {
           // consume stream
         }
-      }).toThrow(/Composite uniqueness constraint/);
+      }, /Composite uniqueness constraint/);
 
-      await expect(async () => {
+      await expectAsyncError(async () => {
         for await (const _record of generate(program, { count: 2, seed: 77 })) {
           // consume stream
         }
-      }).toThrow(/User\.email, User\.tenantId/);
+      }, /User\.email, User\.tenantId/);
 
-      await expect(async () => {
+      await expectAsyncError(async () => {
         for await (const _record of generate(program, { count: 2, seed: 77 })) {
           // consume stream
         }
-      }).toThrow(/100 attempts/);
+      }, /100 attempts/);
     });
 
     it('resets composite uniqueness tracking between separate generate() sessions', async () => {

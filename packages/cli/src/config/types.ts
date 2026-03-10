@@ -1,5 +1,8 @@
 import type { DefaultSpec } from '@testdata-ai/core';
 
+export type CliConfigSource = 'built-in' | 'global' | 'workspace';
+export type CliConfigSection = 'defaults' | 'context' | 'generatorDefaults';
+
 export type CliOutputFormat = 'json';
 
 export interface CliConfigDefaults {
@@ -32,8 +35,22 @@ export interface RawCliGlobalConfig {
   readonly generatorDefaults?: unknown;
 }
 
-export interface LoadedCliGlobalConfig {
+export interface CliConfigLayer<TSource extends CliConfigSource = CliConfigSource> {
   readonly path: string;
-  readonly source: 'built-in' | 'global';
+  readonly source: TSource;
   readonly config: CliGlobalConfig;
+  readonly providedSections: readonly CliConfigSection[];
+}
+
+export type LoadedCliGlobalConfig = CliConfigLayer<'built-in' | 'global'>;
+
+export type LoadedCliWorkspaceConfig = CliConfigLayer<'workspace'>;
+
+export interface LoadedEffectiveCliConfig {
+  readonly config: CliGlobalConfig;
+  readonly layers: {
+    readonly builtIn: CliConfigLayer<'built-in'>;
+    readonly global: LoadedCliGlobalConfig;
+    readonly workspace?: LoadedCliWorkspaceConfig;
+  };
 }

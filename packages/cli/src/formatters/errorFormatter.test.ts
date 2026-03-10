@@ -2,6 +2,10 @@ import { describe, test, expect } from 'bun:test';
 import { formatError, formatErrors } from './errorFormatter';
 import type { Diagnostic } from '@testdata-ai/core';
 
+function stripAnsiCodes(value: string): string {
+  return value.replace(new RegExp(`${String.fromCharCode(27)}\\[[0-9;]+m`, 'g'), '');
+}
+
 describe('errorFormatter', () => {
   describe('formatError()', () => {
     test('formats error with location and pointer', () => {
@@ -366,13 +370,13 @@ describe('errorFormatter', () => {
       const output1 = formatError(makeDiagnostic(1, 3), source);
       expect(output1).toContain('^^^');
       // Strip ANSI codes to check structure: the line should have format  "   | ^^^ test"
-      const stripped1 = output1.replace(/\u001B\[\d+m/g, ''); // Remove ANSI escape codes
+      const stripped1 = stripAnsiCodes(output1);
       expect(stripped1).toMatch(/\|\s+\^\^\^/); // Pipe followed by space(s) then carets
 
       // Column 5, length 2 - should have 4 leading spaces then ^^
       const output5 = formatError(makeDiagnostic(5, 2), source);
       expect(output5).toContain('^^');
-      const stripped5 = output5.replace(/\u001B\[\d+m/g, '');
+      const stripped5 = stripAnsiCodes(output5);
       // Should be: "   |     ^^ test" (4 spaces between pipe and ^^)
       expect(stripped5).toContain('|     ^^'); // Check exact spacing
     });

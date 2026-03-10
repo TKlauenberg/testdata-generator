@@ -266,7 +266,7 @@ export class RecordsWithFields {
   }
 
   public static check() {
-    return Question.about('records have all expected fields', (actor) => {
+    return Question.about('records have all expected fields', () => {
       // Stub implementation
       return true;
     });

@@ -31,6 +31,16 @@ async function createGlobalConfigHome(config: unknown): Promise<string> {
   return homeDirectory;
 }
 
+async function createWorkspaceConfigDirectory(config: unknown): Promise<string> {
+  const workspaceDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-cli-workspace-'));
+  await fs.writeFile(
+    path.join(workspaceDirectory, '.tdconfig.json'),
+    `${JSON.stringify(config, null, 2)}\n`,
+    'utf-8',
+  );
+  return workspaceDirectory;
+}
+
 describe('Generate Command - File Reading', () => {
   test('reads and generates from valid .td file', async () => {
     const proc = spawn([
@@ -326,6 +336,145 @@ describe('Generate Command - Generation Options', () => {
       expect(records).toHaveLength(2);
     } finally {
       await fs.rm(homeDirectory, { recursive: true, force: true });
+    }
+  });
+
+  test('uses workspace defaults discovered from a nested current directory', async () => {
+    const homeDirectory = await createGlobalConfigHome({
+      defaults: {
+        count: 5,
+        format: 'json',
+      },
+      context: {
+        saveDirectory: 'global-contexts',
+      },
+    });
+    const workspaceDirectory = await createWorkspaceConfigDirectory({
+      defaults: {
+        count: 2,
+        format: 'json',
+      },
+      context: {
+        saveDirectory: 'workspace-contexts',
+      },
+    });
+    const nestedDirectory = path.join(workspaceDirectory, 'nested', 'qa');
+    const schemaPath = path.join(nestedDirectory, 'seed-users.td');
+
+    await fs.mkdir(nestedDirectory, { recursive: true });
+    await fs.writeFile(
+      schemaPath,
+      [
+        'schema SeedUser {',
+        '  email: string generator=pick(array=["qa.one@example.com", "qa.two@example.com"])',
+        '}',
+        '',
+      ].join('\n'),
+      'utf-8',
+    );
+
+    try {
+      const proc = spawn([
+        'bun',
+        CLI_PATH,
+        'generate',
+        'seed-users.td',
+        '--save-context',
+        'workspace-users',
+      ], {
+        cwd: nestedDirectory,
+        env: {
+          ...process.env,
+          HOME: homeDirectory,
+        },
+      });
+
+      const output = await new Response(proc.stdout).text();
+      const records = parseJson<unknown>(output);
+
+      if (!isRecordArray(records)) {
+        throw new Error('Expected generated output to be a JSON array of records');
+      }
+
+      expect(records).toHaveLength(2);
+
+      const exists = await fs
+        .access(path.join(nestedDirectory, 'workspace-contexts', 'workspace-users.json'))
+        .then(() => true)
+        .catch(() => false);
+      expect(exists).toBe(true);
+    } finally {
+      await fs.rm(homeDirectory, { recursive: true, force: true });
+      await fs.rm(workspaceDirectory, { recursive: true, force: true });
+    }
+  });
+
+  test('keeps explicit flags higher priority than workspace defaults', async () => {
+    const homeDirectory = await createGlobalConfigHome({
+      defaults: {
+        count: 5,
+        format: 'json',
+      },
+    });
+    const workspaceDirectory = await createWorkspaceConfigDirectory({
+      defaults: {
+        count: 4,
+        format: 'json',
+      },
+      context: {
+        saveDirectory: 'workspace-contexts',
+      },
+    });
+    const schemaPath = path.join(workspaceDirectory, 'seed-users.td');
+
+    await fs.writeFile(
+      schemaPath,
+      [
+        'schema SeedUser {',
+        '  email: string generator=pick(array=["qa.one@example.com", "qa.two@example.com"])',
+        '}',
+        '',
+      ].join('\n'),
+      'utf-8',
+    );
+
+    try {
+      const proc = spawn([
+        'bun',
+        CLI_PATH,
+        'generate',
+        'seed-users.td',
+        '--count',
+        '1',
+        '--save-context',
+        'explicit-users',
+        '--save-context-dir',
+        'explicit-contexts',
+      ], {
+        cwd: workspaceDirectory,
+        env: {
+          ...process.env,
+          HOME: homeDirectory,
+        },
+      });
+
+      const output = await new Response(proc.stdout).text();
+      const records = parseJson<unknown>(output);
+
+      if (!isRecordArray(records)) {
+        throw new Error('Expected generated output to be a JSON array of records');
+      }
+
+      expect(records).toHaveLength(1);
+
+      const exists = await fs
+        .access(path.join(workspaceDirectory, 'explicit-contexts', 'explicit-users.json'))
+        .then(() => true)
+        .catch(() => false);
+      expect(exists).toBe(true);
+    } finally {
+      await fs.rm(homeDirectory, { recursive: true, force: true });
+      await fs.rm(workspaceDirectory, { recursive: true, force: true });
     }
   });
 

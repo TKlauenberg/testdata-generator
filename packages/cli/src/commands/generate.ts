@@ -11,7 +11,7 @@ import { generateData, saveAsContext, ValidationError } from '@testdata-ai/core'
 import type { Diagnostic, GenerateOptions } from '@testdata-ai/core';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { BUILT_IN_CLI_CONFIG, CliConfigError, loadGlobalConfig, validateOutputFormat } from '../config';
+import { BUILT_IN_CLI_CONFIG, CliConfigError, loadEffectiveConfig, validateOutputFormat } from '../config';
 import { formatErrors } from '../formatters';
 
 /**
@@ -39,25 +39,26 @@ export const generateCommand = new Command('generate')
   .argument('<file>', 'DSL schema file (.td)')
   .option(
     '-c, --count <number>',
-    `Number of records to generate (default: global config or built-in ${BUILT_IN_CLI_CONFIG.defaults.count})`,
+    `Number of records to generate (default: workspace config, global config, or built-in ${BUILT_IN_CLI_CONFIG.defaults.count})`,
   )
   .option(
     '-f, --format <format>',
-    `Output format (default: global config or built-in ${BUILT_IN_CLI_CONFIG.defaults.format})`,
+    `Output format (default: workspace config, global config, or built-in ${BUILT_IN_CLI_CONFIG.defaults.format})`,
   )
   .option('-o, --output <file>', 'Output file (default: stdout)')
   .option('-s, --seed <number>', 'Random seed for reproducibility')
   .option('--save-context <name>', 'Save generated records as reusable context')
   .option(
     '--save-context-dir <directory>',
-    `Directory for saved context files (default: global config or built-in ${BUILT_IN_CLI_CONFIG.context.saveDirectory})`,
+    `Directory for saved context files (default: workspace config, global config, or built-in ${BUILT_IN_CLI_CONFIG.context.saveDirectory})`,
   )
   .action(async (file: string, options: CommandOptions) => {
     try {
-      let globalConfig = BUILT_IN_CLI_CONFIG;
+      const workingDirectory = process.cwd();
+      let cliConfig = BUILT_IN_CLI_CONFIG;
       try {
-        const loadedGlobalConfig = await loadGlobalConfig();
-        globalConfig = loadedGlobalConfig.config;
+        const loadedConfig = await loadEffectiveConfig({ currentDirectory: workingDirectory });
+        cliConfig = loadedConfig.config;
       } catch (error: unknown) {
         if (error instanceof CliConfigError) {
           console.error(`Error: ${error.message}`);
@@ -67,24 +68,24 @@ export const generateCommand = new Command('generate')
         throw error;
       }
 
-      if (globalConfig.generatorDefaults.length > 0) {
+      if (cliConfig.generatorDefaults.length > 0) {
         console.error(
-          'Note: global config generatorDefaults are validated but not applied by td generate yet; application is planned in later Epic 9 stories.',
+          'Note: config generatorDefaults are validated but not applied by td generate yet; application is planned in later Epic 9 stories.',
         );
       }
 
       // Parse options
       const count = parsePositiveIntegerOption(
-        options.count ?? String(globalConfig.defaults.count),
+        options.count ?? String(cliConfig.defaults.count),
         '--count',
       );
       const format = validateOutputFormat(
-        options.format ?? globalConfig.defaults.format,
-        options.format === undefined ? 'global config defaults.format' : '--format',
+        options.format ?? cliConfig.defaults.format,
+        options.format === undefined ? 'effective config defaults.format' : '--format',
       );
       const seed = options.seed ? parseIntegerOption(options.seed, '--seed') : undefined;
 
-      const saveContextDirectory = options.saveContextDir ?? globalConfig.context.saveDirectory;
+      const saveContextDirectory = options.saveContextDir ?? cliConfig.context.saveDirectory;
 
       // Step 1: Read file
       let source: string;
@@ -164,11 +165,8 @@ export const generateCommand = new Command('generate')
 
         if (options.saveContext) {
           try {
-            const contextDirectory = path.resolve(
-              process.cwd(),
-              saveContextDirectory,
-            );
-            const sourcePattern = path.relative(process.cwd(), path.resolve(file));
+            const contextDirectory = path.resolve(workingDirectory, saveContextDirectory);
+            const sourcePattern = path.relative(workingDirectory, path.resolve(file));
 
             await saveAsContext(records, options.saveContext, [], {
               directory: contextDirectory,

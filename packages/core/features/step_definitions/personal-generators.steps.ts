@@ -536,7 +536,7 @@ Then(
     const generators = UseGenerators.as(actorCalled('QATester'));
     const records = generators.getSequence('records') as Record<string, unknown>[];
     const fullNames = records.map(
-      (r) => `${r.firstName} ${r.lastName}`,
+      (r) => `${String(r.firstName)} ${String(r.lastName)}`,
     );
     generators.storeSequence('fullNameDiversity', fullNames);
 

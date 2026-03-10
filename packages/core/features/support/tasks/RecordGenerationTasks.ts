@@ -191,7 +191,7 @@ export class CreateSchema {
   }
 
   public static forRecordType(recordType: string): Interaction {
-    return Interaction.where(`#actor creates schema for record type "${recordType}"`, (actor:  UsesAbilities) => {
+    return Interaction.where(`#actor creates schema for record type "${recordType}"`, (_actor: UsesAbilities) => {
       // Stub implementation
       throw new Error('forRecordType is not yet implemented');
     });
@@ -399,96 +399,95 @@ export class CreateProgramWithSchema {
       },
     );
 
-    // Add builder method for step definitions
-    (interaction as any).withFieldsFromTable = (dataTable: string[][]) => {
-      return Interaction.where(
-        `#actor creates program with schema "${schemaName}" with custom fields`,
-        (actor) => {
-          const ability = UseRecordGeneration.as(actor);
+    return Object.assign(interaction, {
+      withFieldsFromTable(dataTable: string[][]): Interaction {
+        return Interaction.where(
+          `#actor creates program with schema "${schemaName}" with custom fields`,
+          (actor) => {
+            const ability = UseRecordGeneration.as(actor);
 
-          const mockLocation: SourceLocation = {
-            file: 'test.td',
-            line: 1,
-            column: 1,
-            length: 10,
-          };
+            const mockLocation: SourceLocation = {
+              file: 'test.td',
+              line: 1,
+              column: 1,
+              length: 10,
+            };
 
-          const fieldNodes: FieldNode[] = dataTable.slice(1).map((row) => {
-            const name = row[0];
-            const type = row[1];
-            const params: { name: string; value: string | number }[] = [];
+            const fieldNodes: FieldNode[] = dataTable.slice(1).map((row) => {
+              const name = row[0];
+              const type = row[1];
+              const params: { name: string; value: string | number }[] = [];
 
-            for (let i = 2; i < row.length; i++) {
-              const headerRow = dataTable[0];
-              const paramName = headerRow[i];
-              if (paramName) {
-                const paramValue = row[i];
-                if (paramValue && paramValue.trim() !== '') {
-                  const numValue = parseFloat(paramValue);
-                  params.push({
-                    name: paramName,
-                    value: isNaN(numValue) ? paramValue : numValue,
-                  });
+              for (let i = 2; i < row.length; i++) {
+                const headerRow = dataTable[0];
+                const paramName = headerRow[i];
+                if (paramName) {
+                  const paramValue = row[i];
+                  if (paramValue && paramValue.trim() !== '') {
+                    const numValue = parseFloat(paramValue);
+                    params.push({
+                      name: paramName,
+                      value: isNaN(numValue) ? paramValue : numValue,
+                    });
+                  }
                 }
               }
-            }
 
-            return {
-              kind: 'field' as const,
-              name,
-              type,
-              generator: {
-                name: type,
-                parameters: params as GeneratorParameter[],
-              },
+              return {
+                kind: 'field' as const,
+                name,
+                type,
+                generator: {
+                  name: type,
+                  parameters: params as GeneratorParameter[],
+                },
+                location: mockLocation,
+              };
+            });
+
+            const schemaNode: SchemaNode = {
+              kind: 'schema',
+              name: schemaName,
+              fields: fieldNodes,
               location: mockLocation,
             };
-          });
 
-          const schemaNode: SchemaNode = {
-            kind: 'schema',
-            name: schemaName,
-            fields: fieldNodes,
-            location: mockLocation,
-          };
+            const validatedFields: ValidatedField[] = fieldNodes.map(
+              (fieldNode): ValidatedField => ({
+                node: fieldNode,
+                resolvedType: fieldNode.type,
+                resolvedGenerator: fieldNode.type,
+                templateReferences: [],
+              }),
+            );
 
-          const validatedFields: ValidatedField[] = fieldNodes.map(
-            (fieldNode): ValidatedField => ({
-              node: fieldNode,
-              resolvedType: fieldNode.type,
-              resolvedGenerator: fieldNode.type,
-              templateReferences: [],
-            })
-          );
+            const schema: ValidatedSchema = {
+              node: schemaNode,
+              fields: validatedFields,
+              dependencies: new Set(),
+              sortOrder: 0,
+            };
 
-          const schema: ValidatedSchema = {
-            node: schemaNode,
-            fields: validatedFields,
-            dependencies: new Set(),
-            sortOrder: 0,
-          };
+            const program: ValidatedProgram = {
+              ast: {
+                kind: 'program',
+                declarations: [schemaNode],
+                location: mockLocation,
+              },
+              symbolTable: new SymbolTable(),
+              schemas: new Map([[schemaName, schema]]),
+              metadata: {
+                analyzedAt: new Date(),
+                schemaCount: 1,
+                totalFields: fieldNodes.length,
+              },
+            };
 
-          const program: ValidatedProgram = {
-            ast: {
-              kind: 'program',
-              declarations: [schemaNode],
-              location: mockLocation,
-            },
-            symbolTable: new SymbolTable(),
-            schemas: new Map([[schemaName, schema]]),
-            metadata: {
-              analyzedAt: new Date(),
-              schemaCount: 1,
-              totalFields: fieldNodes.length,
-            },
-          };
-
-          ability.setProgram(program);
-        },
-      );
-    };
-
-    return interaction as InteractionWithBuilder;
+            ability.setProgram(program);
+          },
+        );
+      },
+    } satisfies InteractionWithBuilder);
   }
 
   public static withMultipleSchemas(count: number): Interaction {

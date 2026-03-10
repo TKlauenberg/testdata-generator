@@ -217,7 +217,7 @@ Then('all strings should contain only alphanumeric characters', async () => {
 });
 
 // Custom charset
-Given('{word} wants to generate strings with only letters', (actorName: string) => {
+Given('{word} wants to generate strings with only letters', (_actorName: string) => {
   // This is a Given step for context, no action needed
 });
 

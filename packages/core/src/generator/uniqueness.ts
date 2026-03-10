@@ -118,6 +118,15 @@ export class UniquenessTracker {
 
   private _seenCompositeValues: Map<string, Set<string>> = new Map();
 
+  public has(field: string, value: unknown): boolean {
+    const seenForField = this._seenFieldValues.get(field);
+    if (!seenForField) {
+      return false;
+    }
+
+    return seenForField.has(stableSerialize(value));
+  }
+
   public track(field: string, value: unknown): boolean {
     const seenForField = this._seenFieldValues.get(field) ?? new Set<string>();
     const serializedValue = stableSerialize(value);

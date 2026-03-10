@@ -66,3 +66,41 @@ Feature: Save generated data as reusable context through the CLI
     Then the CLI exit code should be 0
     And stdout should contain 2 generated records
     And the saved context file "explicit-contexts/generated-users.json" should exist
+
+  Scenario: Workspace config overrides global defaults from a nested working directory
+    Given a temporary CLI workspace
+    And a global CLI config file with contents:
+      """
+      {
+        "defaults": {
+          "count": 5,
+          "format": "json"
+        },
+        "context": {
+          "saveDirectory": "global-contexts"
+        }
+      }
+      """
+    And a workspace CLI config file with contents:
+      """
+      {
+        "defaults": {
+          "count": 2,
+          "format": "json"
+        },
+        "context": {
+          "saveDirectory": "workspace-contexts"
+        }
+      }
+      """
+    And a nested working directory "nested/team"
+    And a DSL schema file "nested/team/seed-users.td" with contents:
+      """
+      schema SeedUser {
+        email: string generator=pick(array=["qa.one@example.com", "qa.two@example.com", "qa.three@example.com"])
+      }
+      """
+    When the tester runs "td generate seed-users.td --save-context generated-users"
+    Then the CLI exit code should be 0
+    And stdout should contain 2 generated records
+    And the saved context file "nested/team/workspace-contexts/generated-users.json" should exist

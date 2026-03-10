@@ -25,6 +25,7 @@ import {
 import type { ContextCollections } from '../context/types';
 
 const MAX_UNIQUENESS_ATTEMPTS = 100;
+const MAX_ENUMERABLE_UNIQUE_CANDIDATES = 10_000;
 
 /**
  * Generated record is a plain JavaScript object with field names as keys.
@@ -236,8 +237,17 @@ export function sortFieldsByDependency(
   const sorted: ValidatedField[] = [];
 
   while (queue.length > 0) {
-    const name = queue.shift()!;
-    sorted.push(byName.get(name)!);
+    const name = queue.shift();
+    if (name === undefined) {
+      break;
+    }
+
+    const field = byName.get(name);
+    if (field === undefined) {
+      throw new Error(`Invalid field lookup during dependency sorting for '${name}'`);
+    }
+
+    sorted.push(field);
     for (const dep of (dependents.get(name) ?? [])) {
       const newDegree = (inDegree.get(dep) ?? 1) - 1;
       inDegree.set(dep, newDegree);
@@ -385,6 +395,28 @@ function generateUniqueFieldValue(
   sessionContext: GenerationSessionContext,
   uniquenessScope: string,
 ): unknown {
+  const finiteCandidates = enumerateFiniteUniqueCandidates(field);
+  if (finiteCandidates !== undefined) {
+    const remainingCandidates = finiteCandidates.filter(
+      (candidate) => !sessionContext.uniquenessTracker.has(uniquenessScope, candidate),
+    );
+
+    if (remainingCandidates.length === 0) {
+      throw new Error(
+        `Uniqueness constraint failed for field '${uniquenessScope}' after ${MAX_UNIQUENESS_ATTEMPTS} attempts. ` +
+          `Increase generator variety (wider ranges/options) or relax uniqueness constraints.`,
+      );
+    }
+
+    const candidateIndex = rng.nextIntRange(0, remainingCandidates.length - 1);
+    const candidate = remainingCandidates[candidateIndex];
+
+    const accepted = sessionContext.uniquenessTracker.track(uniquenessScope, candidate);
+    if (accepted) {
+      return candidate;
+    }
+  }
+
   for (let attempt = 1; attempt <= MAX_UNIQUENESS_ATTEMPTS; attempt++) {
     const candidate = generateFieldValue(field, rng, context, relationshipContext, sessionContext);
     const accepted = sessionContext.uniquenessTracker.track(uniquenessScope, candidate);
@@ -397,6 +429,67 @@ function generateUniqueFieldValue(
     `Uniqueness constraint failed for field '${uniquenessScope}' after ${MAX_UNIQUENESS_ATTEMPTS} attempts. ` +
       `Increase generator variety (wider ranges/options) or relax uniqueness constraints.`,
   );
+}
+
+function enumerateFiniteUniqueCandidates(field: ValidatedField): readonly unknown[] | undefined {
+  if (field.templateReferences.length > 0) {
+    return undefined;
+  }
+
+  const generatorType = field.resolvedGenerator ?? field.resolvedType;
+  const params = field.node.generator?.parameters ?? [];
+
+  switch (generatorType) {
+    case 'int':
+    case 'integer':
+    case 'randomInt':
+      return enumerateIntegerCandidates(params);
+    case 'pick':
+      return enumeratePickCandidates(params);
+    default:
+      return undefined;
+  }
+}
+
+function enumerateIntegerCandidates(params: readonly GeneratorParameter[]): readonly number[] | undefined {
+  const minValue = findParam(params, 'min')?.value ?? 0;
+  const maxValue = findParam(params, 'max')?.value ?? 100;
+
+  if (
+    typeof minValue !== 'number'
+    || typeof maxValue !== 'number'
+    || !Number.isInteger(minValue)
+    || !Number.isInteger(maxValue)
+    || minValue > maxValue
+  ) {
+    return undefined;
+  }
+
+  const min: number = minValue;
+  const max: number = maxValue;
+
+  const candidateCount = max - min + 1;
+  if (candidateCount > MAX_ENUMERABLE_UNIQUE_CANDIDATES) {
+    return undefined;
+  }
+
+  return Array.from({ length: candidateCount }, (_unused, index) => min + index);
+}
+
+function enumeratePickCandidates(params: readonly GeneratorParameter[]): readonly unknown[] | undefined {
+  const arrayValue = findParam(params, 'array')?.value ?? findParam(params, 'values')?.value;
+  if (!Array.isArray(arrayValue)) {
+    return undefined;
+  }
+
+  const uniqueCandidates: unknown[] = [];
+  for (const candidate of arrayValue) {
+    if (!uniqueCandidates.some((existingCandidate) => Object.is(existingCandidate, candidate))) {
+      uniqueCandidates.push(candidate);
+    }
+  }
+
+  return uniqueCandidates;
 }
 
 function generateRelatedRecord(

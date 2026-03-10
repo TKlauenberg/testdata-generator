@@ -4,7 +4,7 @@
 
 import { Given, When, Then } from '@cucumber/cucumber';
 import { actorCalled } from '@serenity-js/core';
-import { Ensure, equals, isGreaterThan, not, isPresent, or, isFalse, isTrue } from '@serenity-js/assertions';
+import { Ensure, equals, isGreaterThan, not, isPresent, isTrue } from '@serenity-js/assertions';
 import {
   StoreDSLSource,
   GenerateRecordsUsingPublicAPI,
@@ -201,12 +201,12 @@ Then('all {int} records should be generated successfully', async (count: number,
   await actorCalled(actor).attemptsTo(Ensure.that(GeneratedRecordsCount(), equals(count)));
 });
 
-Then('memory usage should remain reasonable', async ({ actor }: { actor: string }) => {
+Then('memory usage should remain reasonable', async ({ actor: _actor }: { actor: string }) => {
   // Memory is tracked automatically during generation
   // This step is declarative/documentation only
 });
 
-Then('the process should not run out of memory', async ({ actor }: { actor: string }) => {
+Then('the process should not run out of memory', async ({ actor: _actor }: { actor: string }) => {
   // If we reach this step, we didn't run out of memory
   // Otherwise the test would have crashed
 });

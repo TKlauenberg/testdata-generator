@@ -1,15 +1,21 @@
 import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
 import type { DefaultSpec, LiteralValue } from '@testdata-ai/core';
-import { cloneBuiltInCliConfig, resolveGlobalConfigPath } from './defaults';
+import { cloneBuiltInCliConfig, GLOBAL_CONFIG_FILE_NAME, resolveGlobalConfigPath } from './defaults';
 import type {
+  CliConfigLayer,
   CliConfigDefaults,
+  CliConfigSection,
   CliGlobalConfig,
   CliOutputFormat,
+  LoadedEffectiveCliConfig,
   LoadedCliGlobalConfig,
+  LoadedCliWorkspaceConfig,
   RawCliGlobalConfig,
 } from './types';
 
 const SUPPORTED_OUTPUT_FORMATS: readonly CliOutputFormat[] = ['json'];
+const CONFIG_SECTIONS: readonly CliConfigSection[] = ['defaults', 'context', 'generatorDefaults'];
 
 export class CliConfigError extends Error {
   readonly exitCode: number;
@@ -41,6 +47,7 @@ export async function loadGlobalConfig(
         path: configPath,
         source: 'built-in',
         config: cloneBuiltInCliConfig(),
+        providedSections: [],
       };
     }
 
@@ -66,7 +73,75 @@ export async function loadGlobalConfig(
   return {
     path: configPath,
     source: 'global',
-    config: normalizeGlobalConfig(parsed, configPath),
+    ...normalizeCliConfig(parsed, configPath, 'global'),
+  };
+}
+
+export async function findWorkspaceConfigPath(
+  options: { readonly currentDirectory?: string } = {},
+): Promise<string | undefined> {
+  let currentDirectory: string;
+  try {
+    currentDirectory = path.resolve(options.currentDirectory ?? process.cwd());
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new CliConfigError(`Error resolving workspace config search path: ${message}`, 3);
+  }
+
+  let searchDirectory = currentDirectory;
+  while (true) {
+    const configPath = path.join(searchDirectory, GLOBAL_CONFIG_FILE_NAME);
+
+    try {
+      const stats = await fs.stat(configPath);
+      if (stats.isFile()) {
+        return configPath;
+      }
+    } catch (error: unknown) {
+      if (!isNodeError(error) || (error.code !== 'ENOENT' && error.code !== 'ENOTDIR')) {
+        if (isNodeError(error) && error.code === 'EACCES') {
+          throw new CliConfigError(`Permission denied discovering workspace config '${configPath}'`, 3);
+        }
+
+        const message = error instanceof Error ? error.message : String(error);
+        throw new CliConfigError(`Error discovering workspace config '${configPath}': ${message}`, 3);
+      }
+    }
+
+    const parentDirectory = path.dirname(searchDirectory);
+    if (parentDirectory === searchDirectory) {
+      return undefined;
+    }
+
+    searchDirectory = parentDirectory;
+  }
+}
+
+export async function loadWorkspaceConfig(
+  options: { readonly currentDirectory?: string } = {},
+): Promise<LoadedCliWorkspaceConfig | undefined> {
+  const configPath = await findWorkspaceConfigPath(options);
+  if (configPath === undefined) {
+    return undefined;
+  }
+
+  return loadNamedConfig(configPath, 'workspace');
+}
+
+export async function loadEffectiveConfig(
+  options: { readonly homeDirectory?: string; readonly currentDirectory?: string } = {},
+): Promise<LoadedEffectiveCliConfig> {
+  const builtIn = createBuiltInLayer();
+  const global = await loadGlobalConfig({ homeDirectory: options.homeDirectory });
+  const workspace = await loadWorkspaceConfig({ currentDirectory: options.currentDirectory });
+
+  return {
+    config: composeEffectiveConfig(global, workspace),
+    layers: {
+      builtIn,
+      global,
+      workspace,
+    },
   };
 }
 
@@ -81,33 +156,156 @@ export function validateOutputFormat(format: string, source: string): CliOutputF
   return format as CliOutputFormat;
 }
 
-function normalizeGlobalConfig(rawConfig: unknown, configPath: string): CliGlobalConfig {
+function normalizeCliConfig(
+  rawConfig: unknown,
+  configPath: string,
+  configLabel: 'global' | 'workspace',
+): Pick<CliConfigLayer, 'config' | 'providedSections'> {
   if (!isRecord(rawConfig)) {
     throw new CliConfigError(
-      `Invalid global config '${configPath}': expected a JSON object at the top level`,
+      `Invalid ${configLabel} config '${configPath}': expected a JSON object at the top level`,
       1,
     );
   }
 
-  const rawDefaults = readNestedRecord(rawConfig.defaults, `${configPath} defaults`);
-  const rawContext = readNestedRecord(rawConfig.context, `${configPath} context`);
   const builtInConfig = cloneBuiltInCliConfig();
+  const providedSections: CliConfigSection[] = [];
 
-  const defaults: CliConfigDefaults = {
-    count: readPositiveInteger(rawDefaults.count, 'defaults.count', builtInConfig.defaults.count),
-    format: readOutputFormat(rawDefaults.format, 'defaults.format', builtInConfig.defaults.format),
-  };
+  const defaults: CliConfigDefaults = rawConfig.defaults === undefined
+    ? builtInConfig.defaults
+    : (() => {
+      providedSections.push('defaults');
+      const rawDefaults = readNestedRecord(rawConfig.defaults, `${configPath} defaults`);
+      return {
+        count: readPositiveInteger(rawDefaults.count, 'defaults.count', builtInConfig.defaults.count),
+        format: readOutputFormat(rawDefaults.format, 'defaults.format', builtInConfig.defaults.format),
+      };
+    })();
+
+  const context = rawConfig.context === undefined
+    ? builtInConfig.context
+    : (() => {
+      providedSections.push('context');
+      const rawContext = readNestedRecord(rawConfig.context, `${configPath} context`);
+      return {
+        saveDirectory: readNonEmptyString(
+          rawContext.saveDirectory,
+          'context.saveDirectory',
+          builtInConfig.context.saveDirectory,
+        ),
+      };
+    })();
+
+  const generatorDefaults = rawConfig.generatorDefaults === undefined
+    ? builtInConfig.generatorDefaults
+    : (() => {
+      providedSections.push('generatorDefaults');
+      return readGeneratorDefaults(rawConfig.generatorDefaults, 'generatorDefaults');
+    })();
 
   return {
-    defaults,
-    context: {
-      saveDirectory: readNonEmptyString(
-        rawContext.saveDirectory,
-        'context.saveDirectory',
-        builtInConfig.context.saveDirectory,
-      ),
+    config: {
+      defaults,
+      context,
+      generatorDefaults,
     },
-    generatorDefaults: readGeneratorDefaults(rawConfig.generatorDefaults, 'generatorDefaults'),
+    providedSections,
+  };
+}
+
+async function loadNamedConfig(
+  configPath: string,
+  configLabel: 'global',
+): Promise<CliConfigLayer<'global'>>;
+async function loadNamedConfig(
+  configPath: string,
+  configLabel: 'workspace',
+): Promise<LoadedCliWorkspaceConfig>;
+async function loadNamedConfig(
+  configPath: string,
+  configLabel: 'global' | 'workspace',
+): Promise<LoadedCliGlobalConfig | LoadedCliWorkspaceConfig> {
+  let rawContent: string;
+  try {
+    rawContent = await fs.readFile(configPath, 'utf-8');
+  } catch (error: unknown) {
+    if (isNodeError(error) && error.code === 'EACCES') {
+      throw new CliConfigError(`Permission denied reading ${configLabel} config '${configPath}'`, 3);
+    }
+
+    const message = error instanceof Error ? error.message : String(error);
+    throw new CliConfigError(`Error reading ${configLabel} config '${configPath}': ${message}`, 3);
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(rawContent) as RawCliGlobalConfig;
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new CliConfigError(
+      `Invalid ${configLabel} config '${configPath}': file must contain valid JSON (${message})`,
+      1,
+    );
+  }
+
+  return {
+    path: configPath,
+    source: configLabel,
+    ...normalizeCliConfig(parsed, configPath, configLabel),
+  };
+}
+
+function composeEffectiveConfig(
+  globalConfig: LoadedCliGlobalConfig,
+  workspaceConfig?: LoadedCliWorkspaceConfig,
+): CliGlobalConfig {
+  let effective = cloneBuiltInCliConfig();
+  effective = applyLayer(effective, globalConfig);
+
+  if (workspaceConfig !== undefined) {
+    effective = applyLayer(effective, workspaceConfig);
+  }
+
+  return effective;
+}
+
+function applyLayer(baseConfig: CliGlobalConfig, layer: Pick<CliConfigLayer, 'config' | 'providedSections'>): CliGlobalConfig {
+  let nextConfig = baseConfig;
+
+  if (layer.providedSections.includes('defaults')) {
+    nextConfig = {
+      ...nextConfig,
+      defaults: {
+        ...layer.config.defaults,
+      },
+    };
+  }
+
+  if (layer.providedSections.includes('context')) {
+    nextConfig = {
+      ...nextConfig,
+      context: {
+        ...layer.config.context,
+      },
+    };
+  }
+
+  if (layer.providedSections.includes('generatorDefaults')) {
+    nextConfig = {
+      ...nextConfig,
+      generatorDefaults: [...layer.config.generatorDefaults],
+    };
+  }
+
+  return nextConfig;
+}
+
+function createBuiltInLayer(): CliConfigLayer<'built-in'> {
+  return {
+    path: '<built-in>',
+    source: 'built-in',
+    config: cloneBuiltInCliConfig(),
+    providedSections: CONFIG_SECTIONS,
   };
 }
 

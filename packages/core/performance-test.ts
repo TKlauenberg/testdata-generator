@@ -1,6 +1,6 @@
 /**
  * Performance Validation Script
- * 
+ *
  * Validates NFR1: Generate 1000 records in under 60 seconds
  * Validates that 100k records work without memory issues
  */
@@ -22,7 +22,7 @@ console.log('================================================\n');
 const start1 = Date.now();
 let count1 = 0;
 
-for await (const record of generateData(schema, { count: 1000, seed: 42 })) {
+for await (const _record of generateData(schema, { count: 1000, seed: 42 })) {
   count1++;
 }
 
@@ -45,9 +45,9 @@ const memBefore = process.memoryUsage().heapUsed / 1024 / 1024;
 const start2 = Date.now();
 let count2 = 0;
 
-for await (const record of generateData(schema, { count: 100000, seed: 99 })) {
+for await (const _record of generateData(schema, { count: 100000, seed: 99 })) {
   count2++;
-  
+
   // Log progress
   if (count2 % 10000 === 0) {
     const memCurrent = process.memoryUsage().heapUsed / 1024 / 1024;

@@ -1,11 +1,12 @@
 import { After, Given, Then, When } from '@cucumber/cucumber';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import * as path from 'node:path';
 
 interface CliBddState {
   workspaceDir?: string;
   homeDir?: string;
+  commandDir?: string;
   exitCode?: number;
   stdout?: string;
   stderr?: string;
@@ -52,13 +53,24 @@ Given('a temporary CLI workspace', async () => {
 
 Given('a DSL schema file {string} with contents:', async (fileName: string, contents: string) => {
   const filePath = path.join(requireWorkspaceDir(), fileName);
+  await mkdir(path.dirname(filePath), { recursive: true });
   await writeFile(filePath, `${contents.trim()}\n`, 'utf-8');
 });
 
 Given('a global CLI config file with contents:', async (contents: string) => {
   const workspaceDir = requireWorkspaceDir();
   state.homeDir = path.join(workspaceDir, 'home');
+  await mkdir(state.homeDir, { recursive: true });
   await Bun.write(path.join(state.homeDir, '.tdconfig.json'), `${contents.trim()}\n`);
+});
+
+Given('a workspace CLI config file with contents:', async (contents: string) => {
+  await Bun.write(path.join(requireWorkspaceDir(), '.tdconfig.json'), `${contents.trim()}\n`);
+});
+
+Given('a nested working directory {string}', async (relativePath: string) => {
+  state.commandDir = path.join(requireWorkspaceDir(), relativePath);
+  await mkdir(state.commandDir, { recursive: true });
 });
 
 When('the tester runs {string}', async (command: string) => {
@@ -68,7 +80,7 @@ When('the tester runs {string}', async (command: string) => {
   }
 
   const proc = Bun.spawn(['bun', CLI_PATH, ...args.slice(1)], {
-    cwd: requireWorkspaceDir(),
+    cwd: state.commandDir ?? requireWorkspaceDir(),
     env: {
       ...process.env,
       HOME: state.homeDir ?? process.env.HOME,
@@ -141,6 +153,7 @@ After(async () => {
 
   state.workspaceDir = undefined;
   state.homeDir = undefined;
+  state.commandDir = undefined;
   state.exitCode = undefined;
   state.stdout = undefined;
   state.stderr = undefined;
