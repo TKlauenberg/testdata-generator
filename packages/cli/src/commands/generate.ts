@@ -68,12 +68,6 @@ export const generateCommand = new Command('generate')
         throw error;
       }
 
-      if (cliConfig.generatorDefaults.length > 0) {
-        console.error(
-          'Note: config generatorDefaults are validated but not applied by td generate yet; application is planned in later Epic 9 stories.',
-        );
-      }
-
       // Parse options
       const count = parsePositiveIntegerOption(
         options.count ?? String(cliConfig.defaults.count),
@@ -120,7 +114,10 @@ export const generateCommand = new Command('generate')
         let recordCount = 0;
         const showProgress = count > PROGRESS_THRESHOLD;
 
-        for await (const record of generateData(source, genOptions)) {
+        for await (const record of generateData(source, {
+          ...genOptions,
+          defaultGenerators: cliConfig.generatorDefaults,
+        })) {
           records.push(record);
           recordCount++;
 

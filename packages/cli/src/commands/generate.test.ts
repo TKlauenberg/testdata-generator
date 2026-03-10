@@ -478,6 +478,130 @@ describe('Generate Command - Generation Options', () => {
     }
   });
 
+  test('applies workspace generator defaults to fields without explicit generators', async () => {
+    const homeDirectory = await createGlobalConfigHome({});
+    const workspaceDirectory = await createWorkspaceConfigDirectory({
+      generatorDefaults: [
+        {
+          fieldType: 'string',
+          generator: {
+            name: 'pick',
+            parameters: [
+              {
+                name: 'array',
+                value: ['workspace@example.com'],
+              },
+            ],
+          },
+        },
+      ],
+    });
+    const schemaPath = path.join(workspaceDirectory, 'seed-users.td');
+
+    await fs.writeFile(
+      schemaPath,
+      [
+        'schema SeedUser {',
+        '  contact: string',
+        '}',
+        '',
+      ].join('\n'),
+      'utf-8',
+    );
+
+    try {
+      const proc = spawn([
+        'bun',
+        CLI_PATH,
+        'generate',
+        'seed-users.td',
+        '--count',
+        '1',
+      ], {
+        cwd: workspaceDirectory,
+        env: {
+          ...process.env,
+          HOME: homeDirectory,
+        },
+      });
+
+      const output = await new Response(proc.stdout).text();
+      const records = parseJson<unknown>(output);
+
+      if (!isRecordArray(records)) {
+        throw new Error('Expected generated output to be a JSON array of records');
+      }
+
+      expect(records).toHaveLength(1);
+      expect(records[0]?.contact).toBe('workspace@example.com');
+    } finally {
+      await fs.rm(homeDirectory, { recursive: true, force: true });
+      await fs.rm(workspaceDirectory, { recursive: true, force: true });
+    }
+  });
+
+  test('does not override explicit field generators with workspace generator defaults', async () => {
+    const homeDirectory = await createGlobalConfigHome({});
+    const workspaceDirectory = await createWorkspaceConfigDirectory({
+      generatorDefaults: [
+        {
+          fieldType: 'string',
+          generator: {
+            name: 'pick',
+            parameters: [
+              {
+                name: 'array',
+                value: ['workspace@example.com'],
+              },
+            ],
+          },
+        },
+      ],
+    });
+    const schemaPath = path.join(workspaceDirectory, 'seed-users.td');
+
+    await fs.writeFile(
+      schemaPath,
+      [
+        'schema SeedUser {',
+        '  contact: string generator=pick(array=["schema@example.com"])',
+        '}',
+        '',
+      ].join('\n'),
+      'utf-8',
+    );
+
+    try {
+      const proc = spawn([
+        'bun',
+        CLI_PATH,
+        'generate',
+        'seed-users.td',
+        '--count',
+        '1',
+      ], {
+        cwd: workspaceDirectory,
+        env: {
+          ...process.env,
+          HOME: homeDirectory,
+        },
+      });
+
+      const output = await new Response(proc.stdout).text();
+      const records = parseJson<unknown>(output);
+
+      if (!isRecordArray(records)) {
+        throw new Error('Expected generated output to be a JSON array of records');
+      }
+
+      expect(records).toHaveLength(1);
+      expect(records[0]?.contact).toBe('schema@example.com');
+    } finally {
+      await fs.rm(homeDirectory, { recursive: true, force: true });
+      await fs.rm(workspaceDirectory, { recursive: true, force: true });
+    }
+  });
+
   test('fails with exit code 1 when global config JSON is invalid', async () => {
     const homeDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-cli-home-'));
     await fs.writeFile(path.join(homeDirectory, '.tdconfig.json'), '{"defaults":', 'utf-8');

@@ -231,6 +231,34 @@ describe('loadEffectiveConfig', () => {
     expect(loaded.config).toEqual(BUILT_IN_CLI_CONFIG);
   });
 
+  test('does not treat the user-level global config file as a workspace config', async () => {
+    const homeDirectory = await createHomeDirectory();
+    const nestedDirectory = path.join(homeDirectory, 'project', 'nested');
+
+    await fs.mkdir(nestedDirectory, { recursive: true });
+    await writeGlobalConfig(homeDirectory, {
+      defaults: {
+        count: 7,
+        format: 'json',
+      },
+    });
+
+    const loaded = await loadEffectiveConfig({
+      homeDirectory,
+      currentDirectory: nestedDirectory,
+    });
+
+    expect(loaded.layers.global).toMatchObject({
+      source: 'global',
+      path: path.join(homeDirectory, GLOBAL_CONFIG_FILE_NAME),
+    });
+    expect(loaded.layers.workspace).toBeUndefined();
+    expect(loaded.config.defaults).toEqual({
+      count: 7,
+      format: 'json',
+    });
+  });
+
   test('composes workspace over global over built-in defaults', async () => {
     const homeDirectory = await createHomeDirectory();
     const workspaceDirectory = await createWorkspaceDirectory();

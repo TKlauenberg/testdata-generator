@@ -14,9 +14,11 @@ import { analyze } from './analyzer/analyzer';
 import type { Result } from './common/result';
 import type { Diagnostic } from './common/diagnostic';
 import type { ValidatedProgram } from './analyzer/types';
+import type { DefaultSpec, GeneratorSpec, LiteralValue, Program } from './parser/ast';
 
 export interface ValidationOptions {
   readonly availableContextCollections?: readonly string[];
+  readonly defaultGenerators?: readonly DefaultSpec[];
 }
 
 /**
@@ -74,8 +76,10 @@ export function validateSchema(
     };
   }
 
+  const program = applyConfiguredGeneratorDefaults(parseResult.value, options.defaultGenerators ?? []);
+
   // Phase 3: Semantic Analysis
-  const analysisResult = analyze(parseResult.value, {
+  const analysisResult = analyze(program, {
     availableContextCollections: options.availableContextCollections,
   });
 
@@ -91,6 +95,96 @@ export function validateSchema(
     ok: true,
     value: analysisResult.value,
   };
+}
+
+function applyConfiguredGeneratorDefaults(
+  program: Program,
+  generatorDefaults: readonly DefaultSpec[],
+): Program {
+  if (generatorDefaults.length === 0) {
+    return program;
+  }
+
+  const generatorByFieldType = new Map<string, GeneratorSpec>();
+  for (const generatorDefault of generatorDefaults) {
+    generatorByFieldType.set(generatorDefault.fieldType, cloneGeneratorSpec(generatorDefault.generator));
+  }
+
+  let declarationsChanged = false;
+  const declarations = program.declarations.map((declaration) => {
+    if (declaration.kind !== 'schema') {
+      return declaration;
+    }
+
+    let fieldsChanged = false;
+    const fields = declaration.fields.map((field) => {
+      if (field.generator !== undefined || isSchemaReferenceType(field.type)) {
+        return field;
+      }
+
+      const configuredGenerator = generatorByFieldType.get(field.type);
+      if (configuredGenerator === undefined) {
+        return field;
+      }
+
+      fieldsChanged = true;
+      return {
+        ...field,
+        generator: cloneGeneratorSpec(configuredGenerator),
+      };
+    });
+
+    if (!fieldsChanged) {
+      return declaration;
+    }
+
+    declarationsChanged = true;
+    return {
+      ...declaration,
+      fields,
+    };
+  });
+
+  if (!declarationsChanged) {
+    return program;
+  }
+
+  return {
+    ...program,
+    declarations,
+  };
+}
+
+function isSchemaReferenceType(type: string): boolean {
+  if (type.startsWith('@schema:')) {
+    return true;
+  }
+
+  return /^[A-Z]/.test(type);
+}
+
+function cloneGeneratorSpec(generator: GeneratorSpec): GeneratorSpec {
+  return {
+    name: generator.name,
+    parameters: generator.parameters?.map((parameter) => ({
+      name: parameter.name,
+      value: cloneLiteralValue(parameter.value),
+    })),
+  };
+}
+
+function cloneLiteralValue(value: LiteralValue): LiteralValue {
+  if (Array.isArray(value)) {
+    return value.map((item): LiteralValue => cloneLiteralValue(item));
+  }
+
+  if (value !== null && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, entryValue]) => [key, cloneLiteralValue(entryValue)]),
+    ) as LiteralValue;
+  }
+
+  return value;
 }
 
 /**

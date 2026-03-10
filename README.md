@@ -108,7 +108,7 @@ Current supported keys:
 }
 ```
 
-`generatorDefaults` are parsed and validated in Story 9.1 for forward compatibility. Runtime application of these mappings is introduced by later Epic 9 stories.
+`generatorDefaults` are parsed, validated, and applied to fields that do not define an explicit generator. Field-level generators remain higher priority than config-provided mappings.
 
 Built-in defaults today are:
 

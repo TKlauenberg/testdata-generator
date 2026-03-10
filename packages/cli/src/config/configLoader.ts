@@ -78,7 +78,10 @@ export async function loadGlobalConfig(
 }
 
 export async function findWorkspaceConfigPath(
-  options: { readonly currentDirectory?: string } = {},
+  options: {
+    readonly currentDirectory?: string;
+    readonly excludedConfigPaths?: readonly string[];
+  } = {},
 ): Promise<string | undefined> {
   let currentDirectory: string;
   try {
@@ -88,13 +91,21 @@ export async function findWorkspaceConfigPath(
     throw new CliConfigError(`Error resolving workspace config search path: ${message}`, 3);
   }
 
+  let excludedConfigPaths: ReadonlySet<string>;
+  try {
+    excludedConfigPaths = new Set((options.excludedConfigPaths ?? []).map((configPath) => path.resolve(configPath)));
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new CliConfigError(`Error resolving workspace config exclusions: ${message}`, 3);
+  }
+
   let searchDirectory = currentDirectory;
   while (true) {
     const configPath = path.join(searchDirectory, GLOBAL_CONFIG_FILE_NAME);
 
     try {
       const stats = await fs.stat(configPath);
-      if (stats.isFile()) {
+      if (stats.isFile() && !excludedConfigPaths.has(configPath)) {
         return configPath;
       }
     } catch (error: unknown) {
@@ -118,7 +129,10 @@ export async function findWorkspaceConfigPath(
 }
 
 export async function loadWorkspaceConfig(
-  options: { readonly currentDirectory?: string } = {},
+  options: {
+    readonly currentDirectory?: string;
+    readonly excludedConfigPaths?: readonly string[];
+  } = {},
 ): Promise<LoadedCliWorkspaceConfig | undefined> {
   const configPath = await findWorkspaceConfigPath(options);
   if (configPath === undefined) {
@@ -133,7 +147,10 @@ export async function loadEffectiveConfig(
 ): Promise<LoadedEffectiveCliConfig> {
   const builtIn = createBuiltInLayer();
   const global = await loadGlobalConfig({ homeDirectory: options.homeDirectory });
-  const workspace = await loadWorkspaceConfig({ currentDirectory: options.currentDirectory });
+  const workspace = await loadWorkspaceConfig({
+    currentDirectory: options.currentDirectory,
+    excludedConfigPaths: [global.path],
+  });
 
   return {
     config: composeEffectiveConfig(global, workspace),

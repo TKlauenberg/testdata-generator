@@ -13,7 +13,7 @@
 import type { RNG } from './rng';
 import { createRNG } from './rng';
 import type { ValidatedSchema, ValidatedField, ValidatedProgram } from '../analyzer/types';
-import type { GeneratorParameter } from '../parser/ast';
+import type { DefaultSpec, GeneratorParameter } from '../parser/ast';
 import { GENERATOR_REGISTRY } from './generators';
 import { evaluateTemplate, hasTemplateReferences } from './template';
 import { UniquenessTracker } from './uniqueness';
@@ -45,6 +45,7 @@ export interface GenerateOptions {
   readonly seed?: number;
   readonly maxRelationshipDepth?: number;
   readonly context?: ContextCollections;
+  readonly defaultGenerators?: readonly DefaultSpec[];
 }
 
 interface RelationshipGenerationContext {

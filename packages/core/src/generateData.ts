@@ -130,6 +130,7 @@ export async function* generateData(
   // This ensures we never start generating invalid data
   const validationResult = validateSchema(source, 'inline-schema.td', {
     availableContextCollections: Object.keys(options.context ?? {}),
+    defaultGenerators: options.defaultGenerators,
   });
 
   if (!validationResult.ok) {
