@@ -114,7 +114,7 @@ development_status:
   9-1-global-configuration-defaults: done
   9-2-workspace-configuration: done
   9-3-schema-level-defaults: done # Code review complete, 104 tests passing, 6 issues found and fixed
-  9-4-configuration-priority-and-merging: backlog
+  9-4-configuration-priority-and-merging: ready-for-dev
   epic-9-retrospective: optional
 
   epic-10: backlog
