@@ -3,12 +3,14 @@ import { validateSchema } from '../../../src/validate';
 import type { Result } from '../../../src/common/result';
 import type { ValidatedProgram } from '../../../src/analyzer/types';
 import type { Diagnostic } from '../../../src/common/diagnostic';
+import type { DefaultSpec } from '../../../src/parser';
 
 /**
  * Ability to validate schemas using the validation API.
  */
 export class ValidateSchemaAbility extends Ability {
   private _schemaSource?: string;
+  private _defaultGenerators: readonly DefaultSpec[] = [];
   private _result?: Result<ValidatedProgram, Diagnostic[]>;
   private _validationStartTime?: number;
   private _validationEndTime?: number;
@@ -19,6 +21,11 @@ export class ValidateSchemaAbility extends Ability {
 
   setSchemaSource(source: string): void {
     this._schemaSource = source;
+    this._defaultGenerators = [];
+  }
+
+  setDefaultGenerators(defaultGenerators: readonly DefaultSpec[]): void {
+    this._defaultGenerators = defaultGenerators;
   }
 
   performValidation(): void {
@@ -26,8 +33,36 @@ export class ValidateSchemaAbility extends Ability {
       throw new Error('No schema source provided');
     }
     this._validationStartTime = performance.now();
-    this._result = validateSchema(this._schemaSource, 'test.td');
+    this._result = validateSchema(this._schemaSource, 'test.td', {
+      defaultGenerators: this._defaultGenerators,
+    });
     this._validationEndTime = performance.now();
+  }
+
+  getResolvedGenerator(schemaName: string, fieldName: string): string {
+    if (!this._result?.ok) {
+      throw new Error('Validation did not succeed');
+    }
+
+    const field = this._result.value.schemas.get(schemaName)?.fields.find((item) => item.node.name === fieldName);
+    if (!field) {
+      throw new Error(`Field '${fieldName}' not found in schema '${schemaName}'`);
+    }
+
+    return field.resolvedGenerator ?? field.resolvedType;
+  }
+
+  isFieldUnique(schemaName: string, fieldName: string): boolean {
+    if (!this._result?.ok) {
+      throw new Error('Validation did not succeed');
+    }
+
+    const field = this._result.value.schemas.get(schemaName)?.fields.find((item) => item.node.name === fieldName);
+    if (!field) {
+      throw new Error(`Field '${fieldName}' not found in schema '${schemaName}'`);
+    }
+
+    return field.isUnique;
   }
 
   lastResultSucceeded(): boolean {

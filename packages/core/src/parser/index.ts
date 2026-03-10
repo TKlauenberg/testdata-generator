@@ -8,6 +8,8 @@ export type {
   FieldNode,
   ProfileNode,
   ContextNode,
+  SchemaDefaults,
+  SchemaDefaultConstraints,
   GeneratorSpec,
   GeneratorParameter,
   FieldConstraints,

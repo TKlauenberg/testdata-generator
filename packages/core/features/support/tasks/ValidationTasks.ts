@@ -1,5 +1,6 @@
 import { Interaction, type UsesAbilities } from '@serenity-js/core';
 import { ValidateSchemaAbility } from '../abilities/ValidateSchemaAbility';
+import type { DefaultSpec } from '../../../src/parser';
 
 /**
  * Tasks for validation operations using Screenplay pattern.
@@ -22,5 +23,11 @@ export const ValidateSchema = {
     Interaction.where(`#actor validates the schema`, (actor: UsesAbilities) => {
       const validator = ValidateSchemaAbility.as(actor);
       validator.performValidation();
+    }),
+
+  withDefaultGenerators: (defaults: readonly DefaultSpec[]) =>
+    Interaction.where(`#actor configures generator defaults`, (actor: UsesAbilities) => {
+      const validator = ValidateSchemaAbility.as(actor);
+      validator.setDefaultGenerators(defaults);
     }),
 };

@@ -194,6 +194,84 @@ describe('Parser - Basic Functionality', () => {
       expect(schema.fields[0]?.type).toBe('@schema:Profile');
     }
   });
+
+  test('parses schema-level defaults declared at schema start', () => {
+    const tokens: Token[] = [
+      keyword('schema', 1, 1),
+      ident('User', 1, 8),
+      op('{', 1, 13),
+      op('@', 2, 3),
+      ident('defaults', 2, 4),
+      op('{', 2, 13),
+      ident('string', 3, 5),
+      ident('generator', 3, 12),
+      op('=', 3, 21),
+      ident('randomString', 3, 22),
+      op('(', 3, 34),
+      ident('length', 3, 35),
+      op('=', 3, 41),
+      num(12, 3, 42),
+      op(')', 3, 44),
+      keyword('unique', 4, 5),
+      op('=', 4, 11),
+      ident('true', 4, 12),
+      op('}', 5, 3),
+      ident('name', 6, 3),
+      op(':', 6, 7),
+      ident('string', 6, 9),
+      op('}', 7, 1),
+      eof(7, 2),
+    ];
+
+    const result = parse(tokens);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const schema = result.value.declarations[0] as SchemaNode;
+      expect(schema.defaults).toBeDefined();
+      expect(schema.defaults?.generatorDefaults).toEqual([
+        {
+          fieldType: 'string',
+          generator: {
+            name: 'randomString',
+            parameters: [{ name: 'length', value: 12 }],
+          },
+        },
+      ]);
+      expect(schema.defaults?.constraints?.unique).toBe(true);
+      expect(schema.fields).toHaveLength(1);
+    }
+  });
+
+  test('rejects misplaced schema defaults after fields have started', () => {
+    const tokens: Token[] = [
+      keyword('schema', 1, 1),
+      ident('User', 1, 8),
+      op('{', 1, 13),
+      ident('name', 2, 3),
+      op(':', 2, 7),
+      ident('string', 2, 9),
+      op('@', 3, 3),
+      ident('defaults', 3, 4),
+      op('{', 3, 13),
+      ident('string', 4, 5),
+      ident('generator', 4, 12),
+      op('=', 4, 21),
+      ident('randomString', 4, 22),
+      op('}', 5, 3),
+      op('}', 6, 1),
+      eof(6, 2),
+    ];
+
+    const result = parse(tokens);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(
+        result.errors.some((error) => error.message.includes('Schema defaults block must appear only once at the start')),
+      ).toBe(true);
+    }
+  });
 });
 
 describe('Parser - Generator Specifications', () => {

@@ -56,6 +56,14 @@ export interface FieldConstraints {
 }
 
 /**
+ * Schema-wide field constraint defaults.
+ * Applied to fields that do not define an explicit field-level constraint.
+ */
+export interface SchemaDefaultConstraints {
+  readonly unique?: boolean;
+}
+
+/**
  * Field definition within a schema.
  * Defines a single field with type, optional generator, and constraints.
  *
@@ -101,8 +109,19 @@ export interface FieldNode extends ASTNode {
 export interface SchemaNode extends ASTNode {
   readonly kind: 'schema';
   readonly name: string;
+  readonly defaults?: SchemaDefaults;
   readonly fields: readonly FieldNode[];
   readonly compositeUniques?: readonly (readonly string[])[];
+  readonly location: SourceLocation;
+}
+
+/**
+ * Explicit schema-level defaults declared in an `@defaults` block.
+ * These defaults participate in precedence resolution during validation.
+ */
+export interface SchemaDefaults {
+  readonly generatorDefaults?: readonly DefaultSpec[];
+  readonly constraints?: SchemaDefaultConstraints;
   readonly location: SourceLocation;
 }
 

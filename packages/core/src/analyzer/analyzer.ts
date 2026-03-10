@@ -11,9 +11,18 @@
 
 import type { Result } from '../common/result';
 import type { Diagnostic } from '../common/diagnostic';
-import type { Program, SchemaNode } from '../parser/ast';
+import type { DefaultSpec, FieldNode, GeneratorSpec, LiteralValue, Program, SchemaNode } from '../parser/ast';
 import { SymbolTable } from './symbolTable';
-import type { ValidatedProgram, ValidatedSchema, ValidatedField } from './types';
+import type {
+  EffectiveFieldMetadata,
+  GeneratorResolutionSource,
+  ResolvedGeneratorDefault,
+  ResolvedSchemaDefaults,
+  UniqueResolutionSource,
+  ValidatedProgram,
+  ValidatedSchema,
+  ValidatedField,
+} from './types';
 import {
   isContextReferenceExpression,
   parseContextReferenceExpression,
@@ -55,8 +64,22 @@ type TemplateReference = {
   readonly field: string;
 };
 
+type EffectiveFieldContext = {
+  readonly field: FieldNode;
+  readonly effective: EffectiveFieldMetadata;
+  readonly templateReferences: readonly TemplateReference[];
+  readonly referencedSchema?: string;
+};
+
+type EffectiveSchemaContext = {
+  readonly schema: SchemaNode;
+  readonly resolvedDefaults: ResolvedSchemaDefaults;
+  readonly fields: readonly EffectiveFieldContext[];
+};
+
 export interface AnalyzeOptions {
   readonly availableContextCollections?: readonly string[];
+  readonly defaultGenerators?: readonly DefaultSpec[];
 }
 
 function parseSchemaReference(type: string): string | undefined {
@@ -85,6 +108,7 @@ export function analyze(
 ): Result<ValidatedProgram, Diagnostic[]> {
   const errors: Diagnostic[] = [];
   const availableContextCollections = new Set(options.availableContextCollections ?? []);
+  const configuredGeneratorDefaults = options.defaultGenerators ?? [];
 
   // Step 1: Build symbol table
   const symbolTableResult = buildSymbolTable(ast);
@@ -103,10 +127,13 @@ export function analyze(
     }
   }
 
-  const templateReferencesBySchema = new Map<string, TemplateReference[]>();
+  const effectiveSchemas = new Map<string, EffectiveSchemaContext>();
 
   // Step 2: Validate each schema's fields
   for (const schema of schemas) {
+    const effectiveSchema = resolveEffectiveSchema(schema, configuredGeneratorDefaults);
+    effectiveSchemas.set(schema.name, effectiveSchema);
+
     // Validate field types
     const typeResult = validateFieldTypes(schema, symbolTable, schemas);
     if (!typeResult.ok) {
@@ -114,13 +141,13 @@ export function analyze(
     }
 
     // Validate generator names
-    const genResult = validateGenerators(schema);
+    const genResult = validateGenerators(schema, effectiveSchema.fields);
     if (!genResult.ok) {
       errors.push(...genResult.errors);
     }
 
     // Validate template references
-    const templateResult = validateTemplateReferences(schema, symbolTable);
+    const templateResult = validateTemplateReferences(schema, effectiveSchema.fields, symbolTable);
     if (!templateResult.ok) {
       errors.push(...templateResult.errors);
     }
@@ -132,7 +159,11 @@ export function analyze(
     }
 
     // Validate context references
-    const contextRefResult = validateContextReferences(schema, availableContextCollections);
+    const contextRefResult = validateContextReferences(
+      schema,
+      effectiveSchema.fields,
+      availableContextCollections,
+    );
     if (!contextRefResult.ok) {
       errors.push(...contextRefResult.errors);
     }
@@ -144,11 +175,10 @@ export function analyze(
       errors.push(...compositeUniqueResult.errors);
     }
 
-    templateReferencesBySchema.set(schema.name, getTemplateReferencesForSchema(schema));
   }
 
   // Step 3: Detect circular dependencies
-  const dependencyGraph = buildDependencyGraph(schemas, templateReferencesBySchema);
+  const dependencyGraph = buildDependencyGraph(schemas, effectiveSchemas);
   const circularResult = detectCircularDependencies(dependencyGraph, schemas);
   if (!circularResult.ok) {
     errors.push(...circularResult.errors);
@@ -165,18 +195,25 @@ export function analyze(
   let totalFields = 0;
 
   for (const schema of schemas) {
+    const effectiveSchema = effectiveSchemas.get(schema.name);
+    if (!effectiveSchema) {
+      continue;
+    }
+
     const dependencies = dependencyGraph.get(schema.name) ?? new Set();
-    const validatedFields: ValidatedField[] = schema.fields.map((field) => ({
-      node: field,
-      resolvedType: field.type,
-      resolvedGenerator: field.generator?.name,
-      isUnique: field.constraints?.unique === true,
-      templateReferences: getTemplateReferencesForField(field).map((ref) => ref.raw),
-      referencedSchema: parseSchemaReference(field.type),
+    const validatedFields: ValidatedField[] = effectiveSchema.fields.map((field) => ({
+      node: field.field,
+      effective: field.effective,
+      resolvedType: field.field.type,
+      resolvedGenerator: field.effective.generator?.name,
+      isUnique: field.effective.unique,
+      templateReferences: field.templateReferences.map((ref) => ref.raw),
+      referencedSchema: field.referencedSchema,
     }));
 
     validatedSchemas.set(schema.name, {
       node: schema,
+      resolvedDefaults: effectiveSchema.resolvedDefaults,
       fields: validatedFields,
       dependencies,
       compositeUniques: schema.compositeUniques ?? [],
@@ -284,18 +321,22 @@ function validateFieldTypes(
 /**
  * Validates all generator names in a schema are recognized.
  */
-function validateGenerators(schema: SchemaNode): Result<void, Diagnostic[]> {
+function validateGenerators(
+  schema: SchemaNode,
+  effectiveFields: readonly EffectiveFieldContext[],
+): Result<void, Diagnostic[]> {
   const errors: Diagnostic[] = [];
 
-  for (const field of schema.fields) {
-    if (field.generator && !RECOGNIZED_GENERATORS.has(field.generator.name)) {
-      const suggestions = findSimilar(field.generator.name, Array.from(RECOGNIZED_GENERATORS));
+  for (const effectiveField of effectiveFields) {
+    const generator = effectiveField.effective.generator;
+    if (generator && !RECOGNIZED_GENERATORS.has(generator.name)) {
+      const suggestions = findSimilar(generator.name, Array.from(RECOGNIZED_GENERATORS));
 
       errors.push({
         code: 'analyzer.unrecognizedGenerator',
-        message: `Generator '${field.generator.name}' is not recognized`,
+        message: `Generator '${generator.name}' is not recognized`,
         severity: 'error',
-        location: field.location,
+        location: effectiveField.field.location,
         suggestion: suggestions.length > 0 ? `Did you mean '${suggestions[0]}'?` : undefined,
       });
     }
@@ -313,13 +354,14 @@ function validateGenerators(schema: SchemaNode): Result<void, Diagnostic[]> {
  */
 function validateTemplateReferences(
   schema: SchemaNode,
+  effectiveFields: readonly EffectiveFieldContext[],
   symbolTable: SymbolTable,
 ): Result<void, Diagnostic[]> {
   const errors: Diagnostic[] = [];
   const schemaFieldNames = schema.fields.map((field) => field.name);
 
-  for (const field of schema.fields) {
-    const references = getTemplateReferencesForField(field);
+  for (const effectiveField of effectiveFields) {
+    const references = effectiveField.templateReferences;
     for (const reference of references) {
       if (reference.schema && reference.schema !== schema.name) {
         const referencedSchema = symbolTable.lookupSchema(reference.schema);
@@ -334,7 +376,7 @@ function validateTemplateReferences(
             code: 'analyzer.undefinedSchema',
             message: `Schema '${reference.schema}' is not defined`,
             severity: 'error',
-            location: field.location,
+            location: effectiveField.field.location,
             suggestion:
               schemaSuggestions.length > 0 ? `Did you mean '${schemaSuggestions[0]}'?` : undefined,
           });
@@ -355,7 +397,7 @@ function validateTemplateReferences(
             code: 'analyzer.undefinedTemplateField',
             message: `Undefined field '${reference.field}' in template for schema '${reference.schema}'`,
             severity: 'error',
-            location: field.location,
+            location: effectiveField.field.location,
             suggestion: suggestions.length > 0 ? `Did you mean '${suggestions[0]}'?` : undefined,
           });
         }
@@ -370,7 +412,7 @@ function validateTemplateReferences(
           code: 'analyzer.undefinedTemplateField',
           message: `Undefined field '${reference.field}' in template`,
           severity: 'error',
-          location: field.location,
+          location: effectiveField.field.location,
           suggestion: suggestions.length > 0 ? `Did you mean '${suggestions[0]}'?` : undefined,
         });
       }
@@ -471,14 +513,8 @@ function validateCompositeUniqueConstraints(
   return { ok: true, value: undefined };
 }
 
-function getTemplateReferencesForSchema(schema: SchemaNode): TemplateReference[] {
-  const references: TemplateReference[] = [];
-
-  for (const field of schema.fields) {
-    references.push(...getTemplateReferencesForField(field));
-  }
-
-  return references;
+function getTemplateReferencesForSchema(effectiveFields: readonly EffectiveFieldContext[]): TemplateReference[] {
+  return effectiveFields.flatMap((field) => field.templateReferences);
 }
 
 /**
@@ -522,12 +558,12 @@ function extractTemplateReferencesFromValue(value: unknown): TemplateReference[]
   return [];
 }
 
-function getTemplateReferencesForField(field: SchemaNode['fields'][number]): TemplateReference[] {
-  if (!field.generator?.parameters) {
+function getTemplateReferencesForGenerator(generator?: GeneratorSpec): TemplateReference[] {
+  if (!generator?.parameters) {
     return [];
   }
 
-  return field.generator.parameters.flatMap((parameter) =>
+  return generator.parameters.flatMap((parameter) =>
     extractTemplateReferencesFromValue(parameter.value),
   );
 }
@@ -552,12 +588,13 @@ function extractContextReferenceExpressionsFromValue(value: unknown): string[] {
 
 function validateContextReferences(
   schema: SchemaNode,
+  effectiveFields: readonly EffectiveFieldContext[],
   availableContextCollections: ReadonlySet<string>,
 ): Result<void, Diagnostic[]> {
   const errors: Diagnostic[] = [];
 
-  for (const field of schema.fields) {
-    const parameters = field.generator?.parameters ?? [];
+  for (const effectiveField of effectiveFields) {
+    const parameters = effectiveField.effective.generator?.parameters ?? [];
     for (const parameter of parameters) {
       const contextExpressions = extractContextReferenceExpressionsFromValue(parameter.value);
       for (const expression of contextExpressions) {
@@ -567,7 +604,7 @@ function validateContextReferences(
             code: 'analyzer.invalidContextReference',
             message: parseResult.errors[0] ?? `Invalid context reference '${expression}'`,
             severity: 'error',
-            location: field.location,
+            location: effectiveField.field.location,
             suggestion:
               "Supported forms: @context.<collection>.random, @context.<collection>[<index>], @context.<collection>@tag.random, @context.<collection>@tagOne AND @tagTwo.random, and optional .fieldName suffix",
           });
@@ -580,7 +617,7 @@ function validateContextReferences(
             code: 'analyzer.undefinedContextCollection',
             message: `Context collection '${collectionName}' is not available for reference '${expression}'`,
             severity: 'error',
-            location: field.location,
+            location: effectiveField.field.location,
             suggestion:
               availableContextCollections.size > 0
                 ? `Available collections: ${Array.from(availableContextCollections).join(', ')}`
@@ -600,7 +637,7 @@ function validateContextReferences(
 
 function buildDependencyGraph(
   schemas: SchemaNode[],
-  templateReferencesBySchema: Map<string, TemplateReference[]>,
+  effectiveSchemas: Map<string, EffectiveSchemaContext>,
 ): Map<string, Set<string>> {
   const graph = new Map<string, Set<string>>();
   const schemaNames = new Set(schemas.map((schema) => schema.name));
@@ -615,7 +652,9 @@ function buildDependencyGraph(
       }
     }
 
-    const templateReferences = templateReferencesBySchema.get(schema.name) ?? [];
+    const templateReferences = getTemplateReferencesForSchema(
+      effectiveSchemas.get(schema.name)?.fields ?? [],
+    );
     for (const reference of templateReferences) {
       if (reference.schema && schemaNames.has(reference.schema)) {
         dependencies.add(reference.schema);
@@ -626,6 +665,108 @@ function buildDependencyGraph(
   }
 
   return graph;
+}
+
+function resolveEffectiveSchema(
+  schema: SchemaNode,
+  configuredGeneratorDefaults: readonly DefaultSpec[],
+): EffectiveSchemaContext {
+  const resolvedDefaults = resolveSchemaDefaults(schema, configuredGeneratorDefaults);
+
+  return {
+    schema,
+    resolvedDefaults,
+    fields: schema.fields.map((field) => resolveEffectiveField(field, resolvedDefaults)),
+  };
+}
+
+function resolveSchemaDefaults(
+  schema: SchemaNode,
+  configuredGeneratorDefaults: readonly DefaultSpec[],
+): ResolvedSchemaDefaults {
+  const generatorDefaults = new Map<string, ResolvedGeneratorDefault>();
+
+  for (const configuredDefault of configuredGeneratorDefaults) {
+    generatorDefaults.set(configuredDefault.fieldType, {
+      generator: cloneGeneratorSpec(configuredDefault.generator),
+      source: 'config',
+    });
+  }
+
+  for (const schemaDefault of schema.defaults?.generatorDefaults ?? []) {
+    generatorDefaults.set(schemaDefault.fieldType, {
+      generator: cloneGeneratorSpec(schemaDefault.generator),
+      source: 'schema',
+    });
+  }
+
+  return {
+    generatorDefaults,
+    unique: schema.defaults?.constraints?.unique,
+  };
+}
+
+function resolveEffectiveField(
+  field: FieldNode,
+  resolvedDefaults: ResolvedSchemaDefaults,
+): EffectiveFieldContext {
+  const referencedSchema = parseSchemaReference(field.type);
+  const configuredDefault = referencedSchema ? undefined : resolvedDefaults.generatorDefaults.get(field.type);
+
+  const generator = field.generator
+    ? cloneGeneratorSpec(field.generator)
+    : configuredDefault?.generator;
+  const generatorSource: GeneratorResolutionSource = field.generator
+    ? 'field'
+    : configuredDefault?.source ?? 'built-in';
+  const uniqueSource: UniqueResolutionSource = field.constraints?.unique !== undefined
+    ? 'field'
+    : resolvedDefaults.unique !== undefined
+      ? 'schema'
+      : 'built-in';
+  const unique = field.constraints?.unique ?? resolvedDefaults.unique ?? false;
+
+  return {
+    field,
+    effective: {
+      generator,
+      generatorSource,
+      unique,
+      uniqueSource,
+    },
+    templateReferences: getTemplateReferencesForGenerator(generator),
+    referencedSchema,
+  };
+}
+
+function cloneGeneratorSpec(generator: GeneratorSpec): GeneratorSpec {
+  return {
+    name: generator.name,
+    parameters: generator.parameters?.map((parameter) => ({
+      name: parameter.name,
+      value: cloneLiteralValue(parameter.value),
+    })),
+  };
+}
+
+function cloneLiteralValue(value: LiteralValue): LiteralValue {
+  if (Array.isArray(value)) {
+    const arrayValue = value as readonly LiteralValue[];
+    return arrayValue.map((item): LiteralValue => cloneLiteralValue(item));
+  }
+
+  if (value !== null && typeof value === 'object') {
+    const objectValue = value as { readonly [key: string]: LiteralValue };
+    const clonedObject: { [key: string]: LiteralValue } = {};
+
+    for (const key of Object.keys(objectValue)) {
+      clonedObject[key] = cloneLiteralValue(objectValue[key]);
+    }
+
+    return clonedObject;
+  }
+
+  return value;
 }
 
 function computeSortOrder(graph: Map<string, Set<string>>): Map<string, number> {

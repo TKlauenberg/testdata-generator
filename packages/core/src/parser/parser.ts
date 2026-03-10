@@ -12,7 +12,9 @@ import type { Token, TokenKind } from '../scanner/tokens';
 import type {
   Program,
   SchemaNode,
+  SchemaDefaults,
   FieldNode,
+  DefaultSpec,
   GeneratorSpec,
   GeneratorParameter,
   FieldConstraints,
@@ -449,10 +451,30 @@ export class Parser {
     const openBraceResult = this._expect('operator', '{');
     if (!openBraceResult.ok) return openBraceResult;
 
-    // Parse fields
+    // Parse schema defaults and fields
+    let defaults: SchemaDefaults | undefined;
     const fields: FieldNode[] = [];
     const compositeUniques: string[][] = [];
     while (!this._check('operator', '}') && !this._isAtEnd()) {
+      if (this._isSchemaDefaultsBlockStart()) {
+        const defaultsResult = this._parseSchemaDefaultsBlock();
+        if (fields.length > 0 || compositeUniques.length > 0 || defaults !== undefined) {
+          this._addError(
+            `Schema defaults block must appear only once at the start of schema '${name}'`,
+            defaultsResult.ok ? defaultsResult.value.location : this._currentToken().location,
+            ['Place @defaults immediately after the opening schema brace'],
+          );
+        }
+
+        if (defaultsResult.ok && defaults === undefined && fields.length === 0 && compositeUniques.length === 0) {
+          defaults = defaultsResult.value;
+        } else if (!defaultsResult.ok) {
+          this._synchronizeToNextField();
+        }
+
+        continue;
+      }
+
       const nextToken = this._peek();
       if (
         this._check('keyword', 'unique') &&
@@ -505,11 +527,184 @@ export class Parser {
       value: {
         kind: 'schema',
         name,
+        defaults,
         fields,
         compositeUniques,
         location,
       },
     };
+  }
+
+  private _isSchemaDefaultsBlockStart(): boolean {
+    const currentToken = this._currentToken();
+    const nextToken = this._peek();
+
+    return (
+      currentToken.kind === 'operator' &&
+      currentToken.value === '@' &&
+      nextToken.kind === 'identifier' &&
+      nextToken.value === 'defaults'
+    );
+  }
+
+  private _parseSchemaDefaultsBlock(): Result<SchemaDefaults, Diagnostic[]> {
+    const startToken = this._currentToken();
+
+    const atResult = this._expect('operator', '@');
+    if (!atResult.ok) {
+      return atResult;
+    }
+
+    const defaultsKeywordResult = this._expect('identifier', 'defaults');
+    if (!defaultsKeywordResult.ok) {
+      this._addError(
+        "Expected 'defaults' after '@' for schema defaults block",
+        this._currentToken().location,
+        ['Schema defaults syntax: @defaults { string generator=randomString(length=12) }'],
+      );
+      return { ok: false, errors: this._errors };
+    }
+
+    const openBraceResult = this._expect('operator', '{');
+    if (!openBraceResult.ok) {
+      this._addError(
+        "Expected '{' to open @defaults block",
+        this._currentToken().location,
+        ['Schema defaults syntax: @defaults { string generator=randomString(length=12) }'],
+      );
+      return { ok: false, errors: this._errors };
+    }
+
+    const generatorDefaults: DefaultSpec[] = [];
+    let uniqueDefault: boolean | undefined;
+
+    while (!this._check('operator', '}') && !this._isAtEnd()) {
+      if (this._check('keyword', 'unique')) {
+        const uniqueResult = this._parseSchemaDefaultUnique();
+        if (uniqueResult.ok) {
+          uniqueDefault = uniqueResult.value;
+        } else {
+          this._synchronizeToNextSchemaDefaultEntry();
+        }
+        continue;
+      }
+
+      if (this._check('identifier')) {
+        const generatorDefaultResult = this._parseSchemaDefaultGenerator();
+        if (generatorDefaultResult.ok) {
+          generatorDefaults.push(generatorDefaultResult.value);
+        } else {
+          this._synchronizeToNextSchemaDefaultEntry();
+        }
+        continue;
+      }
+
+      this._addError(
+        `Unexpected ${this._tokenDescription(this._currentToken())} in @defaults block`,
+        this._currentToken().location,
+        ['Supported defaults: <fieldType> generator=<name>(...), unique=true|false'],
+      );
+      this._synchronizeToNextSchemaDefaultEntry();
+    }
+
+    const closeBraceResult = this._expect('operator', '}');
+    if (!closeBraceResult.ok) {
+      this._addError(
+        "Expected '}' to close @defaults block",
+        this._currentToken().location,
+        ['Schema defaults syntax: @defaults { string generator=randomString(length=12) }'],
+      );
+      return { ok: false, errors: this._errors };
+    }
+
+    const endToken = this._tokens[this._current - 1];
+    const location: SourceLocation = {
+      file: startToken.location.file,
+      line: startToken.location.line,
+      column: startToken.location.column,
+      length:
+        endToken.location.line === startToken.location.line
+          ? endToken.location.column + endToken.location.length - startToken.location.column
+          : endToken.location.length,
+    };
+
+    return {
+      ok: true,
+      value: {
+        generatorDefaults: generatorDefaults.length > 0 ? generatorDefaults : undefined,
+        constraints: uniqueDefault !== undefined ? { unique: uniqueDefault } : undefined,
+        location,
+      },
+    };
+  }
+
+  private _parseSchemaDefaultGenerator(): Result<DefaultSpec, Diagnostic[]> {
+    const fieldTypeResult = this._expect('identifier');
+    if (!fieldTypeResult.ok || fieldTypeResult.value.kind !== 'identifier') {
+      this._addError(
+        'Expected a field type before generator default specification',
+        this._currentToken().location,
+        ['Example: string generator=randomString(length=12)'],
+      );
+      return { ok: false, errors: this._errors };
+    }
+
+    const generatorResult = this._parseGeneratorSpec();
+    if (!generatorResult.ok) {
+      this._addError(
+        `Expected generator specification for schema default field type '${fieldTypeResult.value.value}'`,
+        this._currentToken().location,
+        ['Example: string generator=randomString(length=12)'],
+      );
+      return { ok: false, errors: this._errors };
+    }
+
+    return {
+      ok: true,
+      value: {
+        fieldType: fieldTypeResult.value.value,
+        generator: generatorResult.value,
+      },
+    };
+  }
+
+  private _parseSchemaDefaultUnique(): Result<boolean, Diagnostic[]> {
+    const uniqueResult = this._expect('keyword', 'unique');
+    if (!uniqueResult.ok) {
+      return { ok: false, errors: this._errors };
+    }
+
+    const equalsResult = this._expect('operator', '=');
+    if (!equalsResult.ok) {
+      this._addError(
+        "Expected '=' after schema default 'unique'",
+        this._currentToken().location,
+        ['Schema uniqueness default syntax: unique=true'],
+      );
+      return { ok: false, errors: this._errors };
+    }
+
+    const literalResult = this._parseLiteral();
+    if (!literalResult.ok || typeof literalResult.value !== 'boolean') {
+      this._addError(
+        "Schema default 'unique' must be assigned a boolean value",
+        this._currentToken().location,
+        ['Use unique=true or unique=false inside @defaults'],
+      );
+      return { ok: false, errors: this._errors };
+    }
+
+    return { ok: true, value: literalResult.value };
+  }
+
+  private _synchronizeToNextSchemaDefaultEntry(): void {
+    while (!this._isAtEnd() && !this._check('operator', '}')) {
+      if (this._check('keyword', 'unique') || this._check('identifier')) {
+        return;
+      }
+
+      this._advance();
+    }
   }
 
   private _parseCompositeUniqueDirective(): Result<readonly string[], Diagnostic[]> {

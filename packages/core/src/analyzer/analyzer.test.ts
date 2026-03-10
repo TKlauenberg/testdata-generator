@@ -4,7 +4,7 @@
 
 import { describe, test, expect } from 'bun:test';
 import { analyze } from './analyzer';
-import type { Program, SchemaNode, FieldNode, GeneratorParameter } from '../parser/ast';
+import type { Program, SchemaDefaults, SchemaNode, FieldNode, GeneratorParameter } from '../parser/ast';
 import type { SourceLocation } from '../common/diagnostic';
 
 // Helper to create test source location
@@ -40,10 +40,12 @@ function createSchema(
   fields: FieldNode[],
   location?: SourceLocation,
   compositeUniques?: readonly (readonly string[])[],
+  defaults?: SchemaDefaults,
 ): SchemaNode {
   return {
     kind: 'schema',
     name,
+    defaults,
     fields,
     compositeUniques,
     location: location ?? createLocation(),
@@ -549,6 +551,57 @@ describe('analyze()', () => {
         );
         expect(uniqueError).toBeDefined();
         expect(uniqueError?.message).toContain('score');
+      }
+    });
+
+    test('applies schema defaults and configured generator defaults with explicit precedence', () => {
+      const program = createProgram([
+        createSchema(
+          'User',
+          [
+            createField('name', 'string'),
+            createField('email', 'string', 'email'),
+          ],
+          undefined,
+          undefined,
+          {
+            generatorDefaults: [
+              {
+                fieldType: 'string',
+                generator: {
+                  name: 'randomString',
+                  parameters: [{ name: 'length', value: 12 }],
+                },
+              },
+            ],
+            constraints: { unique: true },
+            location: createLocation(),
+          },
+        ),
+      ]);
+
+      const result = analyze(program, {
+        defaultGenerators: [
+          {
+            fieldType: 'string',
+            generator: {
+              name: 'pick',
+              parameters: [{ name: 'array', value: ['workspace-default'] }],
+            },
+          },
+        ],
+      });
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        const userSchema = result.value.schemas.get('User');
+        expect(userSchema?.resolvedDefaults?.generatorDefaults.get('string')?.source).toBe('schema');
+        expect(userSchema?.fields[0]?.resolvedGenerator).toBe('randomString');
+        expect(userSchema?.fields[0]?.effective?.generatorSource).toBe('schema');
+        expect(userSchema?.fields[0]?.isUnique).toBe(true);
+        expect(userSchema?.fields[0]?.effective?.uniqueSource).toBe('schema');
+        expect(userSchema?.fields[1]?.resolvedGenerator).toBe('email');
+        expect(userSchema?.fields[1]?.effective?.generatorSource).toBe('field');
       }
     });
   });

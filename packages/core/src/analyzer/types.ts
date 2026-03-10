@@ -5,8 +5,28 @@
  * containing validated schemas with enriched metadata and a complete symbol table.
  */
 
-import type { Program, SchemaNode, FieldNode } from '../parser/ast';
+import type { Program, SchemaNode, FieldNode, GeneratorSpec } from '../parser/ast';
 import type { SymbolTable } from './symbolTable';
+
+export type GeneratorResolutionSource = 'field' | 'schema' | 'config' | 'built-in';
+export type UniqueResolutionSource = 'field' | 'schema' | 'built-in';
+
+export interface ResolvedGeneratorDefault {
+  readonly generator: GeneratorSpec;
+  readonly source: Exclude<GeneratorResolutionSource, 'field' | 'built-in'>;
+}
+
+export interface ResolvedSchemaDefaults {
+  readonly generatorDefaults: ReadonlyMap<string, ResolvedGeneratorDefault>;
+  readonly unique?: boolean;
+}
+
+export interface EffectiveFieldMetadata {
+  readonly generator?: GeneratorSpec;
+  readonly generatorSource: GeneratorResolutionSource;
+  readonly unique: boolean;
+  readonly uniqueSource: UniqueResolutionSource;
+}
 
 /**
  * Result of successful semantic analysis.
@@ -37,6 +57,9 @@ export interface ValidatedSchema {
   /** Reference to original AST node */
   readonly node: SchemaNode;
 
+  /** Resolved schema-level defaults after precedence resolution */
+  readonly resolvedDefaults?: ResolvedSchemaDefaults;
+
   /** Validated and enriched fields */
   readonly fields: readonly ValidatedField[];
 
@@ -56,6 +79,9 @@ export interface ValidatedSchema {
 export interface ValidatedField {
   /** Reference to original AST node */
   readonly node: FieldNode;
+
+  /** Effective field metadata after precedence resolution */
+  readonly effective?: EffectiveFieldMetadata;
 
   /** Resolved type information */
   readonly resolvedType: string;

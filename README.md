@@ -110,6 +110,30 @@ Current supported keys:
 
 `generatorDefaults` are parsed, validated, and applied to fields that do not define an explicit generator. Field-level generators remain higher priority than config-provided mappings.
 
+Schemas can also declare DSL-local defaults with an `@defaults` block at the start of a schema body:
+
+```td
+schema User {
+	@defaults {
+		string generator=randomString(length=14)
+		unique=true
+	}
+
+	name: string
+	email: string generator=email
+}
+```
+
+`@defaults` participates in the generator precedence chain like this:
+
+- Field-level generator or constraint
+- Schema-level `@defaults`
+- Workspace `.tdconfig.json` `generatorDefaults`
+- Global `~/.tdconfig.json` `generatorDefaults`
+- Built-in defaults
+
+Schema defaults are part of DSL semantics, not CLI config. They can provide per-field-type generator mappings plus a schema-wide uniqueness default for fields that do not declare their own uniqueness behavior.
+
 Built-in defaults today are:
 
 - `defaults.count`: `10`
@@ -120,6 +144,7 @@ Current precedence is:
 
 - Explicit CLI flags override global defaults.
 - Explicit CLI flags override workspace defaults.
+- Schema `@defaults` override workspace and global generator defaults during validation.
 - Workspace defaults override global defaults.
 - Global defaults override built-in defaults.
 

@@ -40,6 +40,67 @@ describe('validateSchema()', () => {
       }
     });
 
+    test('should apply schema defaults to fields without explicit generators', () => {
+      const source = `
+        schema User {
+          @defaults {
+            string generator=randomString(length=14)
+            unique=true
+          }
+
+          name: string
+          email: string generator=email
+        }
+      `;
+
+      const result = validateSchema(source, 'test.td');
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        const userSchema = result.value.schemas.get('User');
+        expect(userSchema?.fields[0]?.resolvedGenerator).toBe('randomString');
+        expect(userSchema?.fields[0]?.effective?.generator?.parameters).toEqual([
+          { name: 'length', value: 14 },
+        ]);
+        expect(userSchema?.fields[0]?.isUnique).toBe(true);
+        expect(userSchema?.fields[1]?.resolvedGenerator).toBe('email');
+      }
+    });
+
+    test('should let schema defaults override configured defaults but not field generators', () => {
+      const source = `
+        schema User {
+          @defaults {
+            string generator=randomString(length=9)
+          }
+
+          name: string
+          status: string generator=pick(array=["explicit"])
+        }
+      `;
+
+      const result = validateSchema(source, 'test.td', {
+        defaultGenerators: [
+          {
+            fieldType: 'string',
+            generator: {
+              name: 'pick',
+              parameters: [{ name: 'array', value: ['workspace-default'] }],
+            },
+          },
+        ],
+      });
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        const userSchema = result.value.schemas.get('User');
+        expect(userSchema?.fields[0]?.resolvedGenerator).toBe('randomString');
+        expect(userSchema?.fields[0]?.effective?.generatorSource).toBe('schema');
+        expect(userSchema?.fields[1]?.resolvedGenerator).toBe('pick');
+        expect(userSchema?.fields[1]?.effective?.generatorSource).toBe('field');
+      }
+    });
+
     test('should validate schema with generators', () => {
       const source = `
         schema User {
@@ -167,7 +228,7 @@ describe('validateSchema()', () => {
         expect(result.errors.length).toBeGreaterThan(0);
         // Check that at least one error mentions the issue
         const hasExpectedError = result.errors.some(
-          err => err.message.match(/expected.*:/i) || err.code.match(/PARSE/)
+          (err) => (err.message.match(/expected.*:/i) ?? err.code.match(/PARSE/)) !== null,
         );
         expect(hasExpectedError).toBe(true);
       }
@@ -185,6 +246,26 @@ describe('validateSchema()', () => {
       }
     });
 
+    test('should return parser error for misplaced schema defaults block', () => {
+      const source = `
+        schema User {
+          name: string
+          @defaults {
+            string generator=randomString(length=12)
+          }
+        }
+      `;
+
+      const result = validateSchema(source, 'test.td');
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(
+          result.errors.some((error) => error.message.includes('Schema defaults block must appear only once at the start')),
+        ).toBe(true);
+      }
+    });
+
     test('should return error for missing closing brace', () => {
       const source = `schema User { id: uuid`;
       const result = validateSchema(source, 'test.td');
@@ -194,7 +275,8 @@ describe('validateSchema()', () => {
         // May have multiple errors (missing brace and EOF)
         expect(result.errors.length).toBeGreaterThan(0);
         const hasExpectedError = result.errors.some(
-          err => err.message.match(/expected.*}/i) || err.message.match(/unexpected.*end/i)
+          (err) =>
+            (err.message.match(/expected.*}/i) ?? err.message.match(/unexpected.*end/i)) !== null,
         );
         expect(hasExpectedError).toBe(true);
       }

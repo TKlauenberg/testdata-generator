@@ -438,7 +438,7 @@ function enumerateFiniteUniqueCandidates(field: ValidatedField): readonly unknow
   }
 
   const generatorType = field.resolvedGenerator ?? field.resolvedType;
-  const params = field.node.generator?.parameters ?? [];
+  const params = field.effective?.generator?.parameters ?? field.node.generator?.parameters ?? [];
 
   switch (generatorType) {
     case 'int':
@@ -551,7 +551,7 @@ function extractParameters(
   rng: RNG,
   contextCollections: ContextCollections,
 ): unknown[] {
-  const params = field.node.generator?.parameters ?? [];
+  const params = field.effective?.generator?.parameters ?? field.node.generator?.parameters ?? [];
 
   const resolvedParams = params.map((parameter) => ({
     ...parameter,

@@ -65,4 +65,22 @@ export const ValidationResult = {
       const validator = ValidateSchemaAbility.as(actor);
       return validator.getValidationDuration();
     }),
+
+  resolvedGenerator: (schemaName: string, fieldName: string) =>
+    Question.about<string>(
+      `resolved generator for ${schemaName}.${fieldName}`,
+      (actor: AnswersQuestions & UsesAbilities) => {
+        const validator = ValidateSchemaAbility.as(actor);
+        return validator.getResolvedGenerator(schemaName, fieldName);
+      },
+    ),
+
+  fieldIsUnique: (schemaName: string, fieldName: string) =>
+    Question.about<boolean>(
+      `whether ${schemaName}.${fieldName} is unique`,
+      (actor: AnswersQuestions & UsesAbilities) => {
+        const validator = ValidateSchemaAbility.as(actor);
+        return validator.isFieldUnique(schemaName, fieldName);
+      },
+    ),
 };

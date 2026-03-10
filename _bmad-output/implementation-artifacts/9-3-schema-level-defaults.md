@@ -1,6 +1,6 @@
 # Story 9.3: Schema-Level Defaults
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -24,39 +24,39 @@ so that **all fields in a schema share common settings**.
 
 ## Tasks / Subtasks
 
-- [ ] Extend the schema grammar and AST to represent schema-level defaults explicitly (AC: 1, 2, 3, 4)
-  - [ ] Update `packages/core/src/parser/ast.ts` so `SchemaNode` can carry a dedicated schema-defaults structure instead of overloading field nodes or CLI config types.
-  - [ ] Extend `packages/core/src/parser/parser.ts` to parse an `@defaults` block only at schema start, before regular field declarations, and reject misplaced defaults with parser diagnostics.
-  - [ ] Reuse the existing `@` operator tokenization if possible; avoid inventing a parallel syntax or pushing schema-default semantics into scanner keywords unless the parser genuinely requires it.
-  - [ ] Cover both supported schema-default dimensions from the epic: generator defaults by field type and uniqueness behavior.
+- [x] Extend the schema grammar and AST to represent schema-level defaults explicitly (AC: 1, 2, 3, 4)
+  - [x] Update `packages/core/src/parser/ast.ts` so `SchemaNode` can carry a dedicated schema-defaults structure instead of overloading field nodes or CLI config types.
+  - [x] Extend `packages/core/src/parser/parser.ts` to parse an `@defaults` block only at schema start, before regular field declarations, and reject misplaced defaults with parser diagnostics.
+  - [x] Reuse the existing `@` operator tokenization if possible; avoid inventing a parallel syntax or pushing schema-default semantics into scanner keywords unless the parser genuinely requires it.
+  - [x] Cover both supported schema-default dimensions from the epic: generator defaults by field type and uniqueness behavior.
 
-- [ ] Resolve schema defaults in the core validation pipeline with explicit precedence (AC: 3, 4, 5, 6, 7)
-  - [ ] Add analyzer-side types in `packages/core/src/analyzer/types.ts` for resolved schema defaults and effective field metadata.
-  - [ ] Update `packages/core/src/analyzer/analyzer.ts` so validated fields reflect the effective generator and uniqueness settings after applying precedence.
-  - [ ] Preserve the canonical order required by Epic 9: field-level > schema-level > workspace > global > built-in.
-  - [ ] Keep override semantics shallow and explicit; do not introduce deep merging across config layers or schema defaults.
+- [x] Resolve schema defaults in the core validation pipeline with explicit precedence (AC: 3, 4, 5, 6, 7)
+  - [x] Add analyzer-side types in `packages/core/src/analyzer/types.ts` for resolved schema defaults and effective field metadata.
+  - [x] Update `packages/core/src/analyzer/analyzer.ts` so validated fields reflect the effective generator and uniqueness settings after applying precedence.
+  - [x] Preserve the canonical order required by Epic 9: field-level > schema-level > workspace > global > built-in.
+  - [x] Keep override semantics shallow and explicit; do not introduce deep merging across config layers or schema defaults.
 
-- [ ] Integrate schema defaults cleanly with the current CLI-configured generator-default flow (AC: 3, 5, 6, 7)
-  - [ ] Refactor `packages/core/src/validate.ts` so CLI/workspace/global generator defaults are applied first, and schema defaults then override them before semantic analysis completes.
-  - [ ] Ensure field-level generator declarations continue to win over every lower-priority layer.
-  - [ ] Ensure schema-level uniqueness defaults flow into the validated program consumed by `packages/core/src/generator/generator.ts`, without duplicating runtime uniqueness logic.
-  - [ ] Avoid moving schema semantics into `packages/cli/src/config/*`; CLI config remains responsible only for CLI/workspace/global defaults.
+- [x] Integrate schema defaults cleanly with the current CLI-configured generator-default flow (AC: 3, 5, 6, 7)
+  - [x] Refactor `packages/core/src/validate.ts` so CLI/workspace/global generator defaults are applied first, and schema defaults then override them before semantic analysis completes.
+  - [x] Ensure field-level generator declarations continue to win over every lower-priority layer.
+  - [x] Ensure schema-level uniqueness defaults flow into the validated program consumed by `packages/core/src/generator/generator.ts`, without duplicating runtime uniqueness logic.
+  - [x] Avoid moving schema semantics into `packages/cli/src/config/*`; CLI config remains responsible only for CLI/workspace/global defaults.
 
-- [ ] Add parser, analyzer, and end-to-end regression coverage for precedence and real-world behavior (AC: 2, 7, 8)
-  - [ ] Extend `packages/core/src/parser/parser.test.ts` with happy-path and failure cases for `@defaults` placement, syntax, and mixed field/default declarations.
-  - [ ] Extend `packages/core/src/analyzer/analyzer.test.ts` to prove effective generator and uniqueness metadata are resolved correctly.
-  - [ ] Extend `packages/core/src/validate.ts` coverage or adjacent validation tests to prove schema defaults override workspace/global defaults but not field-level declarations.
-  - [ ] Add or extend generator-focused tests if needed to prove schema-level uniqueness defaults produce the same enforcement behavior as explicit field uniqueness.
+- [x] Add parser, analyzer, and end-to-end regression coverage for precedence and real-world behavior (AC: 2, 7, 8)
+  - [x] Extend `packages/core/src/parser/parser.test.ts` with happy-path and failure cases for `@defaults` placement, syntax, and mixed field/default declarations.
+  - [x] Extend `packages/core/src/analyzer/analyzer.test.ts` to prove effective generator and uniqueness metadata are resolved correctly.
+  - [x] Extend `packages/core/src/validate.ts` coverage or adjacent validation tests to prove schema defaults override workspace/global defaults but not field-level declarations.
+  - [x] Add or extend generator-focused tests if needed to prove schema-level uniqueness defaults produce the same enforcement behavior as explicit field uniqueness.
 
-- [ ] Add BDD coverage for schema defaults in realistic DSL usage (AC: 9)
-  - [ ] Add a dedicated feature such as `packages/core/features/schema-defaults.feature`, or extend an existing feature only if that keeps the behavior easy to find.
-  - [ ] Add or extend Screenplay step definitions under `packages/core/features/step_definitions/` and support tasks/questions under `packages/core/features/support/` rather than embedding business logic in step files.
-  - [ ] Cover at least: schema default generator application, schema-level uniqueness defaulting, schema-over-workspace precedence, and field-over-schema precedence.
+- [x] Add BDD coverage for schema defaults in realistic DSL usage (AC: 9)
+  - [x] Add a dedicated feature such as `packages/core/features/schema-defaults.feature`, or extend an existing feature only if that keeps the behavior easy to find.
+  - [x] Add or extend Screenplay step definitions under `packages/core/features/step_definitions/` and support tasks/questions under `packages/core/features/support/` rather than embedding business logic in step files.
+  - [x] Cover at least: schema default generator application, schema-level uniqueness defaulting, schema-over-workspace precedence, and field-over-schema precedence.
 
-- [ ] Document the schema-defaults model where users already learn cascading behavior (AC: 5, 6)
-  - [ ] Update `README.md` with an `@defaults` example and a concise precedence summary.
-  - [ ] Add or update a concrete DSL example under `docs/examples/` if the README example becomes too compressed to serve as a practical reference.
-  - [ ] Keep the documentation explicit that schema defaults are part of DSL semantics, not CLI config structure.
+- [x] Document the schema-defaults model where users already learn cascading behavior (AC: 5, 6)
+  - [x] Update `README.md` with an `@defaults` example and a concise precedence summary.
+  - [x] Add or update a concrete DSL example under `docs/examples/` if the README example becomes too compressed to serve as a practical reference.
+  - [x] Keep the documentation explicit that schema defaults are part of DSL semantics, not CLI config structure.
 
 ## Dev Notes
 
@@ -187,14 +187,47 @@ GPT-5.4
 - Discovery and analysis sources loaded: Epic 9 shard, PRD, architecture shards, project context rules, previous story 9.2 artifact, sprint status, current parser/analyzer/validate/generator sources, and recent git history.
 - Key implementation constraint identified: CLI/workspace/global defaults already flow through `packages/core/src/validate.ts`; schema defaults must extend that path without collapsing CLI/core ownership boundaries.
 - Key regression risk identified: uniqueness defaults must reuse existing analyzer metadata and generator enforcement instead of creating parallel runtime behavior.
+- Implemented `@defaults` parsing using the existing `@` token flow, with explicit schema-default AST types and parser diagnostics for misplaced blocks.
+- Moved default precedence resolution into analyzer/validation, exposing resolved schema defaults and effective field metadata while keeping override semantics shallow.
+- Verified focused unit coverage, full Bun regression coverage, and the Cucumber runner after adding real-schema BDD scenarios for schema defaults.
+
+### Implementation Plan
+
+- Parse schema-local defaults into explicit AST structures instead of mutating field nodes to carry hidden configuration state.
+- Resolve configured generator defaults and schema defaults in semantic analysis so validated fields expose the effective generator and uniqueness metadata.
+- Reuse generator runtime uniqueness enforcement by consuming analyzed effective metadata rather than adding a second uniqueness mechanism.
+- Extend unit, validation, and BDD coverage before updating cascade documentation.
 
 ### Completion Notes List
 
-- Story file generated for `9-3-schema-level-defaults` with status `ready-for-dev`.
-- Sprint tracking updated: `9-3-schema-level-defaults` moved from `backlog` to `ready-for-dev`.
-- Story guidance includes concrete extension points for parser, analyzer, validation pipeline, BDD support, and precedence regression coverage.
+- Implemented explicit `SchemaDefaults` AST support and `@defaults` parsing with generator-per-type and schema-wide uniqueness defaults.
+- Resolved precedence as `field > schema > workspace/global > built-in` in analyzer/validate output, and updated generation to consume effective generator parameters.
+- Added parser, analyzer, validation, and BDD regression coverage for schema defaults, including schema-over-config and field-over-schema precedence cases.
+- Updated README cascade guidance and added `docs/examples/schema-defaults.td` as a concrete DSL reference.
+- Verification completed: targeted core tests passed, full Bun test suite passed (`675` tests), Cucumber runner passed, and lint completed with existing repository warnings only.
 
 ### File List
 
 - `_bmad-output/implementation-artifacts/9-3-schema-level-defaults.md`
 - `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- `README.md`
+- `docs/examples/schema-defaults.td`
+- `packages/core/features/schema-defaults.feature`
+- `packages/core/features/step_definitions/validation.steps.ts`
+- `packages/core/features/support/abilities/ValidateSchemaAbility.ts`
+- `packages/core/features/support/questions/ValidationQuestions.ts`
+- `packages/core/features/support/tasks/ValidationTasks.ts`
+- `packages/core/src/analyzer/analyzer.test.ts`
+- `packages/core/src/analyzer/analyzer.ts`
+- `packages/core/src/analyzer/types.ts`
+- `packages/core/src/generator/generator.ts`
+- `packages/core/src/parser/ast.ts`
+- `packages/core/src/parser/index.ts`
+- `packages/core/src/parser/parser.test.ts`
+- `packages/core/src/parser/parser.ts`
+- `packages/core/src/validate.test.ts`
+- `packages/core/src/validate.ts`
+
+## Change Log
+
+- 2026-03-10: Implemented schema-level `@defaults`, precedence-aware validation metadata, runtime consumption of effective defaults, regression coverage, and documentation updates; story moved to `review`.

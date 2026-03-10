@@ -3,6 +3,7 @@ import { actorCalled } from '@serenity-js/core';
 import { Ensure, equals, includes, isTrue, isGreaterThan, startsWith } from '@serenity-js/assertions';
 import { ValidateSchema } from '../support/tasks/ValidationTasks';
 import { ValidationResult } from '../support/questions/ValidationQuestions';
+import type { DefaultSpec } from '../../src/parser';
 
 /**
  * Step definitions for end-to-end validation feature
@@ -15,6 +16,28 @@ Given('the validation API is available', async () => {
 Given('I have a schema file with the content:', async (docString: string) => {
   const actor = actorCalled('QA Tester');
   await actor.attemptsTo(ValidateSchema.withSource(docString));
+});
+
+Given('I validate using configured generator defaults:', async (dataTable: { hashes: () => Array<Record<string, string>> }) => {
+  const defaults: DefaultSpec[] = dataTable.hashes().map((row) => {
+    const parameters = Object.entries(row)
+      .filter(([key, value]) => key !== 'fieldType' && key !== 'generator' && value.trim().length > 0)
+      .map(([key, value]) => ({
+        name: key,
+        value: key === 'array' ? value.split('|').map((item) => item.trim()) : Number.isNaN(Number(value)) ? value : Number(value),
+      }));
+
+    return {
+      fieldType: row.fieldType,
+      generator: {
+        name: row.generator,
+        parameters: parameters.length > 0 ? parameters : undefined,
+      },
+    };
+  });
+
+  const actor = actorCalled('QA Tester');
+  await actor.attemptsTo(ValidateSchema.withDefaultGenerators(defaults));
 });
 
 Given(
@@ -106,3 +129,17 @@ Then(
     }
   },
 );
+
+Then('field {string} in schema {string} should resolve generator {string}', async (fieldName: string, schemaName: string, generatorName: string) => {
+  const actor = actorCalled('QA Tester');
+  await actor.attemptsTo(
+    Ensure.that(ValidationResult.resolvedGenerator(schemaName, fieldName), equals(generatorName)),
+  );
+});
+
+Then('field {string} in schema {string} should be marked unique', async (fieldName: string, schemaName: string) => {
+  const actor = actorCalled('QA Tester');
+  await actor.attemptsTo(
+    Ensure.that(ValidationResult.fieldIsUnique(schemaName, fieldName), isTrue()),
+  );
+});
