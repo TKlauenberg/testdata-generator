@@ -101,6 +101,64 @@ describe('validateSchema()', () => {
       }
     });
 
+    test('should accept empty @defaults block without error', () => {
+      const source = `
+        schema User {
+          @defaults {}
+          name: string
+        }
+      `;
+      const result = validateSchema(source, 'test.td');
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        const userSchema = result.value.schemas.get('User');
+        expect(userSchema).toBeDefined();
+        expect(userSchema?.resolvedDefaults?.generatorDefaults.size).toBe(0);
+        expect(userSchema?.resolvedDefaults?.unique).toBeUndefined();
+      }
+    });
+
+    test('should treat unique=false in @defaults as no-op (same effective result as no uniqueness constraint)', () => {
+      const source = `
+        schema User {
+          @defaults {
+            unique=false
+          }
+          name: string
+        }
+      `;
+      const result = validateSchema(source, 'test.td');
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        const userSchema = result.value.schemas.get('User');
+        expect(userSchema?.fields[0]?.isUnique).toBe(false);
+      }
+    });
+
+    test('should validate schema without @defaults block normally (9.1/9.2 regression)', () => {
+      const source = `
+        schema User {
+          id: uuid generator=uuid
+          name: string
+          age: number
+        }
+      `;
+      const result = validateSchema(source, 'test.td');
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        const userSchema = result.value.schemas.get('User');
+        expect(userSchema).toBeDefined();
+        expect(userSchema?.fields).toHaveLength(3);
+        expect(userSchema?.node.defaults).toBeUndefined();
+        expect(userSchema?.fields[0]?.isUnique).toBe(false);
+        expect(userSchema?.fields[0]?.effective?.generatorSource).toBe('field');
+        expect(userSchema?.fields[1]?.effective?.generatorSource).toBe('built-in');
+      }
+    });
+
     test('should validate schema with generators', () => {
       const source = `
         schema User {
@@ -262,6 +320,46 @@ describe('validateSchema()', () => {
       if (!result.ok) {
         expect(
           result.errors.some((error) => error.message.includes('Schema defaults block must appear only once at the start')),
+        ).toBe(true);
+      }
+    });
+
+    test('should reject duplicate unique= declarations in @defaults block', () => {
+      const source = `
+        schema User {
+          @defaults {
+            unique=true
+            unique=false
+          }
+          name: string
+        }
+      `;
+      const result = validateSchema(source, 'test.td');
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(
+          result.errors.some((e) => e.message.includes("duplicate 'unique' declaration")),
+        ).toBe(true);
+      }
+    });
+
+    test('should reject duplicate fieldType generator defaults in @defaults block', () => {
+      const source = `
+        schema User {
+          @defaults {
+            string generator=randomString(length=12)
+            string generator=uuid
+          }
+          name: string
+        }
+      `;
+      const result = validateSchema(source, 'test.td');
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(
+          result.errors.some((e) => e.message.includes("duplicate generator default for type 'string'")),
         ).toBe(true);
       }
     });

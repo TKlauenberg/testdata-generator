@@ -577,12 +577,24 @@ export class Parser {
 
     const generatorDefaults: DefaultSpec[] = [];
     let uniqueDefault: boolean | undefined;
+    let uniqueDefaultSet = false;
+    const seenFieldTypes = new Set<string>();
 
     while (!this._check('operator', '}') && !this._isAtEnd()) {
       if (this._check('keyword', 'unique')) {
+        const uniqueKeywordToken = this._currentToken();
         const uniqueResult = this._parseSchemaDefaultUnique();
         if (uniqueResult.ok) {
-          uniqueDefault = uniqueResult.value;
+          if (uniqueDefaultSet) {
+            this._addError(
+              "@defaults block contains a duplicate 'unique' declaration",
+              uniqueKeywordToken.location,
+              ["Remove the duplicate 'unique' declaration; only one is allowed per @defaults block"],
+            );
+          } else {
+            uniqueDefault = uniqueResult.value;
+            uniqueDefaultSet = true;
+          }
         } else {
           this._synchronizeToNextSchemaDefaultEntry();
         }
@@ -590,9 +602,19 @@ export class Parser {
       }
 
       if (this._check('identifier')) {
+        const fieldTypeToken = this._currentToken();
         const generatorDefaultResult = this._parseSchemaDefaultGenerator();
         if (generatorDefaultResult.ok) {
-          generatorDefaults.push(generatorDefaultResult.value);
+          if (seenFieldTypes.has(generatorDefaultResult.value.fieldType)) {
+            this._addError(
+              `@defaults block contains a duplicate generator default for type '${generatorDefaultResult.value.fieldType}'`,
+              fieldTypeToken.location,
+              [`Remove the duplicate '${generatorDefaultResult.value.fieldType}' generator default; only one is allowed per @defaults block`],
+            );
+          } else {
+            seenFieldTypes.add(generatorDefaultResult.value.fieldType);
+            generatorDefaults.push(generatorDefaultResult.value);
+          }
         } else {
           this._synchronizeToNextSchemaDefaultEntry();
         }

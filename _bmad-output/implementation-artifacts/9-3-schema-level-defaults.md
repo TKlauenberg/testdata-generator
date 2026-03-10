@@ -1,6 +1,6 @@
 # Story 9.3: Schema-Level Defaults
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -231,3 +231,27 @@ GPT-5.4
 ## Change Log
 
 - 2026-03-10: Implemented schema-level `@defaults`, precedence-aware validation metadata, runtime consumption of effective defaults, regression coverage, and documentation updates; story moved to `review`.
+- 2026-03-10: Code review complete. Fixed M1 (duplicate `unique=` in `@defaults` now emits parser diagnostic), fixed M2 (duplicate fieldType generator default now emits parser diagnostic). Added 8 new tests covering duplicates, empty block, no-op `unique=false`, and explicit no-`@defaults` regression. Fixed L3 (`ValidateSchemaAbility.setSchemaSource` no longer silently resets configured generator defaults). Added L4 BDD regression scenario for schemas without `@defaults`. Story moved to `done`.
+
+## Senior Developer Review (AI)
+
+**Reviewer:** Tobi on 2026-03-10
+
+**Outcome:** Changes Requested → Fixed
+
+### Findings
+
+| #   | Severity | Description                                                                                                               | File                                 | Fixed                 |
+| --- | -------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ | --------------------- |
+| M1  | MEDIUM   | Duplicate `unique=` in `@defaults` block silently overwrote the first value with no diagnostic                            | `parser.ts`                          | ✅ Auto-fixed          |
+| M2  | MEDIUM   | Duplicate fieldType in `@defaults` generator list silently overwrote via `Map.set()` with no diagnostic                   | `parser.ts`                          | ✅ Auto-fixed          |
+| L1  | LOW      | `unique=false` in `@defaults` is semantically a no-op (built-in default is already false) but accepted without indication | `validate.test.ts`                   | ✅ Test coverage added |
+| L2  | LOW      | Empty `@defaults {}` accepted silently with no effect; no user feedback                                                   | `parser.test.ts`, `validate.test.ts` | ✅ Test coverage added |
+| L3  | LOW      | `ValidateSchemaAbility.setSchemaSource()` implicitly reset `_defaultGenerators`, creating hidden step-ordering dependency | `ValidateSchemaAbility.ts`           | ✅ Auto-fixed          |
+| L4  | LOW      | `schema-defaults.feature` lacked an explicit no-`@defaults` regression scenario as required by testing requirements       | `schema-defaults.feature`            | ✅ Scenario added      |
+
+### Post-fix Verification
+
+- **Unit tests:** 104 pass (was 96) — 8 new tests added, all green
+- **BDD tests:** 1 pass (all scenarios including new regression scenario)
+- **Git discrepancies:** 0

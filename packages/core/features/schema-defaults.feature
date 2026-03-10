@@ -68,3 +68,15 @@ Feature: Schema-level defaults
     When I validate the schema
     Then the validation should succeed
     And field "email" in schema "User" should resolve generator "email"
+
+  Scenario: Schemas without @defaults block validate normally (regression)
+    Given I have a schema file with the content:
+      """
+      schema User {
+        id: uuid generator=uuid
+        name: string
+      }
+      """
+    When I validate the schema
+    Then the validation should succeed
+    And the result should contain 1 schema(s)

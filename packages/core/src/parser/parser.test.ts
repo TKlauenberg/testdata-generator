@@ -272,6 +272,105 @@ describe('Parser - Basic Functionality', () => {
       ).toBe(true);
     }
   });
+
+  test('rejects duplicate unique= declarations in @defaults block', () => {
+    const tokens: Token[] = [
+      keyword('schema', 1, 1),
+      ident('User', 1, 8),
+      op('{', 1, 13),
+      op('@', 2, 3),
+      ident('defaults', 2, 4),
+      op('{', 2, 13),
+      keyword('unique', 3, 5),
+      op('=', 3, 11),
+      ident('true', 3, 13),
+      keyword('unique', 4, 5),
+      op('=', 4, 11),
+      ident('false', 4, 13),
+      op('}', 5, 3),
+      ident('name', 6, 3),
+      op(':', 6, 7),
+      ident('string', 6, 9),
+      op('}', 7, 1),
+      eof(7, 2),
+    ];
+
+    const result = parse(tokens);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(
+        result.errors.some((e) => e.message.includes("duplicate 'unique' declaration")),
+      ).toBe(true);
+    }
+  });
+
+  test('rejects duplicate fieldType generator declarations in @defaults block', () => {
+    const tokens: Token[] = [
+      keyword('schema', 1, 1),
+      ident('User', 1, 8),
+      op('{', 1, 13),
+      op('@', 2, 3),
+      ident('defaults', 2, 4),
+      op('{', 2, 13),
+      ident('string', 3, 5),
+      ident('generator', 3, 12),
+      op('=', 3, 21),
+      ident('randomString', 3, 22),
+      op('(', 3, 34),
+      ident('length', 3, 35),
+      op('=', 3, 41),
+      num(12, 3, 42),
+      op(')', 3, 44),
+      ident('string', 4, 5),
+      ident('generator', 4, 12),
+      op('=', 4, 21),
+      ident('uuid', 4, 22),
+      op('}', 5, 3),
+      ident('name', 6, 3),
+      op(':', 6, 7),
+      ident('string', 6, 9),
+      op('}', 7, 1),
+      eof(7, 2),
+    ];
+
+    const result = parse(tokens);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(
+        result.errors.some((e) => e.message.includes("duplicate generator default for type 'string'")),
+      ).toBe(true);
+    }
+  });
+
+  test('accepts empty @defaults block without error', () => {
+    const tokens: Token[] = [
+      keyword('schema', 1, 1),
+      ident('User', 1, 8),
+      op('{', 1, 13),
+      op('@', 2, 3),
+      ident('defaults', 2, 4),
+      op('{', 2, 13),
+      op('}', 3, 3),
+      ident('name', 4, 3),
+      op(':', 4, 7),
+      ident('string', 4, 9),
+      op('}', 5, 1),
+      eof(5, 2),
+    ];
+
+    const result = parse(tokens);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const schema = result.value.declarations[0] as SchemaNode;
+      expect(schema.defaults).toBeDefined();
+      expect(schema.defaults?.generatorDefaults).toBeUndefined();
+      expect(schema.defaults?.constraints).toBeUndefined();
+      expect(schema.fields).toHaveLength(1);
+    }
+  });
 });
 
 describe('Parser - Generator Specifications', () => {

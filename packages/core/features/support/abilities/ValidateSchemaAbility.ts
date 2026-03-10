@@ -21,7 +21,6 @@ export class ValidateSchemaAbility extends Ability {
 
   setSchemaSource(source: string): void {
     this._schemaSource = source;
-    this._defaultGenerators = [];
   }
 
   setDefaultGenerators(defaultGenerators: readonly DefaultSpec[]): void {
