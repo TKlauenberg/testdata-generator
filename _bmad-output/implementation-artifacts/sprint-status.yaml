@@ -117,8 +117,8 @@ development_status:
   9-4-configuration-priority-and-merging: done
   epic-9-retrospective: done
 
-  epic-10: backlog
-  10-1-csv-output-adapter: backlog
+  epic-10: in-progress
+  10-1-csv-output-adapter: ready-for-dev
   10-2-sql-output-adapter: backlog
   10-3-cli-multi-format-support: backlog
   10-4-programmatic-api-for-test-integration: backlog
