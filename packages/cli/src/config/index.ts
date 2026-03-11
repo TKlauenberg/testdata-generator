@@ -2,6 +2,7 @@ export { BUILT_IN_CLI_CONFIG, GLOBAL_CONFIG_FILE_NAME, cloneBuiltInCliConfig, re
 export {
   CliConfigError,
   findWorkspaceConfigPath,
+  getSettingSources,
   loadEffectiveConfig,
   loadGlobalConfig,
   loadWorkspaceConfig,
@@ -15,6 +16,7 @@ export type {
   CliContextDefaults,
   CliGlobalConfig,
   CliOutputFormat,
+  EffectiveSettingSources,
   LoadedEffectiveCliConfig,
   LoadedCliGlobalConfig,
   LoadedCliWorkspaceConfig,

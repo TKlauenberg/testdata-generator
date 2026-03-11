@@ -6,8 +6,10 @@ import type {
   CliConfigLayer,
   CliConfigDefaults,
   CliConfigSection,
+  CliConfigSource,
   CliGlobalConfig,
   CliOutputFormat,
+  EffectiveSettingSources,
   LoadedEffectiveCliConfig,
   LoadedCliGlobalConfig,
   LoadedCliWorkspaceConfig,
@@ -25,6 +27,32 @@ export class CliConfigError extends Error {
     this.name = 'CliConfigError';
     this.exitCode = exitCode;
   }
+}
+
+export function getSettingSources(effective: LoadedEffectiveCliConfig): EffectiveSettingSources {
+  let defaultsSource: CliConfigSource = 'built-in';
+  let contextSource: CliConfigSource = 'built-in';
+  let generatorDefaultsSource: CliConfigSource = 'built-in';
+
+  if (effective.layers.global.source === 'global') {
+    if (effective.layers.global.providedSections.includes('defaults'))
+      defaultsSource = 'global';
+    if (effective.layers.global.providedSections.includes('context'))
+      contextSource = 'global';
+    if (effective.layers.global.providedSections.includes('generatorDefaults'))
+      generatorDefaultsSource = 'global';
+  }
+
+  if (effective.layers.workspace !== undefined) {
+    if (effective.layers.workspace.providedSections.includes('defaults'))
+      defaultsSource = 'workspace';
+    if (effective.layers.workspace.providedSections.includes('context'))
+      contextSource = 'workspace';
+    if (effective.layers.workspace.providedSections.includes('generatorDefaults'))
+      generatorDefaultsSource = 'workspace';
+  }
+
+  return { defaults: defaultsSource, context: contextSource, generatorDefaults: generatorDefaultsSource };
 }
 
 export async function loadGlobalConfig(

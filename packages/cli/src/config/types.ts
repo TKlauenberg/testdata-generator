@@ -54,3 +54,9 @@ export interface LoadedEffectiveCliConfig {
     readonly workspace?: LoadedCliWorkspaceConfig;
   };
 }
+
+export interface EffectiveSettingSources {
+  readonly defaults: CliConfigSource;
+  readonly context: CliConfigSource;
+  readonly generatorDefaults: CliConfigSource;
+}

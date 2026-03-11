@@ -4,6 +4,7 @@ import { version } from '@testdata-ai/core';
 import { generateCommand } from '../src/commands/generate.js';
 import { validateCommand } from '../src/commands/validate.js';
 import { initCommand } from '../src/commands/init.js';
+import { configCommand } from '../src/commands/config.js';
 
 const program = new Command();
 
@@ -16,5 +17,6 @@ program
 program.addCommand(generateCommand);
 program.addCommand(validateCommand);
 program.addCommand(initCommand);
+program.addCommand(configCommand);
 
 program.parse();

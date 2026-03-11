@@ -1,6 +1,6 @@
 # Story 9.4: Configuration Priority and Merging
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -28,26 +28,26 @@ This story also closes the Epic 8 retrospective gap by defining the canonical co
 
 ## Tasks / Subtasks
 
-- [ ] Add `td config show` command with per-setting source attribution (AC: 7, 8)
-  - [ ] Create `packages/cli/src/commands/config.ts` with a Commander `config` command containing a `show` subcommand.
-  - [ ] Add `EffectiveSettingSources` type to `packages/cli/src/config/types.ts` for per-section source attribution.
-  - [ ] Implement `getSettingSources(effective: LoadedEffectiveCliConfig): EffectiveSettingSources` in `packages/cli/src/config/configLoader.ts` — derives the winning source (built-in, global, workspace) for each config section by replaying layer priority over `providedSections`.
-  - [ ] Export `getSettingSources` and `EffectiveSettingSources` from `packages/cli/src/config/index.ts`.
-  - [ ] Format output in the `show` subcommand: display priority legend, config-file paths with found/not-found status, then each setting annotated with `[source]`.
-  - [ ] Register `configCommand` in `packages/cli/bin/td.ts`.
+- [x] Add `td config show` command with per-setting source attribution (AC: 7, 8)
+  - [x] Create `packages/cli/src/commands/config.ts` with a Commander `config` command containing a `show` subcommand.
+  - [x] Add `EffectiveSettingSources` type to `packages/cli/src/config/types.ts` for per-section source attribution.
+  - [x] Implement `getSettingSources(effective: LoadedEffectiveCliConfig): EffectiveSettingSources` in `packages/cli/src/config/configLoader.ts` — derives the winning source (built-in, global, workspace) for each config section by replaying layer priority over `providedSections`.
+  - [x] Export `getSettingSources` and `EffectiveSettingSources` from `packages/cli/src/config/index.ts`.
+  - [x] Format output in the `show` subcommand: display priority legend, config-file paths with found/not-found status, then each setting annotated with `[source]`.
+  - [x] Register `configCommand` in `packages/cli/bin/td.ts`.
 
-- [ ] Add priority verification tests for ALL config options (AC: 10)
-  - [ ] Extend `packages/cli/src/config/configLoader.test.ts` to explicitly verify that each of the three sections (`defaults`, `context`, `generatorDefaults`) follows workspace > global > built-in priority, including cases where only one layer provides a section.
-  - [ ] Add `packages/cli/src/commands/config.test.ts` with unit tests for the `show` command output: correct source labels, correct value display, correct file-path reporting for found/not-found configs.
-  - [ ] Ensure no existing tests break (regression coverage for Stories 9.1, 9.2, 9.3 config behavior).
+- [x] Add priority verification tests for ALL config options (AC: 10)
+  - [x] Extend `packages/cli/src/config/configLoader.test.ts` to explicitly verify that each of the three sections (`defaults`, `context`, `generatorDefaults`) follows workspace > global > built-in priority, including cases where only one layer provides a section.
+  - [x] Add `packages/cli/src/commands/config.test.ts` with unit tests for the `show` command output: correct source labels, correct value display, correct file-path reporting for found/not-found configs.
+  - [x] Ensure no existing tests break (regression coverage for Stories 9.1, 9.2, 9.3 config behavior).
 
-- [ ] Document the canonical configuration model (AC: 4, 5, 6, 9, 11)
-  - [ ] Create `docs/configuration.md` with full 5-layer priority stack, a configuration scope matrix (which settings belong at which layers), Epic 8 context-settings clarification (`context.saveDirectory` vs `--save-context-dir`), and the CLI-vs-schema-semantics boundary.
-  - [ ] Update `README.md` to include a concise `## Configuration` section linking to `docs/configuration.md` and showing a quick cascading rule summary and `td config show` example.
+- [x] Document the canonical configuration model (AC: 4, 5, 6, 9, 11)
+  - [x] Create `docs/configuration.md` with full 5-layer priority stack, a configuration scope matrix (which settings belong at which layers), Epic 8 context-settings clarification (`context.saveDirectory` vs `--save-context-dir`), and the CLI-vs-schema-semantics boundary.
+  - [x] Update `README.md` to include a concise `## Configuration` section linking to `docs/configuration.md` and showing a quick cascading rule summary and `td config show` example.
 
-- [ ] Add BDD coverage for the configuration priority model (AC: 1, 2)
-  - [ ] Create `packages/core/features/config-priority.feature` with scenarios exercising the full priority stack through the validation API: built-in defaults apply when nothing else is configured, global defaults apply when workspace defaults are absent, workspace defaults override global defaults, schema-level defaults override workspace defaults, and field-level declarations override schema defaults.
-  - [ ] Add or extend step definitions in `packages/core/features/step_definitions/` only if new steps are needed; reuse existing steps where possible.
+- [x] Add BDD coverage for the configuration priority model (AC: 1, 2)
+  - [x] Create `packages/core/features/config-priority.feature` with scenarios exercising the full priority stack through the validation API: built-in defaults apply when nothing else is configured, global defaults apply when workspace defaults are absent, workspace defaults override global defaults, schema-level defaults override workspace defaults, and field-level declarations override schema defaults.
+  - [x] Add or extend step definitions in `packages/core/features/step_definitions/` only if new steps are needed; reuse existing steps where possible.
 
 ## Dev Notes
 
@@ -217,13 +217,13 @@ export const configCommand = new Command('config')
 
 The full priority stack, from highest to lowest:
 
-| Priority | Layer | Where | Examples |
-|---|---|---|---|
-| 1 (highest) | field-level | DSL field declaration | `name: string generator=firstName()` |
-| 2 | schema-level | DSL `@defaults` block | `@defaults { string generator=pick(...) }` |
-| 3 | workspace | `.tdconfig.json` in project root (upward-discovered) | `generatorDefaults`, `context.saveDirectory` |
-| 4 | global | `~/.tdconfig.json` | `defaults.count`, `defaults.format` |
-| 5 (lowest) | built-in | Hardcoded in `defaults.ts` | count=10, format=json, saveDirectory=./contexts |
+| Priority    | Layer        | Where                                                | Examples                                        |
+| ----------- | ------------ | ---------------------------------------------------- | ----------------------------------------------- |
+| 1 (highest) | field-level  | DSL field declaration                                | `name: string generator=firstName()`            |
+| 2           | schema-level | DSL `@defaults` block                                | `@defaults { string generator=pick(...) }`      |
+| 3           | workspace    | `.tdconfig.json` in project root (upward-discovered) | `generatorDefaults`, `context.saveDirectory`    |
+| 4           | global       | `~/.tdconfig.json`                                   | `defaults.count`, `defaults.format`             |
+| 5 (lowest)  | built-in     | Hardcoded in `defaults.ts`                           | count=10, format=json, saveDirectory=./contexts |
 
 **Settings scope:**
 - `defaults.count` and `defaults.format` — CLI/workspace/global config only (no DSL equivalent)
@@ -330,10 +330,46 @@ Follow project rules in `_bmad-output/planning-artifacts/project-context.md`:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Sonnet 4.6
 
 ### Debug Log References
 
+No blocking issues encountered. Implementation followed story specifications exactly.
+
 ### Completion Notes List
 
+- ✅ Implemented `EffectiveSettingSources` interface in `packages/cli/src/config/types.ts`
+- ✅ Implemented `getSettingSources()` in `packages/cli/src/config/configLoader.ts` — section-level source attribution replaying global then workspace layer priority
+- ✅ Exported `getSettingSources` and `EffectiveSettingSources` from `packages/cli/src/config/index.ts`
+- ✅ Created `packages/cli/src/commands/config.ts` with Commander.js nested `config show` subcommand using `eslint-disable` comments for intentional user-facing `console.log` output
+- ✅ Registered `configCommand` in `packages/cli/bin/td.ts`
+- ✅ Extended `configLoader.test.ts` with 14 new tests: 5 for `getSettingSources()` + 9 for section priority (defaults, context, generatorDefaults each with 3 combinations)
+- ✅ Created `packages/cli/src/commands/config.test.ts` with 8 spawn-based integration tests covering all `td config show` output scenarios
+- ✅ All 143 CLI unit tests pass; no regressions
+- ✅ Created `docs/configuration.md` with 5-layer priority stack, configuration scope matrix, Epic 8 context settings, CLI vs schema semantics boundary, and cascade examples
+- ✅ Updated `README.md` with concise `## Configuration` section linking to `docs/configuration.md` with `td config show` example
+- ✅ Created `packages/core/features/config-priority.feature` with 5 BDD scenarios covering full priority stack
+- ✅ No new step definitions needed; all scenarios reuse existing steps from `validation.steps.ts`
+- ✅ 57 BDD scenarios pass (52 existing + 5 new); no regressions
+- ✅ ESLint clean on all modified files; `tsc --project packages/cli/tsconfig.json --noEmit` reports zero errors
+
 ### File List
+
+**New files:**
+- `packages/cli/src/commands/config.ts`
+- `packages/cli/src/commands/config.test.ts`
+- `packages/core/features/config-priority.feature`
+- `docs/configuration.md`
+
+**Modified files:**
+- `packages/cli/src/config/types.ts` — Added `EffectiveSettingSources` interface
+- `packages/cli/src/config/configLoader.ts` — Added `getSettingSources()` export
+- `packages/cli/src/config/index.ts` — Exported `getSettingSources` and `EffectiveSettingSources`
+- `packages/cli/bin/td.ts` — Registered `configCommand`
+- `packages/cli/src/config/configLoader.test.ts` — Added 14 priority verification + `getSettingSources` tests
+- `README.md` — Added `## Configuration` section
+- `_bmad-output/implementation-artifacts/sprint-status.yaml` — Updated story status
+
+### Change Log
+
+- **2026-03-10**: Story 9.4 implemented — `td config show` command, `EffectiveSettingSources` type, `getSettingSources()` source attribution, 14 new unit tests, 8 command integration tests, 5 BDD scenarios, canonical configuration model documentation in `docs/configuration.md`, `README.md` updated with Configuration section.

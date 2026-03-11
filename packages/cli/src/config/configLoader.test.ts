@@ -5,6 +5,7 @@ import * as path from 'node:path';
 import {
   CliConfigError,
   findWorkspaceConfigPath,
+  getSettingSources,
   loadEffectiveConfig,
   loadGlobalConfig,
 } from './configLoader';
@@ -389,5 +390,207 @@ describe('loadEffectiveConfig', () => {
     } finally {
       await fs.chmod(workspaceConfigPath, 0o600);
     }
+  });
+});
+
+describe('getSettingSources', () => {
+  test('returns built-in for all sections when neither global nor workspace config exists', async () => {
+    const homeDirectory = await createHomeDirectory();
+    const workspaceDirectory = await createWorkspaceDirectory();
+
+    const effective = await loadEffectiveConfig({ homeDirectory, currentDirectory: workspaceDirectory });
+    const sources = getSettingSources(effective);
+
+    expect(sources.defaults).toBe('built-in');
+    expect(sources.context).toBe('built-in');
+    expect(sources.generatorDefaults).toBe('built-in');
+  });
+
+  test('returns global for sections provided by global config only', async () => {
+    const homeDirectory = await createHomeDirectory();
+    const workspaceDirectory = await createWorkspaceDirectory();
+
+    await writeGlobalConfig(homeDirectory, {
+      defaults: { count: 5, format: 'json' },
+      context: { saveDirectory: 'global-ctx' },
+      generatorDefaults: [{ fieldType: 'string', generator: { name: 'pick' } }],
+    });
+
+    const effective = await loadEffectiveConfig({ homeDirectory, currentDirectory: workspaceDirectory });
+    const sources = getSettingSources(effective);
+
+    expect(sources.defaults).toBe('global');
+    expect(sources.context).toBe('global');
+    expect(sources.generatorDefaults).toBe('global');
+  });
+
+  test('returns workspace for sections provided by workspace config, built-in for rest', async () => {
+    const homeDirectory = await createHomeDirectory();
+    const workspaceDirectory = await createWorkspaceDirectory();
+
+    await writeWorkspaceConfig(workspaceDirectory, { context: { saveDirectory: 'ws-ctx' } });
+
+    const effective = await loadEffectiveConfig({ homeDirectory, currentDirectory: workspaceDirectory });
+    const sources = getSettingSources(effective);
+
+    expect(sources.defaults).toBe('built-in');
+    expect(sources.context).toBe('workspace');
+    expect(sources.generatorDefaults).toBe('built-in');
+  });
+
+  test('workspace wins over global when both provide the same section', async () => {
+    const homeDirectory = await createHomeDirectory();
+    const workspaceDirectory = await createWorkspaceDirectory();
+
+    await writeGlobalConfig(homeDirectory, {
+      defaults: { count: 3, format: 'json' },
+      context: { saveDirectory: 'global-ctx' },
+    });
+    await writeWorkspaceConfig(workspaceDirectory, {
+      defaults: { count: 99, format: 'json' },
+      generatorDefaults: [{ fieldType: 'string', generator: { name: 'pick' } }],
+    });
+
+    const effective = await loadEffectiveConfig({ homeDirectory, currentDirectory: workspaceDirectory });
+    const sources = getSettingSources(effective);
+
+    expect(sources.defaults).toBe('workspace');
+    expect(sources.context).toBe('global');
+    expect(sources.generatorDefaults).toBe('workspace');
+  });
+
+  test('marks sections as built-in when global layer source is built-in (no file found)', async () => {
+    const homeDirectory = await createHomeDirectory();
+    const workspaceDirectory = await createWorkspaceDirectory();
+
+    // No config files written — global source will be 'built-in'
+    const effective = await loadEffectiveConfig({ homeDirectory, currentDirectory: workspaceDirectory });
+
+    expect(effective.layers.global.source).toBe('built-in');
+    const sources = getSettingSources(effective);
+
+    expect(sources.defaults).toBe('built-in');
+    expect(sources.context).toBe('built-in');
+    expect(sources.generatorDefaults).toBe('built-in');
+  });
+});
+
+describe('configuration section priority: defaults', () => {
+  test('workspace defaults override global defaults', async () => {
+    const homeDirectory = await createHomeDirectory();
+    const workspaceDirectory = await createWorkspaceDirectory();
+
+    await writeGlobalConfig(homeDirectory, { defaults: { count: 3, format: 'json' } });
+    await writeWorkspaceConfig(workspaceDirectory, { defaults: { count: 99, format: 'json' } });
+
+    const effective = await loadEffectiveConfig({ homeDirectory, currentDirectory: workspaceDirectory });
+
+    expect(effective.config.defaults.count).toBe(99);
+    expect(getSettingSources(effective).defaults).toBe('workspace');
+  });
+
+  test('global defaults override built-in defaults when workspace has no defaults section', async () => {
+    const homeDirectory = await createHomeDirectory();
+    const workspaceDirectory = await createWorkspaceDirectory();
+
+    await writeGlobalConfig(homeDirectory, { defaults: { count: 42, format: 'json' } });
+
+    const effective = await loadEffectiveConfig({ homeDirectory, currentDirectory: workspaceDirectory });
+
+    expect(effective.config.defaults.count).toBe(42);
+    expect(getSettingSources(effective).defaults).toBe('global');
+  });
+
+  test('built-in defaults apply when no config files exist', async () => {
+    const homeDirectory = await createHomeDirectory();
+    const workspaceDirectory = await createWorkspaceDirectory();
+
+    const effective = await loadEffectiveConfig({ homeDirectory, currentDirectory: workspaceDirectory });
+
+    expect(effective.config.defaults.count).toBe(BUILT_IN_CLI_CONFIG.defaults.count);
+    expect(effective.config.defaults.format).toBe(BUILT_IN_CLI_CONFIG.defaults.format);
+    expect(getSettingSources(effective).defaults).toBe('built-in');
+  });
+});
+
+describe('configuration section priority: context', () => {
+  test('workspace context overrides global context', async () => {
+    const homeDirectory = await createHomeDirectory();
+    const workspaceDirectory = await createWorkspaceDirectory();
+
+    await writeGlobalConfig(homeDirectory, { context: { saveDirectory: 'global-ctx' } });
+    await writeWorkspaceConfig(workspaceDirectory, { context: { saveDirectory: 'workspace-ctx' } });
+
+    const effective = await loadEffectiveConfig({ homeDirectory, currentDirectory: workspaceDirectory });
+
+    expect(effective.config.context.saveDirectory).toBe('workspace-ctx');
+    expect(getSettingSources(effective).context).toBe('workspace');
+  });
+
+  test('global context overrides built-in context when workspace has no context section', async () => {
+    const homeDirectory = await createHomeDirectory();
+    const workspaceDirectory = await createWorkspaceDirectory();
+
+    await writeGlobalConfig(homeDirectory, { context: { saveDirectory: 'global-ctx' } });
+
+    const effective = await loadEffectiveConfig({ homeDirectory, currentDirectory: workspaceDirectory });
+
+    expect(effective.config.context.saveDirectory).toBe('global-ctx');
+    expect(getSettingSources(effective).context).toBe('global');
+  });
+
+  test('built-in context applies when no config files exist', async () => {
+    const homeDirectory = await createHomeDirectory();
+    const workspaceDirectory = await createWorkspaceDirectory();
+
+    const effective = await loadEffectiveConfig({ homeDirectory, currentDirectory: workspaceDirectory });
+
+    expect(effective.config.context.saveDirectory).toBe(BUILT_IN_CLI_CONFIG.context.saveDirectory);
+    expect(getSettingSources(effective).context).toBe('built-in');
+  });
+});
+
+describe('configuration section priority: generatorDefaults', () => {
+  test('workspace generatorDefaults override global generatorDefaults', async () => {
+    const homeDirectory = await createHomeDirectory();
+    const workspaceDirectory = await createWorkspaceDirectory();
+
+    await writeGlobalConfig(homeDirectory, {
+      generatorDefaults: [{ fieldType: 'string', generator: { name: 'pick' } }],
+    });
+    await writeWorkspaceConfig(workspaceDirectory, {
+      generatorDefaults: [{ fieldType: 'string', generator: { name: 'randomString' } }],
+    });
+
+    const effective = await loadEffectiveConfig({ homeDirectory, currentDirectory: workspaceDirectory });
+
+    expect(effective.config.generatorDefaults).toHaveLength(1);
+    expect(effective.config.generatorDefaults[0].generator.name).toBe('randomString');
+    expect(getSettingSources(effective).generatorDefaults).toBe('workspace');
+  });
+
+  test('global generatorDefaults override built-in when workspace has no generatorDefaults section', async () => {
+    const homeDirectory = await createHomeDirectory();
+    const workspaceDirectory = await createWorkspaceDirectory();
+
+    await writeGlobalConfig(homeDirectory, {
+      generatorDefaults: [{ fieldType: 'string', generator: { name: 'pick' } }],
+    });
+
+    const effective = await loadEffectiveConfig({ homeDirectory, currentDirectory: workspaceDirectory });
+
+    expect(effective.config.generatorDefaults).toHaveLength(1);
+    expect(effective.config.generatorDefaults[0].generator.name).toBe('pick');
+    expect(getSettingSources(effective).generatorDefaults).toBe('global');
+  });
+
+  test('built-in generatorDefaults (empty) apply when no config files exist', async () => {
+    const homeDirectory = await createHomeDirectory();
+    const workspaceDirectory = await createWorkspaceDirectory();
+
+    const effective = await loadEffectiveConfig({ homeDirectory, currentDirectory: workspaceDirectory });
+
+    expect(effective.config.generatorDefaults).toHaveLength(0);
+    expect(getSettingSources(effective).generatorDefaults).toBe('built-in');
   });
 });

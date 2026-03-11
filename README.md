@@ -197,6 +197,44 @@ git add .tdconfig.json
 bun packages/cli/bin/td.ts generate schema.td --save-context baseline-users
 ```
 
+## Configuration
+
+testdata-ai uses a five-layer configuration model. Higher-priority layers completely override the same section in lower-priority layers (no deep merging within a section).
+
+**Priority order (highest first):** field-level > schema-level (`@defaults`) > workspace (`.tdconfig.json`) > global (`~/.tdconfig.json`) > built-in
+
+**Quick cascade summary:**
+- `defaults.count` and `defaults.format` — CLI/workspace/global only (no DSL equivalent)
+- `context.saveDirectory` — default storage path for `--save-context`; `--save-context-dir` overrides per-invocation only
+- `generatorDefaults` — configured at CLI/workspace/global level; schema `@defaults` overrides per-schema; field declarations override always
+
+**Inspect effective configuration:**
+
+```bash
+bun packages/cli/bin/td.ts config show
+```
+
+This annotates each setting with its winning layer (`[built-in]`, `[global]`, or `[workspace]`):
+
+```
+Effective Configuration
+═══════════════════════
+
+Layer priority:  field-level  >  schema-level  >  workspace  >  global  >  built-in
+
+Config files:
+  global     /home/user/.tdconfig.json  (not found — using built-in defaults)
+  workspace  /projects/my-app/.tdconfig.json
+
+Settings:
+  defaults.count        10           [built-in]
+  defaults.format       json         [built-in]
+  context.saveDirectory ./team-ctx   [workspace]
+  generatorDefaults     string: pick [workspace]
+```
+
+For the full configuration reference including the scope matrix, Epic 8 context settings, and detailed cascade examples, see [docs/configuration.md](docs/configuration.md).
+
 ## Development
 
 ### Building
