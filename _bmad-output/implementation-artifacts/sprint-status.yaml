@@ -110,12 +110,12 @@ development_status:
   8-5-save-generated-data-as-context: done
   epic-8-retrospective: done
 
-  epic-9: in-progress
+  epic-9: done
   9-1-global-configuration-defaults: done
   9-2-workspace-configuration: done
   9-3-schema-level-defaults: done # Code review complete, 104 tests passing, 6 issues found and fixed
   9-4-configuration-priority-and-merging: done
-  epic-9-retrospective: optional
+  epic-9-retrospective: done
 
   epic-10: backlog
   10-1-csv-output-adapter: backlog
