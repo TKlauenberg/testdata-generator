@@ -139,6 +139,7 @@ td config show
 ```
 
 This command loads the full layer stack using the same pipeline as all other commands and annotates each setting with its winning source layer.
+The config file table also marks each discovered file as `(found)` or `(not found ...)`.
 
 ## Config File Format
 

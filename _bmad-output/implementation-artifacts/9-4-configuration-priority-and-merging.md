@@ -1,6 +1,6 @@
 # Story 9.4: Configuration Priority and Merging
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -349,9 +349,11 @@ No blocking issues encountered. Implementation followed story specifications exa
 - ✅ Created `docs/configuration.md` with 5-layer priority stack, configuration scope matrix, Epic 8 context settings, CLI vs schema semantics boundary, and cascade examples
 - ✅ Updated `README.md` with concise `## Configuration` section linking to `docs/configuration.md` with `td config show` example
 - ✅ Created `packages/core/features/config-priority.feature` with 5 BDD scenarios covering full priority stack
-- ✅ No new step definitions needed; all scenarios reuse existing steps from `validation.steps.ts`
-- ✅ 57 BDD scenarios pass (52 existing + 5 new); no regressions
+- ✅ Added focused BDD step definitions and validation tasks to model separate global and workspace generator-default layers while reusing the existing validation assertions
+- ✅ Post-review verification completed: targeted CLI tests passed and the core BDD runner passed with the updated precedence scenarios
 - ✅ ESLint clean on all modified files; `tsc --project packages/cli/tsconfig.json --noEmit` reports zero errors
+- ✅ Code review fixes applied: BDD coverage now models separate global and workspace generator-default layers, `td config show` reports found/not-found file status, and generator defaults display full parameterized values
+- ✅ README configuration guidance deduplicated to keep `docs/configuration.md` as the canonical reference
 
 ### File List
 
@@ -362,14 +364,42 @@ No blocking issues encountered. Implementation followed story specifications exa
 - `docs/configuration.md`
 
 **Modified files:**
+- `_bmad-output/implementation-artifacts/9-4-configuration-priority-and-merging.md` — Recorded review fixes and final status
 - `packages/cli/src/config/types.ts` — Added `EffectiveSettingSources` interface
 - `packages/cli/src/config/configLoader.ts` — Added `getSettingSources()` export
 - `packages/cli/src/config/index.ts` — Exported `getSettingSources` and `EffectiveSettingSources`
 - `packages/cli/bin/td.ts` — Registered `configCommand`
+- `packages/cli/src/commands/config.ts` — Added explicit config-file status labels and full generator parameter rendering
+- `packages/cli/src/commands/config.test.ts` — Expanded output assertions for found status and parameterized generator display
 - `packages/cli/src/config/configLoader.test.ts` — Added 14 priority verification + `getSettingSources` tests
+- `packages/core/features/step_definitions/validation.steps.ts` — Added layered config steps for global/workspace generator defaults
+- `packages/core/features/support/abilities/ValidateSchemaAbility.ts` — Added layered default-generator composition for BDD validation
+- `packages/core/features/support/tasks/ValidationTasks.ts` — Added tasks for global/workspace generator-default setup
 - `README.md` — Added `## Configuration` section
 - `_bmad-output/implementation-artifacts/sprint-status.yaml` — Updated story status
 
 ### Change Log
 
 - **2026-03-10**: Story 9.4 implemented — `td config show` command, `EffectiveSettingSources` type, `getSettingSources()` source attribution, 14 new unit tests, 8 command integration tests, 5 BDD scenarios, canonical configuration model documentation in `docs/configuration.md`, `README.md` updated with Configuration section.
+- **2026-03-11**: Code review fixes applied — BDD precedence coverage now distinguishes global vs workspace configured defaults, `td config show` now reports found/not-found config-file status and prints full parameterized generator defaults, README configuration content deduplicated, story moved to `done`.
+
+## Senior Developer Review (AI)
+
+**Reviewer:** Tobi on 2026-03-11
+
+**Outcome:** Changes Requested → Fixed
+
+### Findings
+
+| #   | Severity | Description | File | Fixed |
+| --- | -------- | ----------- | ---- | ----- |
+| H1  | HIGH | BDD scenario claimed to validate `workspace > global` precedence but only supplied one effective defaults layer | `packages/core/features/config-priority.feature` | ✅ Auto-fixed |
+| M1  | MEDIUM | `td config show` showed missing-file status but no explicit positive status for discovered config files | `packages/cli/src/commands/config.ts` | ✅ Auto-fixed |
+| M2  | MEDIUM | `td config show` dropped generator parameters, hiding the effective configured value for `generatorDefaults` | `packages/cli/src/commands/config.ts` | ✅ Auto-fixed |
+| L1  | LOW | README had duplicated configuration guidance, increasing drift risk against the canonical docs | `README.md` | ✅ Auto-fixed |
+
+### Post-fix Verification
+
+- Targeted CLI unit tests passed after the fixes
+- BDD support now models separate global and workspace config layers for precedence scenarios
+- Sprint tracking synchronized to `done`

@@ -25,7 +25,7 @@ Feature: Configuration priority model
         label: string
       }
       """
-    And I validate using configured generator defaults:
+    And global generator defaults are configured:
       | fieldType | generator |
       | string    | pick      |
     When I validate the schema
@@ -39,7 +39,10 @@ Feature: Configuration priority model
         tag: string
       }
       """
-    And I validate using configured generator defaults:
+    And global generator defaults are configured:
+      | fieldType | generator |
+      | string    | pick      |
+    And workspace generator defaults are configured:
       | fieldType | generator    |
       | string    | randomString |
     When I validate the schema
@@ -57,7 +60,7 @@ Feature: Configuration priority model
         code: string
       }
       """
-    And I validate using configured generator defaults:
+    And workspace generator defaults are configured:
       | fieldType | generator |
       | string    | pick      |
     When I validate the schema
@@ -75,9 +78,12 @@ Feature: Configuration priority model
         username: string generator=firstName
       }
       """
-    And I validate using configured generator defaults:
+    And global generator defaults are configured:
       | fieldType | generator |
       | string    | pick      |
+    And workspace generator defaults are configured:
+      | fieldType | generator |
+      | string    | email     |
     When I validate the schema
     Then the validation should succeed
     And field "username" in schema "Account" should resolve generator "firstName"

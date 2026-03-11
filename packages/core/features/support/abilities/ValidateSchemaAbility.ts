@@ -10,7 +10,9 @@ import type { DefaultSpec } from '../../../src/parser';
  */
 export class ValidateSchemaAbility extends Ability {
   private _schemaSource?: string;
-  private _defaultGenerators: readonly DefaultSpec[] = [];
+  private _configuredDefaultGenerators?: readonly DefaultSpec[];
+  private _globalDefaultGenerators?: readonly DefaultSpec[];
+  private _workspaceDefaultGenerators?: readonly DefaultSpec[];
   private _result?: Result<ValidatedProgram, Diagnostic[]>;
   private _validationStartTime?: number;
   private _validationEndTime?: number;
@@ -24,7 +26,19 @@ export class ValidateSchemaAbility extends Ability {
   }
 
   setDefaultGenerators(defaultGenerators: readonly DefaultSpec[]): void {
-    this._defaultGenerators = defaultGenerators;
+    this._configuredDefaultGenerators = defaultGenerators;
+    this._globalDefaultGenerators = undefined;
+    this._workspaceDefaultGenerators = undefined;
+  }
+
+  setGlobalDefaultGenerators(defaultGenerators: readonly DefaultSpec[]): void {
+    this._configuredDefaultGenerators = undefined;
+    this._globalDefaultGenerators = defaultGenerators;
+  }
+
+  setWorkspaceDefaultGenerators(defaultGenerators: readonly DefaultSpec[]): void {
+    this._configuredDefaultGenerators = undefined;
+    this._workspaceDefaultGenerators = defaultGenerators;
   }
 
   performValidation(): void {
@@ -33,9 +47,21 @@ export class ValidateSchemaAbility extends Ability {
     }
     this._validationStartTime = performance.now();
     this._result = validateSchema(this._schemaSource, 'test.td', {
-      defaultGenerators: this._defaultGenerators,
+      defaultGenerators: this.getEffectiveDefaultGenerators(),
     });
     this._validationEndTime = performance.now();
+  }
+
+  private getEffectiveDefaultGenerators(): readonly DefaultSpec[] {
+    if (this._configuredDefaultGenerators !== undefined) {
+      return this._configuredDefaultGenerators;
+    }
+
+    if (this._workspaceDefaultGenerators !== undefined) {
+      return this._workspaceDefaultGenerators;
+    }
+
+    return this._globalDefaultGenerators ?? [];
   }
 
   getResolvedGenerator(schemaName: string, fieldName: string): string {

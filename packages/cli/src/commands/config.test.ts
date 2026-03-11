@@ -68,15 +68,19 @@ describe('td config show — output structure', () => {
     expect(stdout).toContain('built-in');
   });
 
-  test('output includes the global config file path', async () => {
+  test('output includes found status for discovered config files', async () => {
     const homeDir = await createHomeDirectory();
     const wsDir = await createWorkspaceDirectory();
+
+    await writeConfig(homeDir, { defaults: { count: 5, format: 'json' } });
+    await writeConfig(wsDir, { context: { saveDirectory: './team-contexts' } });
 
     const { stdout, exitCode } = await runConfigShow(homeDir, wsDir);
 
     expect(exitCode).toBe(0);
     expect(stdout).toContain(homeDir);
     expect(stdout).toContain('.tdconfig.json');
+    expect(stdout).toContain('(found)');
   });
 
   test('shows [built-in] for all settings when no config files are found', async () => {
@@ -124,22 +128,31 @@ describe('td config show — output structure', () => {
     expect(stdout).toContain('(none)');
   });
 
-  test('renders non-empty generatorDefaults as fieldType: generatorName entries', async () => {
+  test('renders non-empty generatorDefaults with generator parameters', async () => {
     const homeDir = await createHomeDirectory();
     const wsDir = await createWorkspaceDirectory();
 
     await writeConfig(homeDir, {
       generatorDefaults: [
-        { fieldType: 'string', generator: { name: 'pick' } },
-        { fieldType: 'number', generator: { name: 'randomNumber' } },
+        {
+          fieldType: 'string',
+          generator: {
+            name: 'pick',
+            parameters: [{ name: 'array', value: ['alpha', 'beta'] }],
+          },
+        },
+        {
+          fieldType: 'number',
+          generator: { name: 'randomNumber', parameters: [{ name: 'min', value: 1 }] },
+        },
       ],
     });
 
     const { stdout, exitCode } = await runConfigShow(homeDir, wsDir);
 
     expect(exitCode).toBe(0);
-    expect(stdout).toContain('string: pick');
-    expect(stdout).toContain('number: randomNumber');
+    expect(stdout).toContain('string: pick(array=["alpha","beta"])');
+    expect(stdout).toContain('number: randomNumber(min=1)');
   });
 });
 

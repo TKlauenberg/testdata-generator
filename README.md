@@ -74,128 +74,9 @@ bun packages/cli/bin/td.ts --help
 bun packages/cli/bin/td.ts generate schema.td
 ```
 
-### Global CLI Configuration
+### Configuration Files
 
-The CLI automatically loads user-level defaults from `~/.tdconfig.json` when the file exists. If the file is missing, the CLI falls back to built-in defaults and continues without error.
-
-The CLI also discovers a workspace `.tdconfig.json` by searching from the current working directory up through parent directories. This workspace file is intended for version-controlled, team-shared defaults.
-
-Current supported keys:
-
-```json
-{
-	"defaults": {
-		"count": 25,
-		"format": "json"
-	},
-	"context": {
-		"saveDirectory": "./shared-contexts"
-	},
-	"generatorDefaults": [
-		{
-			"fieldType": "string",
-			"generator": {
-				"name": "pick",
-				"parameters": [
-					{
-						"name": "array",
-						"value": ["alpha", "beta"]
-					}
-				]
-			}
-		}
-	]
-}
-```
-
-`generatorDefaults` are parsed, validated, and applied to fields that do not define an explicit generator. Field-level generators remain higher priority than config-provided mappings.
-
-Schemas can also declare DSL-local defaults with an `@defaults` block at the start of a schema body:
-
-```td
-schema User {
-	@defaults {
-		string generator=randomString(length=14)
-		unique=true
-	}
-
-	name: string
-	email: string generator=email
-}
-```
-
-`@defaults` participates in the generator precedence chain like this:
-
-- Field-level generator or constraint
-- Schema-level `@defaults`
-- Workspace `.tdconfig.json` `generatorDefaults`
-- Global `~/.tdconfig.json` `generatorDefaults`
-- Built-in defaults
-
-Schema defaults are part of DSL semantics, not CLI config. They can provide per-field-type generator mappings plus a schema-wide uniqueness default for fields that do not declare their own uniqueness behavior.
-
-Built-in defaults today are:
-
-- `defaults.count`: `10`
-- `defaults.format`: `json`
-- `context.saveDirectory`: `./contexts`
-
-Current precedence is:
-
-- Explicit CLI flags override global defaults.
-- Explicit CLI flags override workspace defaults.
-- Schema `@defaults` override workspace and global generator defaults during validation.
-- Workspace defaults override global defaults.
-- Global defaults override built-in defaults.
-
-Workspace config supports the same keys as the global file:
-
-```json
-{
-	"defaults": {
-		"count": 12,
-		"format": "json"
-	},
-	"context": {
-		"saveDirectory": "./team-contexts"
-	},
-	"generatorDefaults": [
-		{
-			"fieldType": "string",
-			"generator": {
-				"name": "pick",
-				"parameters": [
-					{
-						"name": "array",
-						"value": ["staging", "production"]
-					}
-				]
-			}
-		}
-	]
-}
-```
-
-Workspace overrides are shallow by top-level section. If a workspace file provides `defaults`, that section replaces the global `defaults` section rather than deep-merging individual nested keys.
-
-Examples:
-
-```bash
-# Use workspace defaults when running inside a project that contains .tdconfig.json
-bun packages/cli/bin/td.ts generate schema.td
-
-# Discover workspace defaults from a nested directory inside the repository
-cd apps/qa/e2e
-bun packages/cli/bin/td.ts generate schema.td
-
-# Override the workspace or global default count for one run
-bun packages/cli/bin/td.ts generate schema.td --count 5
-
-# Use a team-shared workspace save directory when persisting generated context
-echo '{"context":{"saveDirectory":"./team-contexts"}}' > .tdconfig.json
-git add .tdconfig.json
-bun packages/cli/bin/td.ts generate schema.td --save-context baseline-users
-```
+The CLI supports both user-level `~/.tdconfig.json` and workspace `.tdconfig.json` files. Schema-local defaults still live in the DSL via `@defaults`. The canonical precedence rules, supported keys, and examples are documented in the [Configuration](#configuration) section below and in [docs/configuration.md](docs/configuration.md).
 
 ## Configuration
 
@@ -229,8 +110,8 @@ Config files:
 Settings:
   defaults.count        10           [built-in]
   defaults.format       json         [built-in]
-  context.saveDirectory ./team-ctx   [workspace]
-  generatorDefaults     string: pick [workspace]
+	context.saveDirectory ./team-ctx   [workspace]
+	generatorDefaults     string: pick(array=["team-a","team-b"]) [workspace]
 ```
 
 For the full configuration reference including the scope matrix, Epic 8 context settings, and detailed cascade examples, see [docs/configuration.md](docs/configuration.md).

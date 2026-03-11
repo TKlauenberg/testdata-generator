@@ -7,14 +7,30 @@ function sourceLabel(source: CliConfigSource): string {
 }
 
 function configFileLine(label: string, filePath: string, found: boolean): string {
-  const status = found ? '' : '(not found — using built-in defaults)';
+  const status = found ? '(found)' : '(not found — using built-in defaults)';
   return `  ${label.padEnd(10)} ${filePath}  ${status}`.trimEnd();
+}
+
+function formatLiteralValue(value: string | number | boolean | readonly unknown[] | Record<string, unknown>): string {
+  return JSON.stringify(value);
+}
+
+function generatorDisplay(generator: LoadedEffectiveCliConfig['config']['generatorDefaults'][number]['generator']): string {
+  if (generator.parameters === undefined || generator.parameters.length === 0) {
+    return generator.name;
+  }
+
+  const parameters = generator.parameters
+    .map((parameter) => `${parameter.name}=${formatLiteralValue(parameter.value)}`)
+    .join(', ');
+
+  return `${generator.name}(${parameters})`;
 }
 
 function generatorDefaultsDisplay(effective: LoadedEffectiveCliConfig): string {
   const specs = effective.config.generatorDefaults;
   if (specs.length === 0) return '(none)';
-  return specs.map((s) => `${s.fieldType}: ${s.generator.name}`).join(', ');
+  return specs.map((s) => `${s.fieldType}: ${generatorDisplay(s.generator)}`).join(', ');
 }
 
 async function runConfigShow(): Promise<void> {

@@ -18,8 +18,8 @@ Given('I have a schema file with the content:', async (docString: string) => {
   await actor.attemptsTo(ValidateSchema.withSource(docString));
 });
 
-Given('I validate using configured generator defaults:', async (dataTable: { hashes: () => Array<Record<string, string>> }) => {
-  const defaults: DefaultSpec[] = dataTable.hashes().map((row) => {
+function parseDefaultSpecs(dataTable: { hashes: () => Array<Record<string, string>> }): DefaultSpec[] {
+  return dataTable.hashes().map((row) => {
     const parameters = Object.entries(row)
       .filter(([key, value]) => key !== 'fieldType' && key !== 'generator' && value.trim().length > 0)
       .map(([key, value]) => ({
@@ -35,9 +35,24 @@ Given('I validate using configured generator defaults:', async (dataTable: { has
       },
     };
   });
+}
 
+Given('I validate using configured generator defaults:', async (dataTable: { hashes: () => Array<Record<string, string>> }) => {
+  const defaults = parseDefaultSpecs(dataTable);
   const actor = actorCalled('QA Tester');
   await actor.attemptsTo(ValidateSchema.withDefaultGenerators(defaults));
+});
+
+Given('global generator defaults are configured:', async (dataTable: { hashes: () => Array<Record<string, string>> }) => {
+  const defaults = parseDefaultSpecs(dataTable);
+  const actor = actorCalled('QA Tester');
+  await actor.attemptsTo(ValidateSchema.withGlobalDefaultGenerators(defaults));
+});
+
+Given('workspace generator defaults are configured:', async (dataTable: { hashes: () => Array<Record<string, string>> }) => {
+  const defaults = parseDefaultSpecs(dataTable);
+  const actor = actorCalled('QA Tester');
+  await actor.attemptsTo(ValidateSchema.withWorkspaceDefaultGenerators(defaults));
 });
 
 Given(

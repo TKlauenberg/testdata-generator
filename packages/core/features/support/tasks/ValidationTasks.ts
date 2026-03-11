@@ -30,4 +30,16 @@ export const ValidateSchema = {
       const validator = ValidateSchemaAbility.as(actor);
       validator.setDefaultGenerators(defaults);
     }),
+
+  withGlobalDefaultGenerators: (defaults: readonly DefaultSpec[]) =>
+    Interaction.where(`#actor configures global generator defaults`, (actor: UsesAbilities) => {
+      const validator = ValidateSchemaAbility.as(actor);
+      validator.setGlobalDefaultGenerators(defaults);
+    }),
+
+  withWorkspaceDefaultGenerators: (defaults: readonly DefaultSpec[]) =>
+    Interaction.where(`#actor configures workspace generator defaults`, (actor: UsesAbilities) => {
+      const validator = ValidateSchemaAbility.as(actor);
+      validator.setWorkspaceDefaultGenerators(defaults);
+    }),
 };
