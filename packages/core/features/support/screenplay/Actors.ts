@@ -5,6 +5,7 @@ import { ValidateSchemaAbility } from '../abilities/ValidateSchemaAbility';
 import { UsePRNG } from '../abilities/UsePRNG';
 import { UseGenerators } from '../abilities/UseGenerators';
 import { UseRecordGeneration } from '../abilities/UseRecordGeneration';
+import { UseCsvAdapter } from '../abilities/UseCsvAdapter';
 import { UseJsonAdapter } from '../abilities/UseJsonAdapter';
 import { UseGenerateDataAPI } from '../abilities/UseGenerateDataAPI';
 import { UseJsonContextLoader } from '../abilities/UseJsonContextLoader';
@@ -55,6 +56,7 @@ export class TestCast implements Cast {
       UsePRNG.withCoreLibrary(),
       UseGenerators.withDefaultCapabilities(),
       UseRecordGeneration.withDefaultCapabilities(),
+      UseCsvAdapter.toWriteFiles(),
       UseJsonAdapter.toWriteFiles(),
       UseGenerateDataAPI.withDefaultCapabilities(),
       UseJsonContextLoader.withDefaultCapabilities(),

@@ -49,3 +49,14 @@ export interface JsonAdapterOptions {
   /** Optional metadata to include in output */
   readonly metadata?: Partial<AdapterMetadata>;
 }
+
+/**
+ * Configuration options for CsvAdapter
+ */
+export interface CsvAdapterOptions {
+  /** Output file path */
+  readonly outputPath: string;
+
+  /** Field delimiter, defaults to comma */
+  readonly delimiter?: string;
+}

@@ -1,6 +1,6 @@
 # Story 10.1: CSV Output Adapter
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -27,34 +27,34 @@ This story establishes the CSV output path in core only. CLI format selection be
 
 ## Tasks / Subtasks
 
-- [ ] Implement the CSV adapter surface in core (AC: 1, 2, 5, 8)
-  - [ ] Create `packages/core/src/adapters/csvAdapter.ts` with a `CsvAdapter` class following the existing `JsonAdapter` constructor and `write()` shape.
-  - [ ] Extend `packages/core/src/adapters/types.ts` with `CsvAdapterOptions` rather than introducing a new `adapter.ts` abstraction.
-  - [ ] Export `CsvAdapter` and `CsvAdapterOptions` from `packages/core/src/adapters/index.ts`.
-  - [ ] Preserve the existing public API surface through `packages/core/src/index.ts` via `export * from './adapters';`.
+- [x] Implement the CSV adapter surface in core (AC: 1, 2, 5, 8)
+  - [x] Create `packages/core/src/adapters/csvAdapter.ts` with a `CsvAdapter` class following the existing `JsonAdapter` constructor and `write()` shape.
+  - [x] Extend `packages/core/src/adapters/types.ts` with `CsvAdapterOptions` rather than introducing a new `adapter.ts` abstraction.
+  - [x] Export `CsvAdapter` and `CsvAdapterOptions` from `packages/core/src/adapters/index.ts`.
+  - [x] Preserve the existing public API surface through `packages/core/src/index.ts` via `export * from './adapters';`.
 
-- [ ] Implement streaming CSV writing and canonical serialization rules (AC: 2, 3, 4, 5, 6, 7)
-  - [ ] Use `Bun.file(outputPath).writer()` and consume the `AsyncIterable` with `for await`.
-  - [ ] Capture header order from the first emitted record and keep that order stable for all subsequent rows.
-  - [ ] Escape fields according to CSV rules: quote fields containing delimiter, `"`, `\n`, or `\r`; double embedded quotes.
-  - [ ] Serialize arrays and objects with `JSON.stringify()` before CSV escaping.
-  - [ ] Preserve primitive values as text cells without inventing metadata rows or sidecar files.
-  - [ ] Do not buffer the full record set in memory before writing.
+- [x] Implement streaming CSV writing and canonical serialization rules (AC: 2, 3, 4, 5, 6, 7)
+  - [x] Use `Bun.file(outputPath).writer()` and consume the `AsyncIterable` with `for await`.
+  - [x] Capture header order from the first emitted record and keep that order stable for all subsequent rows.
+  - [x] Escape fields according to CSV rules: quote fields containing delimiter, `"`, `\n`, or `\r`; double embedded quotes.
+  - [x] Serialize arrays and objects with `JSON.stringify()` before CSV escaping.
+  - [x] Preserve primitive values as text cells without inventing metadata rows or sidecar files.
+  - [x] Do not buffer the full record set in memory before writing.
 
-- [ ] Add focused unit coverage for the adapter contract (AC: 3, 4, 5, 6, 7, 9)
-  - [ ] Create `packages/core/src/adapters/csvAdapter.test.ts` next to the implementation.
-  - [ ] Verify header emission and stable row ordering.
-  - [ ] Verify escaping for commas, quotes, CRLF, and multiline cell values.
-  - [ ] Verify custom delimiter output without breaking default comma behavior.
-  - [ ] Verify nested objects and arrays are emitted as JSON strings.
-  - [ ] Verify large streams are written successfully without array buffering.
+- [x] Add focused unit coverage for the adapter contract (AC: 3, 4, 5, 6, 7, 9)
+  - [x] Create `packages/core/src/adapters/csvAdapter.test.ts` next to the implementation.
+  - [x] Verify header emission and stable row ordering.
+  - [x] Verify escaping for commas, quotes, CRLF, and multiline cell values.
+  - [x] Verify custom delimiter output without breaking default comma behavior.
+  - [x] Verify nested objects and arrays are emitted as JSON strings.
+  - [x] Verify large streams are written successfully without array buffering.
 
-- [ ] Add BDD round-trip coverage using existing CSV loading infrastructure (AC: 10)
-  - [ ] Create `packages/core/features/csv-output-adapter.feature` for QA-facing acceptance scenarios.
-  - [ ] Add Screenplay support files for CSV output mirroring the JSON adapter test structure only where reuse is not practical.
-  - [ ] Reuse `packages/core/features/support/tasks/GenerateDataPublicAPITasks.ts` for record generation.
-  - [ ] Re-import default-delimiter CSV output with `loadCsvContext()` from `packages/core/src/context/loaders/csvLoader.ts` rather than creating a second parser in tests.
-  - [ ] Keep configurable-delimiter verification in unit tests unless the loader is explicitly extended in a separate story.
+- [x] Add BDD round-trip coverage using existing CSV loading infrastructure (AC: 10)
+  - [x] Create `packages/core/features/csv-output-adapter.feature` for QA-facing acceptance scenarios.
+  - [x] Add Screenplay support files for CSV output mirroring the JSON adapter test structure only where reuse is not practical.
+  - [x] Reuse `packages/core/features/support/tasks/GenerateDataPublicAPITasks.ts` for record generation.
+  - [x] Re-import default-delimiter CSV output with `loadCsvContext()` from `packages/core/src/context/loaders/csvLoader.ts` rather than creating a second parser in tests.
+  - [x] Keep configurable-delimiter verification in unit tests unless the loader is explicitly extended in a separate story.
 
 ## Dev Notes
 
@@ -211,10 +211,32 @@ GPT-5.4
 
 Validation task file referenced by the workflow (`_bmad/core/tasks/validate-workflow.xml`) is not present in this repository snapshot, so checklist validation was performed manually during story creation.
 
+- `bun run build` currently fails outside this story due to pre-existing TypeScript errors in `packages/core/features/support/tasks/RecordGenerationTasks.ts` and existing generator test typing issues, so the story was validated with focused source-level tests plus the core BDD suite and lint.
+
 ### Completion Notes List
 
-- Ultimate context engine analysis completed - comprehensive developer guide created.
+- Implemented `CsvAdapter` with streaming header-first writes, configurable delimiter support, RFC-style CSV escaping, and JSON serialization for nested values.
+- Added co-located Bun tests covering default and custom delimiters, quoting rules, nested serialization, empty streams, and large-stream incremental output.
+- Added Screenplay-based CSV adapter BDD coverage that writes generated records through the public API and re-imports output through `loadCsvContext()`.
+- Registered the CSV adapter Screenplay ability and Cucumber feature in the core acceptance-test runner.
+- Fixed two lint-blocking issues encountered during validation so `bun run lint` now completes with warnings only.
 
 ### File List
 
+- `packages/core/src/adapters/csvAdapter.ts`
+- `packages/core/src/adapters/csvAdapter.test.ts`
+- `packages/core/src/adapters/types.ts`
+- `packages/core/src/adapters/index.ts`
+- `packages/core/features/csv-output-adapter.feature`
+- `packages/core/features/step_definitions/csv-output-adapter.steps.ts`
+- `packages/core/features/support/abilities/UseCsvAdapter.ts`
+- `packages/core/features/support/tasks/CsvAdapterTasks.ts`
+- `packages/core/features/support/questions/CsvAdapterQuestions.ts`
+- `packages/core/features/support/screenplay/Actors.ts`
+- `packages/core/features/support/abilities/ValidateSchemaAbility.ts`
+- `packages/core/tests/run-cucumber.ts`
 - `_bmad-output/implementation-artifacts/10-1-csv-output-adapter.md`
+
+## Change Log
+
+- 2026-03-11: Implemented the core CSV output adapter, added unit and BDD round-trip coverage, registered CSV Screenplay support, and updated story tracking to review.

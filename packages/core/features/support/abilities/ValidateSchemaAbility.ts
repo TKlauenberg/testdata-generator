@@ -47,12 +47,12 @@ export class ValidateSchemaAbility extends Ability {
     }
     this._validationStartTime = performance.now();
     this._result = validateSchema(this._schemaSource, 'test.td', {
-      defaultGenerators: this.getEffectiveDefaultGenerators(),
+      defaultGenerators: this._getEffectiveDefaultGenerators(),
     });
     this._validationEndTime = performance.now();
   }
 
-  private getEffectiveDefaultGenerators(): readonly DefaultSpec[] {
+  private _getEffectiveDefaultGenerators(): readonly DefaultSpec[] {
     if (this._configuredDefaultGenerators !== undefined) {
       return this._configuredDefaultGenerators;
     }

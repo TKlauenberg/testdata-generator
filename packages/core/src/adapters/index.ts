@@ -5,4 +5,5 @@
  */
 
 export { JsonAdapter } from './jsonAdapter';
-export type { IAdapter, AdapterMetadata, JsonAdapterOptions } from './types';
+export { CsvAdapter } from './csvAdapter';
+export type { IAdapter, AdapterMetadata, JsonAdapterOptions, CsvAdapterOptions } from './types';
