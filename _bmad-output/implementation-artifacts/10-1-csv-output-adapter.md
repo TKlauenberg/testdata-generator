@@ -1,6 +1,6 @@
 # Story 10.1: CSV Output Adapter
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -220,6 +220,7 @@ Validation task file referenced by the workflow (`_bmad/core/tasks/validate-work
 - Added Screenplay-based CSV adapter BDD coverage that writes generated records through the public API and re-imports output through `loadCsvContext()`.
 - Registered the CSV adapter Screenplay ability and Cucumber feature in the core acceptance-test runner.
 - Fixed two lint-blocking issues encountered during validation so `bun run lint` now completes with warnings only.
+- Fixed code review findings by truncating reused CSV output paths before writing, skipping leading empty records until headers are discovered, and strengthening BDD round-trip assertions for public-API generated values.
 
 ### File List
 
@@ -235,8 +236,31 @@ Validation task file referenced by the workflow (`_bmad/core/tasks/validate-work
 - `packages/core/features/support/screenplay/Actors.ts`
 - `packages/core/features/support/abilities/ValidateSchemaAbility.ts`
 - `packages/core/tests/run-cucumber.ts`
+- `_bmad-output/implementation-artifacts/sprint-status.yaml`
 - `_bmad-output/implementation-artifacts/10-1-csv-output-adapter.md`
 
 ## Change Log
 
 - 2026-03-11: Implemented the core CSV output adapter, added unit and BDD round-trip coverage, registered CSV Screenplay support, and updated story tracking to review.
+- 2026-03-28: Fixed code review issues around CSV overwrite safety, leading empty-record handling, stronger public-API round-trip assertions, and synchronized story tracking to done.
+
+## Senior Developer Review (AI)
+
+### Reviewer
+
+Tobi
+
+### Date
+
+2026-03-28
+
+### Outcome
+
+Approved after fixes.
+
+### Review Notes
+
+- Fixed a real overwrite bug in `CsvAdapter` where reusing an existing output path could leave stale bytes in the file and break CSV re-import on subsequent runs.
+- Fixed a header-discovery bug in `CsvAdapter` where a leading empty record caused silent data loss for all later rows.
+- Extended CSV BDD coverage so the public `generateData()` path now verifies representative round-tripped field values and types, not just field presence.
+- Updated the story file list and sprint tracking so the implementation record matches the actual repository changes.

@@ -41,6 +41,37 @@ describe('CsvAdapter', () => {
     expect(content).toBe('id,name,active\n1,Alice,true\n2,Bob,false\n');
   });
 
+  test('truncates an existing file before writing new CSV content', async () => {
+    await Bun.write(TEST_FILE, 'id,name\n1,stale\ntrailing-garbage');
+
+    const adapter = new CsvAdapter({ outputPath: TEST_FILE });
+
+    await adapter.write(
+      createRecordStream([
+        { id: 2, name: 'Fresh' },
+      ]),
+    );
+
+    const content = await readCsv(TEST_FILE);
+
+    expect(content).toBe('id,name\n2,Fresh\n');
+  });
+
+  test('skips leading empty records until it finds headers to write', async () => {
+    const adapter = new CsvAdapter({ outputPath: TEST_FILE });
+
+    await adapter.write(
+      createRecordStream([
+        {},
+        { id: 1, name: 'Alice' },
+      ]),
+    );
+
+    const content = await readCsv(TEST_FILE);
+
+    expect(content).toBe('id,name\n1,Alice\n');
+  });
+
   test('escapes commas, quotes, carriage returns, and embedded newlines', async () => {
     const adapter = new CsvAdapter({ outputPath: TEST_FILE });
 

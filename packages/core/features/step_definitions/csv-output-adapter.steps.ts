@@ -45,3 +45,19 @@ Then('loaded CSV output record {int} field {string} should equal string {string}
     Ensure.that(LoadedGeneratedCsvFieldValue(index, field), equals(value.replace(/\\n/g, '\n'))),
   );
 });
+
+Then('loaded CSV output record {int} field {string} should be numeric', async (index: number, field: string) => {
+  const value = await actorCalled('QATester').answer(LoadedGeneratedCsvFieldValue(index, field));
+  expect(typeof value).toBe('number');
+});
+
+Then('loaded CSV output record {int} field {string} should be a non-empty string', async (index: number, field: string) => {
+  const value = await actorCalled('QATester').answer(LoadedGeneratedCsvFieldValue(index, field));
+  expect(typeof value).toBe('string');
+  expect((value as string).length).toBeGreaterThan(0);
+});
+
+Then('loaded CSV output record {int} field {string} should be boolean', async (index: number, field: string) => {
+  const value = await actorCalled('QATester').answer(LoadedGeneratedCsvFieldValue(index, field));
+  expect(typeof value).toBe('boolean');
+});

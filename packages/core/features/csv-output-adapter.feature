@@ -21,6 +21,9 @@ Feature: CSV Output Adapter
     Then the loaded CSV output should contain 5 records
     And the loaded CSV output metadata format should be "csv"
     And loaded CSV output record 0 should include fields "id", "name", and "active"
+    And loaded CSV output record 0 field "id" should be numeric
+    And loaded CSV output record 0 field "name" should be a non-empty string
+    And loaded CSV output record 0 field "active" should be boolean
 
   Scenario: CSV output preserves quoted values through round-trip parsing
     Given QATester has CSV-ready generated records:

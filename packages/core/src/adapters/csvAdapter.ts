@@ -43,6 +43,7 @@ export class CsvAdapter implements IAdapter {
   }
 
   async write(records: AsyncIterable<Record<string, unknown>>): Promise<void> {
+    await Bun.write(this._outputPath, '');
     const file = Bun.file(this._outputPath).writer();
 
     try {
@@ -50,12 +51,13 @@ export class CsvAdapter implements IAdapter {
 
       for await (const record of records) {
         if (headers === null) {
-          headers = Object.keys(record);
+          const candidateHeaders = Object.keys(record);
 
-          if (headers.length === 0) {
-            file.write('\n');
+          if (candidateHeaders.length === 0) {
             continue;
           }
+
+          headers = candidateHeaders;
 
           file.write(headers.join(this._delimiter));
           file.write('\n');
