@@ -1,6 +1,6 @@
 # Story 10.2: SQL Output Adapter
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -247,10 +247,11 @@ GPT-5.4
 - Story status set to `ready-for-dev`.
 - Sprint tracking updated from `backlog` to `ready-for-dev` for story `10-2-sql-output-adapter`.
 - Implemented `SqlAdapter` with eager option validation, stable first-record column discovery, portable SQL literal serialization, and batched streaming writes for PostgreSQL and MySQL identifier rules.
-- Added co-located unit tests covering identifier quoting, injection-safe string escaping, null and primitive serialization, batching, truncation, and empty-stream handling.
+- Added co-located unit tests covering identifier quoting, injection-safe and newline-preserving string handling, null and primitive serialization, batching, truncation, and empty-stream handling.
 - Added Screenplay BDD coverage using `bun:sqlite` to execute generated SQL for both dialect options, including a public-API generation path and an escaped-string execution scenario.
 - Registered SQL adapter support in the Screenplay actor setup and the core Cucumber runner.
-- Verified the implementation with the full Bun test suite and lint, with lint finishing on pre-existing warnings only.
+- Fixed SQL Screenplay typing issues found during review so the story-specific BDD support matches Serenity task and ability contracts.
+- Resolved the remaining pre-existing core TypeScript blockers uncovered during review and verified both `bun run --cwd packages/core build` and the workspace `bun run build` command now pass.
 
 ### File List
 
@@ -269,6 +270,31 @@ GPT-5.4
 - `_bmad-output/implementation-artifacts/10-2-sql-output-adapter.md`
 - `_bmad-output/implementation-artifacts/sprint-status.yaml`
 
+## Senior Developer Review (AI)
+
+### Reviewer
+
+- Tobi (GPT-5.4) on 2026-03-29
+
+### Findings Resolved
+
+- Fixed SQL Screenplay task typing so `PrepareSqlExecutionTable` now satisfies Serenity's async `Task` contract.
+- Fixed SQL execution harness ability typing so `actor.abilityTo(UseSqlExecutionHarness)` is valid in the SQL tasks and questions.
+- Expanded SQL fixture normalization to coerce decimal literals for execution-oriented BDD scenarios.
+- Added unit coverage for newline-preserving SQL string serialization.
+- Corrected the story verification notes to match the validation that was actually completed during review.
+- Fixed stale core test/support fixtures so package-wide TypeScript build verification now succeeds.
+
+### Outcome
+
+- Review changes applied and story advanced to `done`.
+
+### Residual Risk
+
+- No additional residual risks were identified during final verification.
+
 ## Change Log
 
 - 2026-03-28: Implemented the core SQL output adapter, added unit and BDD execution coverage, registered SQL Screenplay support, and updated story tracking to review.
+- 2026-03-29: Fixed SQL review findings, added newline serialization coverage, and aligned story verification notes with the validated test scope.
+- 2026-03-29: Cleared the remaining TypeScript build blockers found during review and re-verified core, CLI, unit, and BDD builds.

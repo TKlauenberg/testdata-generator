@@ -6,7 +6,9 @@ import { SqlAdapter } from './sqlAdapter';
 const TEST_OUTPUT_DIR = path.join(import.meta.dir, '../../__test-output__/sql-adapter');
 const TEST_FILE = path.join(TEST_OUTPUT_DIR, 'output.sql');
 
-async function* createRecordStream(records: Array<Record<string, unknown>>): AsyncIterable<Record<string, unknown>> {
+async function* createRecordStream(
+  records: Array<Record<string, unknown>>,
+): AsyncIterable<Record<string, unknown>> {
   for (const record of records) {
     yield await Promise.resolve(record);
   }
@@ -44,8 +46,8 @@ describe('SqlAdapter', () => {
     const content = await readSql(TEST_FILE);
 
     expect(content).toBe(
-      'INSERT INTO "public"."users" ("name", "id", "active") VALUES (\'Alice\', 1, TRUE), (\'Bob\', 2, NULL);\n'
-      + 'INSERT INTO "public"."users" ("name", "id", "active") VALUES (\'Cara\', 3, FALSE);\n',
+      'INSERT INTO "public"."users" ("name", "id", "active") VALUES (\'Alice\', 1, TRUE), (\'Bob\', 2, NULL);\n' +
+        'INSERT INTO "public"."users" ("name", "id", "active") VALUES (\'Cara\', 3, FALSE);\n',
     );
   });
 
@@ -71,15 +73,11 @@ describe('SqlAdapter', () => {
       dialect: 'mysql',
     });
 
-    await adapter.write(
-      createRecordStream([
-        { 'user`name': 'Alice', value: 1 },
-      ]),
-    );
+    await adapter.write(createRecordStream([{ 'user`name': 'Alice', value: 1 }]));
 
     const content = await readSql(TEST_FILE);
 
-    expect(content).toBe('INSERT INTO `qa`.`users` (`user``name`, `value`) VALUES (\'Alice\', 1);\n');
+    expect(content).toBe("INSERT INTO `qa`.`users` (`user``name`, `value`) VALUES ('Alice', 1);\n");
   });
 
   test('escapes injection-like strings into a single safe SQL literal', async () => {
@@ -88,17 +86,26 @@ describe('SqlAdapter', () => {
       tableName: 'users',
     });
 
-    await adapter.write(
-      createRecordStream([
-        { payload: "O'Brien'); DROP TABLE users; --" },
-      ]),
-    );
+    await adapter.write(createRecordStream([{ payload: "O'Brien'); DROP TABLE users; --" }]));
 
     const content = await readSql(TEST_FILE);
 
     expect(content).toBe(
-      'INSERT INTO "users" ("payload") VALUES (\'O\'\'Brien\'\'); DROP TABLE users; --\');\n',
+      "INSERT INTO \"users\" (\"payload\") VALUES ('O''Brien''); DROP TABLE users; --');\n",
     );
+  });
+
+  test('preserves newline content inside escaped SQL string literals', async () => {
+    const adapter = new SqlAdapter({
+      outputPath: TEST_FILE,
+      tableName: 'users',
+    });
+
+    await adapter.write(createRecordStream([{ notes: 'line 1\nline 2' }]));
+
+    const content = await readSql(TEST_FILE);
+
+    expect(content).toBe('INSERT INTO "users" ("notes") VALUES (\'line 1\nline 2\');\n');
   });
 
   test('serializes NULL, booleans, numbers, bigint, arrays, and objects', async () => {
@@ -142,14 +149,24 @@ describe('SqlAdapter', () => {
   });
 
   test('rejects empty outputPath and tableName values', () => {
-    expect(() => new SqlAdapter({ outputPath: '', tableName: 'users' })).toThrow('outputPath cannot be empty');
-    expect(() => new SqlAdapter({ outputPath: TEST_FILE, tableName: '' })).toThrow('tableName cannot be empty');
+    expect(() => new SqlAdapter({ outputPath: '', tableName: 'users' })).toThrow(
+      'outputPath cannot be empty',
+    );
+    expect(() => new SqlAdapter({ outputPath: TEST_FILE, tableName: '' })).toThrow(
+      'tableName cannot be empty',
+    );
   });
 
   test('rejects invalid batchSize values', () => {
-    expect(() => new SqlAdapter({ outputPath: TEST_FILE, tableName: 'users', batchSize: 0 })).toThrow('batchSize must be a positive integer');
-    expect(() => new SqlAdapter({ outputPath: TEST_FILE, tableName: 'users', batchSize: -1 })).toThrow('batchSize must be a positive integer');
-    expect(() => new SqlAdapter({ outputPath: TEST_FILE, tableName: 'users', batchSize: 1.5 })).toThrow('batchSize must be a positive integer');
+    expect(
+      () => new SqlAdapter({ outputPath: TEST_FILE, tableName: 'users', batchSize: 0 }),
+    ).toThrow('batchSize must be a positive integer');
+    expect(
+      () => new SqlAdapter({ outputPath: TEST_FILE, tableName: 'users', batchSize: -1 }),
+    ).toThrow('batchSize must be a positive integer');
+    expect(
+      () => new SqlAdapter({ outputPath: TEST_FILE, tableName: 'users', batchSize: 1.5 }),
+    ).toThrow('batchSize must be a positive integer');
   });
 
   test('rejects non-finite numeric values instead of emitting invalid SQL literals', async () => {

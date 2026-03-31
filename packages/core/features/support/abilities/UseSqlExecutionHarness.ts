@@ -17,7 +17,7 @@ export class UseSqlExecutionHarness extends Ability {
   private _lastTableName: string | undefined;
   private _lastRows: Array<Record<string, unknown>> = [];
 
-  private constructor() {
+  public constructor() {
     super();
     this._database = new Database(':memory:');
   }

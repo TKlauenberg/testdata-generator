@@ -15,7 +15,8 @@ export const GeneratedSqlOutput = (): ReturnType<typeof Question.about<Promise<s
 export const ExecutedSqlRowCount = (): ReturnType<typeof Question.about<number>> => {
   return Question.about<number>(
     'executed SQL row count',
-    (actor: AnswersQuestions & UsesAbilities) => actor.abilityTo(UseSqlExecutionHarness).getRows().length,
+    (actor: AnswersQuestions & UsesAbilities) =>
+      actor.abilityTo(UseSqlExecutionHarness).getRows().length,
   );
 };
 
@@ -25,6 +26,7 @@ export const ExecutedSqlFieldValue = (
 ): ReturnType<typeof Question.about<unknown>> => {
   return Question.about<unknown>(
     `executed SQL row ${index} field ${field}`,
-    (actor: AnswersQuestions & UsesAbilities) => actor.abilityTo(UseSqlExecutionHarness).getRows()[index]?.[field],
+    (actor: AnswersQuestions & UsesAbilities) =>
+      actor.abilityTo(UseSqlExecutionHarness).getRows()[index]?.[field],
   );
 };

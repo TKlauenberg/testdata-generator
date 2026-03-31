@@ -8,10 +8,10 @@ export { JsonAdapter } from './jsonAdapter';
 export { CsvAdapter } from './csvAdapter';
 export { SqlAdapter } from './sqlAdapter';
 export type {
-	IAdapter,
-	AdapterMetadata,
-	JsonAdapterOptions,
-	CsvAdapterOptions,
-	SqlAdapterOptions,
-	SqlDialect,
+  IAdapter,
+  AdapterMetadata,
+  JsonAdapterOptions,
+  CsvAdapterOptions,
+  SqlAdapterOptions,
+  SqlDialect,
 } from './types';

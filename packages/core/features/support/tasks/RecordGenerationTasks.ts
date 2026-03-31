@@ -5,7 +5,11 @@
 import { Interaction, Task, Actor, type UsesAbilities } from '@serenity-js/core';
 import { UseRecordGeneration } from '../abilities/UseRecordGeneration';
 import { generateRecord, generate } from '../../../src/generator/generator';
-import type { ValidatedSchema, ValidatedField, ValidatedProgram } from '../../../src/analyzer/types';
+import type {
+  ValidatedSchema,
+  ValidatedField,
+  ValidatedProgram,
+} from '../../../src/analyzer/types';
 import type { FieldNode, SchemaNode, GeneratorParameter } from '../../../src/parser/ast';
 import type { SourceLocation } from '../../../src/common/diagnostic';
 import { SymbolTable } from '../../../src/analyzer/symbolTable';
@@ -23,6 +27,29 @@ const mockLocation: SourceLocation = {
   length: 10,
 };
 
+function createValidatedField(fieldNode: FieldNode): ValidatedField {
+  return {
+    node: fieldNode,
+    resolvedType: fieldNode.type,
+    resolvedGenerator: fieldNode.type,
+    isUnique: fieldNode.constraints?.unique ?? false,
+    templateReferences: [],
+  };
+}
+
+function createValidatedSchema(
+  schemaNode: SchemaNode,
+  fields: readonly ValidatedField[],
+): ValidatedSchema {
+  return {
+    node: schemaNode,
+    fields,
+    dependencies: new Set(),
+    compositeUniques: schemaNode.compositeUniques ?? [],
+    sortOrder: 0,
+  };
+}
+
 /**
  * Helper to create mock ValidatedSchema for testing
  */
@@ -31,7 +58,7 @@ function createMockSchema(
     name: string;
     type: string;
     params?: Array<{ name: string; value: unknown }>;
-  }>
+  }>,
 ): ValidatedSchema {
   const fieldNodes: FieldNode[] = fields.map(
     (f): FieldNode => ({
@@ -43,33 +70,23 @@ function createMockSchema(
         parameters: (f.params ?? []) as GeneratorParameter[],
       },
       location: mockLocation,
-    })
+    }),
   );
 
   const schemaNode: SchemaNode = {
     kind: 'schema',
     name: 'TestSchema',
     fields: fieldNodes,
+    compositeUniques: [],
     location: mockLocation,
   };
 
-  const validatedFields: ValidatedField[] = fields.map(
-    (f, idx): ValidatedField => ({
-      node: fieldNodes[idx],
-      resolvedType: f.type,
-      resolvedGenerator: f.type,
-      templateReferences: [],
-    })
+  const validatedFields: ValidatedField[] = fieldNodes.map((fieldNode) =>
+    createValidatedField(fieldNode),
   );
 
-  return {
-    node: schemaNode,
-    fields: validatedFields,
-    dependencies: new Set(),
-    sortOrder: 0,
-  };
+  return createValidatedSchema(schemaNode, validatedFields);
 }
-
 
 /**
  * Parse table row into field parameters
@@ -93,108 +110,95 @@ function parseFieldParams(params: string): Array<{ name: string; value: unknown 
  */
 export class CreateSchema {
   public static fromTable(table: string[][]): Interaction {
-    return Interaction.where(
-      `#actor creates schema from table`,
-      (actor) => {
-        const ability = UseRecordGeneration.as(actor);
+    return Interaction.where(`#actor creates schema from table`, (actor) => {
+      const ability = UseRecordGeneration.as(actor);
 
-        // Skip header row
-        const fieldRows = table.slice(1);
+      // Skip header row
+      const fieldRows = table.slice(1);
 
-        const fieldNodes: FieldNode[] = fieldRows.map((row) => {
-          const [name, type, ...paramCols] = row;
+      const fieldNodes: FieldNode[] = fieldRows.map((row) => {
+        const [name, type, ...paramCols] = row;
 
-          // Parse parameters from table columns
-          const params: Array<{ name: string; value: unknown }> = [];
+        // Parse parameters from table columns
+        const params: Array<{ name: string; value: unknown }> = [];
 
-          // Handle both explicit params column and named columns (min, max, etc.)
-          if (table[0].includes('params')) {
-            const paramsIdx = table[0].indexOf('params');
-            if (paramCols[paramsIdx - 2]) {
-              params.push(...parseFieldParams(paramCols[paramsIdx - 2]));
-            }
-          } else {
-            // Named parameter columns (min, max, length, etc.)
-            for (let i = 2; i < table[0].length; i++) {
-              const paramName = table[0][i];
-              const paramValue = row[i];
-              if (paramValue && paramValue.trim() !== '') {
-                const numValue = parseFloat(paramValue);
-                params.push({
-                  name: paramName,
-                  value: isNaN(numValue) ? paramValue : numValue,
-                });
-              }
+        // Handle both explicit params column and named columns (min, max, etc.)
+        if (table[0].includes('params')) {
+          const paramsIdx = table[0].indexOf('params');
+          if (paramCols[paramsIdx - 2]) {
+            params.push(...parseFieldParams(paramCols[paramsIdx - 2]));
+          }
+        } else {
+          // Named parameter columns (min, max, length, etc.)
+          for (let i = 2; i < table[0].length; i++) {
+            const paramName = table[0][i];
+            const paramValue = row[i];
+            if (paramValue && paramValue.trim() !== '') {
+              const numValue = parseFloat(paramValue);
+              params.push({
+                name: paramName,
+                value: isNaN(numValue) ? paramValue : numValue,
+              });
             }
           }
+        }
 
-          return {
-            kind: 'field' as const,
-            name,
-            type,
-            generator: {
-              name: type,
-              parameters: params as GeneratorParameter[],
-            },
-            location: mockLocation,
-          };
-        });
-
-        const schemaNode: SchemaNode = {
-          kind: 'schema',
-          name: 'TestSchema',
-          fields: fieldNodes,
+        return {
+          kind: 'field' as const,
+          name,
+          type,
+          generator: {
+            name: type,
+            parameters: params as GeneratorParameter[],
+          },
           location: mockLocation,
         };
+      });
 
-        const validatedFields: ValidatedField[] = fieldNodes.map(
-          (node): ValidatedField => ({
-            node,
-            resolvedType: node.type,
-            resolvedGenerator: node.type,
-            templateReferences: [],
-          })
-        );
+      const schemaNode: SchemaNode = {
+        kind: 'schema',
+        name: 'TestSchema',
+        fields: fieldNodes,
+        compositeUniques: [],
+        location: mockLocation,
+      };
 
-        const schema: ValidatedSchema = {
-          node: schemaNode,
-          fields: validatedFields,
-          dependencies: new Set(),
-          sortOrder: 0,
-        };
+      const validatedFields: ValidatedField[] = fieldNodes.map((fieldNode) =>
+        createValidatedField(fieldNode),
+      );
 
-        ability.setSchema(schema);
-      }
-    );
+      const schema: ValidatedSchema = createValidatedSchema(schemaNode, validatedFields);
+
+      ability.setSchema(schema);
+    });
   }
 
   public static empty(): Interaction {
-    return Interaction.where(`#actor creates empty schema`,  (actor: UsesAbilities) => {
+    return Interaction.where(`#actor creates empty schema`, (actor: UsesAbilities) => {
       const ability = UseRecordGeneration.as(actor);
 
       const schemaNode: SchemaNode = {
         kind: 'schema',
         name: 'EmptySchema',
         fields: [],
+        compositeUniques: [],
         location: mockLocation,
       };
 
-      const schema: ValidatedSchema = {
-        node: schemaNode,
-        fields: [],
-        dependencies: new Set(),
-        sortOrder: 0,
-      };
+      const schema: ValidatedSchema = createValidatedSchema(schemaNode, []);
 
       ability.setSchema(schema);
     });
   }
 
   public static forRecordType(recordType: string): Interaction {
-    return Interaction.where(`#actor creates schema for record type "${recordType}"`, (_actor: UsesAbilities) => {
-      // Stub implementation
-      throw new Error('forRecordType is not yet implemented');
-    });
+    return Interaction.where(
+      `#actor creates schema for record type "${recordType}"`,
+      (_actor: UsesAbilities) => {
+        // Stub implementation
+        throw new Error('forRecordType is not yet implemented');
+      },
+    );
   }
 }
 
@@ -205,7 +209,7 @@ export class CreateSchemaWithField {
   private constructor(
     private readonly fieldName: string,
     private readonly fieldType: string,
-    private readonly params: Array<{ name: string; value: unknown }>
+    private readonly params: Array<{ name: string; value: unknown }>,
   ) {}
 
   public static named(fieldName: string): CreateSchemaWithField {
@@ -240,7 +244,7 @@ export class CreateSchemaWithField {
   private _buildWithParams(params: Array<{ name: string; value: unknown }>): Interaction {
     return Interaction.where(
       `#actor creates schema with field ${this.fieldName}`,
-       (actor: UsesAbilities) => {
+      (actor: UsesAbilities) => {
         const ability = UseRecordGeneration.as(actor);
 
         const fieldNode: FieldNode = {
@@ -258,25 +262,16 @@ export class CreateSchemaWithField {
           kind: 'schema',
           name: 'TestSchema',
           fields: [fieldNode],
+          compositeUniques: [],
           location: mockLocation,
         };
 
-        const validatedField: ValidatedField = {
-          node: fieldNode,
-          resolvedType: this.fieldType,
-          resolvedGenerator: this.fieldType,
-          templateReferences: [],
-        };
+        const validatedField: ValidatedField = createValidatedField(fieldNode);
 
-        const schema: ValidatedSchema = {
-          node: schemaNode,
-          fields: [validatedField],
-          dependencies: new Set(),
-          sortOrder: 0,
-        };
+        const schema: ValidatedSchema = createValidatedSchema(schemaNode, [validatedField]);
 
         ability.setSchema(schema);
-      }
+      },
     );
   }
 }
@@ -286,7 +281,7 @@ export class CreateSchemaWithField {
  */
 export class CreateRNG {
   public static withSeed(seed: number, name: string = 'default'): Interaction {
-    return Interaction.where(`#actor creates RNG with seed ${seed}`,  (actor: UsesAbilities) => {
+    return Interaction.where(`#actor creates RNG with seed ${seed}`, (actor: UsesAbilities) => {
       const ability = UseRecordGeneration.as(actor);
       ability.createRNG(seed, name);
     });
@@ -299,9 +294,9 @@ export class CreateRNG {
 export class GenerateRecord {
   public static fromCurrentSchema(
     recordName: string = 'record1',
-    rngName: string = 'default'
+    rngName: string = 'default',
   ): Interaction {
-    return Interaction.where(`#actor generates record`,  (actor: UsesAbilities) => {
+    return Interaction.where(`#actor generates record`, (actor: UsesAbilities) => {
       const ability = UseRecordGeneration.as(actor);
       const schema = ability.getSchema();
       const rng = ability.getRNG(rngName);
@@ -320,7 +315,7 @@ export class GenerateRecord {
  */
 export class GenerateMultipleRecords {
   public static count(count: number): Interaction {
-    return Interaction.where(`#actor generates ${count} records`,  (actor: UsesAbilities) => {
+    return Interaction.where(`#actor generates ${count} records`, (actor: UsesAbilities) => {
       const ability = UseRecordGeneration.as(actor);
       const schema = ability.getSchema();
       const rng = ability.getRNG();
@@ -339,7 +334,7 @@ export class GenerateMultipleRecords {
  */
 export class TryGenerateRecord {
   public static fromCurrentSchema(): Interaction {
-    return Interaction.where(`#actor tries to generate record`,  (actor: UsesAbilities) => {
+    return Interaction.where(`#actor tries to generate record`, (actor: UsesAbilities) => {
       const ability = UseRecordGeneration.as(actor);
       const schema = ability.getSchema();
       const rng = ability.getRNG();
@@ -369,7 +364,14 @@ export class CreateProgramWithSchema {
 
         // Create a simple schema with id and name fields
         const schema = createMockSchema([
-          { name: 'id', type: 'int', params: [{ name: 'min', value: 1 }, { name: 'max', value: 1000 }] },
+          {
+            name: 'id',
+            type: 'int',
+            params: [
+              { name: 'min', value: 1 },
+              { name: 'max', value: 1000 },
+            ],
+          },
           { name: 'name', type: 'string', params: [{ name: 'length', value: 10 }] },
         ]);
 
@@ -449,24 +451,15 @@ export class CreateProgramWithSchema {
               kind: 'schema',
               name: schemaName,
               fields: fieldNodes,
+              compositeUniques: [],
               location: mockLocation,
             };
 
-            const validatedFields: ValidatedField[] = fieldNodes.map(
-              (fieldNode): ValidatedField => ({
-                node: fieldNode,
-                resolvedType: fieldNode.type,
-                resolvedGenerator: fieldNode.type,
-                templateReferences: [],
-              }),
+            const validatedFields: ValidatedField[] = fieldNodes.map((fieldNode) =>
+              createValidatedField(fieldNode),
             );
 
-            const schema: ValidatedSchema = {
-              node: schemaNode,
-              fields: validatedFields,
-              dependencies: new Set(),
-              sortOrder: 0,
-            };
+            const schema: ValidatedSchema = createValidatedSchema(schemaNode, validatedFields);
 
             const program: ValidatedProgram = {
               ast: {
@@ -487,7 +480,7 @@ export class CreateProgramWithSchema {
           },
         );
       },
-    } satisfies InteractionWithBuilder);
+    }) as InteractionWithBuilder;
   }
 
   public static withMultipleSchemas(count: number): Interaction {
@@ -495,53 +488,48 @@ export class CreateProgramWithSchema {
   }
 
   public static withCount(count: number): Interaction {
-    return Interaction.where(
-      `#actor creates program with ${count} schemas`,
-      (actor) => {
-        const ability = UseRecordGeneration.as(actor);
+    return Interaction.where(`#actor creates program with ${count} schemas`, (actor) => {
+      const ability = UseRecordGeneration.as(actor);
 
-        const schemas = new Map<string, ValidatedSchema>();
+      const schemas = new Map<string, ValidatedSchema>();
 
-        if (count >= 1) {
-          const userSchema = createMockSchema([
-            { name: 'id', type: 'int', params: [] },
-          ]);
-          schemas.set('User', userSchema);
-        }
+      if (count >= 1) {
+        const userSchema = createMockSchema([{ name: 'id', type: 'int', params: [] }]);
+        schemas.set('User', userSchema);
+      }
 
-        if (count >= 2) {
-          const orderSchema = createMockSchema([
-            { name: 'orderId', type: 'int', params: [] },
-            { name: 'total', type: 'float', params: [] },
-          ]);
-          schemas.set('Order', orderSchema);
-        }
+      if (count >= 2) {
+        const orderSchema = createMockSchema([
+          { name: 'orderId', type: 'int', params: [] },
+          { name: 'total', type: 'float', params: [] },
+        ]);
+        schemas.set('Order', orderSchema);
+      }
 
-        const mockLocation: SourceLocation = {
-          file: 'test.td',
-          line: 1,
-          column: 1,
-          length: 10,
-        };
+      const mockLocation: SourceLocation = {
+        file: 'test.td',
+        line: 1,
+        column: 1,
+        length: 10,
+      };
 
-        const program: ValidatedProgram = {
-          ast: {
-            kind: 'program',
-            declarations: [],
-            location: mockLocation,
-          },
-          symbolTable: new SymbolTable(),
-          schemas,
-          metadata: {
-            analyzedAt: new Date(),
-            schemaCount: count,
-            totalFields: count === 1 ? 1 : 3,
-          },
-        };
+      const program: ValidatedProgram = {
+        ast: {
+          kind: 'program',
+          declarations: [],
+          location: mockLocation,
+        },
+        symbolTable: new SymbolTable(),
+        schemas,
+        metadata: {
+          analyzedAt: new Date(),
+          schemaCount: count,
+          totalFields: count === 1 ? 1 : 3,
+        },
+      };
 
-        ability.setProgram(program);
-      },
-    );
+      ability.setProgram(program);
+    });
   }
 }
 
@@ -550,22 +538,19 @@ export class CreateProgramWithSchema {
  */
 export class GenerateRecordsStreaming {
   public static withCount(count: number): Interaction {
-    return Interaction.where(
-      `#actor generates ${count} records using streaming`,
-      async (actor) => {
-        const ability = UseRecordGeneration.as(actor);
-        const program = ability.getProgram();
+    return Interaction.where(`#actor generates ${count} records using streaming`, async (actor) => {
+      const ability = UseRecordGeneration.as(actor);
+      const program = ability.getProgram();
 
-        if (!program) throw new Error('No program set');
+      if (!program) throw new Error('No program set');
 
-        const records = [];
-        for await (const record of generate(program, { count })) {
-          records.push(record);
-        }
+      const records = [];
+      for await (const record of generate(program, { count })) {
+        records.push(record);
+      }
 
-        ability.storeStreamingRecords(records);
-      },
-    );
+      ability.storeStreamingRecords(records);
+    });
   }
 }
 
@@ -576,7 +561,7 @@ export class GenerateRecordsStreamingWithSeed extends Task {
   private constructor(
     private readonly count?: number,
     private readonly seed?: number,
-    private readonly storeName: string = 'records1'
+    private readonly storeName: string = 'records1',
   ) {
     super(`Generate ${count} records with seed ${seed} using streaming`);
   }
@@ -632,7 +617,7 @@ export class GenerateRecordsStreamingWithSeed extends Task {
   public static withCountAndSeed(
     count: number,
     seed: number,
-    storeName: string = 'records1'
+    storeName: string = 'records1',
   ): Interaction {
     return Interaction.where(
       `#actor generates ${count} records with seed ${seed}`,
@@ -658,18 +643,15 @@ export class GenerateRecordsStreamingWithSeed extends Task {
  */
 export class StartStreamingGeneration {
   public static withCount(count: number): Interaction {
-    return Interaction.where(
-      `#actor starts generating ${count} records`,
-      (actor) => {
-        const ability = UseRecordGeneration.as(actor);
-        const program = ability.getProgram();
+    return Interaction.where(`#actor starts generating ${count} records`, (actor) => {
+      const ability = UseRecordGeneration.as(actor);
+      const program = ability.getProgram();
 
-        if (!program) throw new Error('No program set');
+      if (!program) throw new Error('No program set');
 
-        // Store the generator for later use
-        ability.storeGenerator(generate(program, { count }));
-      },
-    );
+      // Store the generator for later use
+      ability.storeGenerator(generate(program, { count }));
+    });
   }
 }
 
@@ -682,24 +664,21 @@ export class StopStreamingAfter {
   }
 
   public static count(stopCount: number): Interaction {
-    return Interaction.where(
-      `#actor stops after ${stopCount} records`,
-      async (actor) => {
-        const ability = UseRecordGeneration.as(actor);
-        const generator = ability.getGenerator();
+    return Interaction.where(`#actor stops after ${stopCount} records`, async (actor) => {
+      const ability = UseRecordGeneration.as(actor);
+      const generator = ability.getGenerator();
 
-        if (!generator) throw new Error('No generator stored');
+      if (!generator) throw new Error('No generator stored');
 
-        const records = [];
-        let count = 0;
-        for await (const record of generator) {
-          records.push(record);
-          count++;
-          if (count >= stopCount) break;
-        }
+      const records = [];
+      let count = 0;
+      for await (const record of generator) {
+        records.push(record);
+        count++;
+        if (count >= stopCount) break;
+      }
 
-        ability.storeStreamingRecords(records);
-      },
-    );
+      ability.storeStreamingRecords(records);
+    });
   }
 }

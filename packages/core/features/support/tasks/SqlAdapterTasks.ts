@@ -23,7 +23,7 @@ function normalizeValue(value: string): unknown {
     return false;
   }
 
-  if (/^-?\d+$/.test(value)) {
+  if (/^-?\d+(?:\.\d+)?$/.test(value)) {
     return Number(value);
   }
 
@@ -64,38 +64,31 @@ export class WriteRecordsToSql extends Task {
     const api = UseGenerateDataAPI.as(actor);
     const sqlAdapter = actor.abilityTo(UseSqlAdapter);
 
-    await sqlAdapter.writeToFile(
-      arrayToAsyncIterable(api.getRecords()),
-      this._filename,
-      {
-        tableName: this._tableName,
-        dialect: this._dialect,
-        batchSize: this._batchSize,
-      },
-    );
+    await sqlAdapter.writeToFile(arrayToAsyncIterable(api.getRecords()), this._filename, {
+      tableName: this._tableName,
+      dialect: this._dialect,
+      batchSize: this._batchSize,
+    });
   }
 }
 
 export class StorePreparedSqlRecords {
   public static fromTable(tableRows: readonly Record<string, string>[]): Interaction {
-    return Interaction.where(
-      '#actor stores prepared SQL records',
-      (actor: UsesAbilities) => {
-        const api = UseGenerateDataAPI.as(actor);
-        const normalizedRecords = tableRows.map((row) => {
-          const normalized: Record<string, unknown> = {};
+    return Interaction.where('#actor stores prepared SQL records', (actor: UsesAbilities) => {
+      const api = UseGenerateDataAPI.as(actor);
+      const normalizedRecords = tableRows.map((row) => {
+        const normalized: Record<string, unknown> = {};
 
-          for (const [key, value] of Object.entries(row)) {
-            normalized[key] = normalizeValue(value);
-          }
+        for (const [key, value] of Object.entries(row)) {
+          normalized[key] = normalizeValue(value);
+        }
 
-          return normalized;
-        });
+        return normalized;
+      });
 
-        api.storeDSLSource('');
-        api.getRecords().splice(0, api.getRecords().length, ...normalizedRecords);
-      },
-    );
+      api.storeDSLSource('');
+      api.getRecords().splice(0, api.getRecords().length, ...normalizedRecords);
+    });
   }
 }
 
@@ -115,7 +108,7 @@ export class PrepareSqlExecutionTable extends Task {
     return new PrepareSqlExecutionTable(this._tableName, columnDefinitions.trim());
   }
 
-  public performAs(actor: Actor): void {
+  public async performAs(actor: Actor): Promise<void> {
     if (this._columnDefinitions.length === 0) {
       throw new Error('PrepareSqlExecutionTable requires at least one column definition');
     }

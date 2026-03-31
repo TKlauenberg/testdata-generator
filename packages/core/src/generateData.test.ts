@@ -158,10 +158,7 @@ describe('generateData()', () => {
         users: [
           createTaggedContext(
             'staging-us.json',
-            [
-              { email: 'staging.us.one@example.com' },
-              { email: 'staging.us.two@example.com' },
-            ],
+            [{ email: 'staging.us.one@example.com' }, { email: 'staging.us.two@example.com' }],
             ['staging', 'region-us'],
           ),
           createTaggedContext(
@@ -184,10 +181,9 @@ describe('generateData()', () => {
 
       expect(recordsA).toEqual(recordsB);
       for (const record of recordsA) {
-        expect([
-          'staging.us.one@example.com',
-          'staging.us.two@example.com',
-        ]).toContain(record.email);
+        expect(['staging.us.one@example.com', 'staging.us.two@example.com']).toContain(
+          record.email as string,
+        );
       }
     });
 
@@ -203,10 +199,7 @@ describe('generateData()', () => {
         count: 3,
         seed: 9,
         context: {
-          users: [
-            { email: 'qa.one@example.com' },
-            { email: 'qa.two@example.com' },
-          ],
+          users: [{ email: 'qa.one@example.com' }, { email: 'qa.two@example.com' }],
         },
       })) {
         records.push(record);
@@ -214,7 +207,7 @@ describe('generateData()', () => {
 
       expect(records).toHaveLength(3);
       for (const record of records) {
-        expect(['qa.one@example.com', 'qa.two@example.com']).toContain(record.email);
+        expect(['qa.one@example.com', 'qa.two@example.com']).toContain(record.email as string);
       }
     });
   });
@@ -261,7 +254,7 @@ describe('generateData()', () => {
     });
 
     test('throws ValidationError for syntax errors', async () => {
-      const invalidSource = `schema User { id int }`;  // Missing colon
+      const invalidSource = `schema User { id int }`; // Missing colon
 
       expect.assertions(1);
       try {
@@ -303,7 +296,7 @@ describe('generateData()', () => {
     });
 
     test('returns validation errors immediately without generation', async () => {
-      const invalidSource = `schema User { id: whoops }`;  // Invalid type
+      const invalidSource = `schema User { id: whoops }`; // Invalid type
 
       let generationStarted = false;
 
@@ -328,7 +321,7 @@ describe('generateData()', () => {
       for await (const _record of generateData(emptySource, { count: 1 })) {
         count++;
       }
-      
+
       // Should generate 0 records since there are no schemas
       expect(count).toBe(0);
     });

@@ -31,16 +31,20 @@ When(
   '{word} writes the records to SQL file {string} for table {string} using {word} dialect',
   async (actorName: string, filename: string, tableName: string, dialect: string) => {
     await actorCalled(actorName).attemptsTo(
-      WriteRecordsToSql.file(filename)
-        .forTable(tableName)
-        .usingDialect(toSqlDialect(dialect)),
+      WriteRecordsToSql.file(filename).forTable(tableName).usingDialect(toSqlDialect(dialect)),
     );
   },
 );
 
 When(
   '{word} writes the prepared records to SQL file {string} for table {string} using {word} dialect and batch size {int}',
-  async (actorName: string, filename: string, tableName: string, dialect: string, batchSize: number) => {
+  async (
+    actorName: string,
+    filename: string,
+    tableName: string,
+    dialect: string,
+    batchSize: number,
+  ) => {
     await actorCalled(actorName).attemptsTo(
       WriteRecordsToSql.file(filename)
         .forTable(tableName)
@@ -69,24 +73,31 @@ Then('the generated SQL should contain {string}', async (fragment: string) => {
 });
 
 Then('the executed SQL should insert {int} rows', async (count: number) => {
-  await actorCalled('QATester').attemptsTo(
-    Ensure.that(ExecutedSqlRowCount(), equals(count)),
-  );
+  await actorCalled('QATester').attemptsTo(Ensure.that(ExecutedSqlRowCount(), equals(count)));
 });
 
-Then('executed SQL row {int} field {string} should equal string {string}', async (index: number, field: string, value: string) => {
-  await actorCalled('QATester').attemptsTo(
-    Ensure.that(ExecutedSqlFieldValue(index, field), equals(value)),
-  );
-});
+Then(
+  'executed SQL row {int} field {string} should equal string {string}',
+  async (index: number, field: string, value: string) => {
+    await actorCalled('QATester').attemptsTo(
+      Ensure.that(ExecutedSqlFieldValue(index, field), equals(value)),
+    );
+  },
+);
 
-Then('executed SQL row {int} field {string} should be numeric', async (index: number, field: string) => {
-  const value = await actorCalled('QATester').answer(ExecutedSqlFieldValue(index, field));
-  expect(typeof value).toBe('number');
-});
+Then(
+  'executed SQL row {int} field {string} should be numeric',
+  async (index: number, field: string) => {
+    const value = await actorCalled('QATester').answer(ExecutedSqlFieldValue(index, field));
+    expect(typeof value).toBe('number');
+  },
+);
 
-Then('executed SQL row {int} field {string} should be a non-empty string', async (index: number, field: string) => {
-  const value = await actorCalled('QATester').answer(ExecutedSqlFieldValue(index, field));
-  expect(typeof value).toBe('string');
-  expect((value as string).length).toBeGreaterThan(0);
-});
+Then(
+  'executed SQL row {int} field {string} should be a non-empty string',
+  async (index: number, field: string) => {
+    const value = await actorCalled('QATester').answer(ExecutedSqlFieldValue(index, field));
+    expect(typeof value).toBe('string');
+    expect((value as string).length).toBeGreaterThan(0);
+  },
+);

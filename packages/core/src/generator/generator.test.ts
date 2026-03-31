@@ -37,7 +37,7 @@ function createMockSchema(
       },
       constraints: f.isUnique ? { unique: true } : undefined,
       location: mockLocation,
-    })
+    }),
   );
 
   const schemaNode: SchemaNode = {
@@ -56,7 +56,7 @@ function createMockSchema(
       isUnique: f.isUnique ?? false,
       templateReferences: [],
       referencedSchema: f.type.startsWith('@schema:') ? f.type.replace('@schema:', '') : undefined,
-    })
+    }),
   );
 
   return {
@@ -71,7 +71,14 @@ function createMockSchema(
 describe('generateRecord', () => {
   it('should generate record with all fields from schema', () => {
     const schema: ValidatedSchema = createMockSchema([
-      { name: 'id', type: 'int', params: [{ name: 'min', value: 1 }, { name: 'max', value: 100 }] },
+      {
+        name: 'id',
+        type: 'int',
+        params: [
+          { name: 'min', value: 1 },
+          { name: 'max', value: 100 },
+        ],
+      },
       { name: 'name', type: 'string', params: [{ name: 'length', value: 10 }] },
       { name: 'active', type: 'boolean', params: [] },
     ]);
@@ -92,7 +99,14 @@ describe('generateRecord', () => {
 
   it('should produce identical records with same seed', () => {
     const schema: ValidatedSchema = createMockSchema([
-      { name: 'value', type: 'int', params: [{ name: 'min', value: 0 }, { name: 'max', value: 10 }] },
+      {
+        name: 'value',
+        type: 'int',
+        params: [
+          { name: 'min', value: 0 },
+          { name: 'max', value: 10 },
+        ],
+      },
     ]);
 
     const rng1 = createRNG(99999);
@@ -106,7 +120,14 @@ describe('generateRecord', () => {
 
   it('should produce different records with different seeds', () => {
     const schema: ValidatedSchema = createMockSchema([
-      { name: 'value', type: 'int', params: [{ name: 'min', value: 0 }, { name: 'max', value: 100 }] },
+      {
+        name: 'value',
+        type: 'int',
+        params: [
+          { name: 'min', value: 0 },
+          { name: 'max', value: 100 },
+        ],
+      },
     ]);
 
     const rng1 = createRNG(11111);
@@ -120,7 +141,14 @@ describe('generateRecord', () => {
 
   it('should respect generator parameters from schema', () => {
     const schema: ValidatedSchema = createMockSchema([
-      { name: 'age', type: 'int', params: [{ name: 'min', value: 18 }, { name: 'max', value: 65 }] },
+      {
+        name: 'age',
+        type: 'int',
+        params: [
+          { name: 'min', value: 18 },
+          { name: 'max', value: 65 },
+        ],
+      },
     ]);
 
     const rng = createRNG(777);
@@ -132,7 +160,14 @@ describe('generateRecord', () => {
 
   it('should respect float parameters', () => {
     const schema: ValidatedSchema = createMockSchema([
-      { name: 'score', type: 'float', params: [{ name: 'min', value: 0.0 }, { name: 'max', value: 1.0 }] },
+      {
+        name: 'score',
+        type: 'float',
+        params: [
+          { name: 'min', value: 0.0 },
+          { name: 'max', value: 1.0 },
+        ],
+      },
     ]);
 
     const rng = createRNG(555);
@@ -176,8 +211,22 @@ describe('generateRecord', () => {
 
   it('should handle multi-field schema with different types', () => {
     const schema: ValidatedSchema = createMockSchema([
-      { name: 'id', type: 'int', params: [{ name: 'min', value: 1 }, { name: 'max', value: 1000 }] },
-      { name: 'price', type: 'float', params: [{ name: 'min', value: 0.0 }, { name: 'max', value: 100.0 }] },
+      {
+        name: 'id',
+        type: 'int',
+        params: [
+          { name: 'min', value: 1 },
+          { name: 'max', value: 1000 },
+        ],
+      },
+      {
+        name: 'price',
+        type: 'float',
+        params: [
+          { name: 'min', value: 0.0 },
+          { name: 'max', value: 100.0 },
+        ],
+      },
       { name: 'name', type: 'string', params: [{ name: 'length', value: 10 }] },
       { name: 'active', type: 'boolean' },
     ]);
@@ -199,8 +248,22 @@ describe('generateRecord', () => {
 
   it('should handle generator type aliases (integer, double, text, bool)', () => {
     const schema: ValidatedSchema = createMockSchema([
-      { name: 'a', type: 'integer', params: [{ name: 'min', value: 0 }, { name: 'max', value: 10 }] },
-      { name: 'b', type: 'double', params: [{ name: 'min', value: 0.0 }, { name: 'max', value: 1.0 }] },
+      {
+        name: 'a',
+        type: 'integer',
+        params: [
+          { name: 'min', value: 0 },
+          { name: 'max', value: 10 },
+        ],
+      },
+      {
+        name: 'b',
+        type: 'double',
+        params: [
+          { name: 'min', value: 0.0 },
+          { name: 'max', value: 1.0 },
+        ],
+      },
       { name: 'c', type: 'text', params: [{ name: 'length', value: 8 }] },
       { name: 'd', type: 'bool' },
     ]);
@@ -235,16 +298,14 @@ describe('generateRecord', () => {
       {
         name: 'status',
         type: 'pick',
-        params: [
-          { name: 'array', value: ['active', 'inactive', 'pending'] },
-        ],
+        params: [{ name: 'array', value: ['active', 'inactive', 'pending'] }],
       },
     ]);
 
     const rng = createRNG(4242);
     const record = generateRecord(schema, rng);
 
-    expect(['active', 'inactive', 'pending']).toContain(record.status);
+    expect(['active', 'inactive', 'pending']).toContain(record.status as string);
   });
 
   it('should generate weightedPick values from options parameter', () => {
@@ -268,7 +329,7 @@ describe('generateRecord', () => {
     const rng = createRNG(4343);
     const record = generateRecord(schema, rng);
 
-    expect(['free', 'premium', 'enterprise']).toContain(record.accountType);
+    expect(['free', 'premium', 'enterprise']).toContain(record.accountType as string);
   });
 
   it('should use resolvedGenerator when present', () => {
@@ -280,15 +341,20 @@ describe('generateRecord', () => {
       },
     ]);
 
-    schema.fields[0] = {
-      ...schema.fields[0],
-      resolvedGenerator: 'pick',
+    const schemaWithResolvedGenerator: ValidatedSchema = {
+      ...schema,
+      fields: [
+        {
+          ...schema.fields[0],
+          resolvedGenerator: 'pick',
+        },
+      ],
     };
 
     const rng = createRNG(4545);
-    const record = generateRecord(schema, rng);
+    const record = generateRecord(schemaWithResolvedGenerator, rng);
 
-    expect(['active', 'inactive']).toContain(record.status);
+    expect(['active', 'inactive']).toContain(record.status as string);
   });
 
   it('should evaluate template parameter values using current record context', () => {
@@ -310,20 +376,27 @@ describe('generateRecord', () => {
       },
     ]);
 
-    schema.fields[2] = {
-      ...schema.fields[2],
-      resolvedGenerator: 'pick',
-      node: {
-        ...schema.fields[2].node,
-        generator: {
-          name: 'pick',
-          parameters: [{ name: 'array', value: ['{{firstName}}.{{lastName}}@test.com'] }],
-        },
-      },
+    const schemaWithTemplateGenerator: ValidatedSchema = {
+      ...schema,
+      fields: schema.fields.map((field, index) =>
+        index === 2
+          ? {
+              ...field,
+              resolvedGenerator: 'pick',
+              node: {
+                ...field.node,
+                generator: {
+                  name: 'pick',
+                  parameters: [{ name: 'array', value: ['{{firstName}}.{{lastName}}@test.com'] }],
+                },
+              },
+            }
+          : field,
+      ),
     };
 
     const rng = createRNG(1212);
-    const record = generateRecord(schema, rng);
+    const record = generateRecord(schemaWithTemplateGenerator, rng);
 
     expect(record.email).toBe('Ada.Lovelace@test.com');
   });
@@ -366,15 +439,21 @@ describe('generateRecord', () => {
     ]);
 
     // Set templateReferences so the order resolver knows email depends on firstName
-    schema.fields[0] = {
-      ...schema.fields[0],
-      templateReferences: ['firstName'],
+    const schemaWithTemplateReferences: ValidatedSchema = {
+      ...schema,
+      fields: [
+        {
+          ...schema.fields[0],
+          templateReferences: ['firstName'],
+        },
+        schema.fields[1],
+      ],
     };
 
     const rng = createRNG(1234);
 
     // After 6.2: ordering is resolved automatically – record generates successfully
-    const record = generateRecord(schema, rng);
+    const record = generateRecord(schemaWithTemplateReferences, rng);
     expect(record.email).toBe('Ada@test.com');
     expect(record.firstName).toBe('Ada');
   });
@@ -389,10 +468,7 @@ describe('sortFieldsByDependency', () => {
    * Small helper: build a minimal ValidatedField with given name and deps.
    * Avoids importing the full createMockSchema for field-level tests.
    */
-  function makeField(
-    name: string,
-    templateReferences: string[] = []
-  ): ValidatedField {
+  function makeField(name: string, templateReferences: string[] = []): ValidatedField {
     const mockLocation = { file: 'test.td', line: 1, column: 1, length: 10 };
     const node: FieldNode = {
       kind: 'field',
@@ -475,9 +551,7 @@ describe('sortFieldsByDependency', () => {
     const a = makeField('a', ['b']);
     const b = makeField('b', ['a']);
 
-    expect(() => sortFieldsByDependency([a, b])).toThrow(
-      /circular field dependency/i
-    );
+    expect(() => sortFieldsByDependency([a, b])).toThrow(/circular field dependency/i);
     // Error message must mention the involved fields
     expect(() => sortFieldsByDependency([a, b])).toThrow(/a/);
     expect(() => sortFieldsByDependency([a, b])).toThrow(/b/);
@@ -506,13 +580,19 @@ describe('sortFieldsByDependency', () => {
       },
     ]);
 
-    schema.fields[0] = {
-      ...schema.fields[0],
-      templateReferences: ['firstName'],
+    const schemaWithTemplateReferences: ValidatedSchema = {
+      ...schema,
+      fields: [
+        {
+          ...schema.fields[0],
+          templateReferences: ['firstName'],
+        },
+        schema.fields[1],
+      ],
     };
 
     const rng = createRNG(5555);
-    const record = generateRecord(schema, rng);
+    const record = generateRecord(schemaWithTemplateReferences, rng);
 
     expect(record.firstName).toBe('Grace');
     expect(record.email).toBe('Grace@example.com');
@@ -532,7 +612,7 @@ function createMockProgram(
       isUnique?: boolean;
     }>;
     compositeUniques?: readonly (readonly string[])[];
-  }>
+  }>,
 ): ValidatedProgram {
   const mockLocation: SourceLocation = {
     file: 'test.td',
@@ -764,7 +844,7 @@ describe('generate (streaming)', () => {
       }
 
       for (const record of records) {
-        expect(['ada@example.com', 'grace@example.com']).toContain(record.email);
+        expect(['ada@example.com', 'grace@example.com']).toContain(record.email as string);
       }
     });
 
@@ -959,7 +1039,7 @@ describe('generate (streaming)', () => {
 
         expect(count).toBe(1_000_000);
       },
-      { timeout: 60000 } // 60 second timeout for 1M records
+      { timeout: 60000 }, // 60 second timeout for 1M records
     );
   });
 
@@ -1038,7 +1118,12 @@ describe('generate (streaming)', () => {
             {
               name: 'id',
               type: 'pick',
-              params: [{ name: 'array', value: ['dup', 'dup', 'dup', 'dup', 'dup', 'dup', 'dup', 'dup', 'dup', 'unique'] }],
+              params: [
+                {
+                  name: 'array',
+                  value: ['dup', 'dup', 'dup', 'dup', 'dup', 'dup', 'dup', 'dup', 'dup', 'unique'],
+                },
+              ],
               isUnique: true,
             },
           ],
@@ -1452,4 +1537,3 @@ describe('generate (streaming)', () => {
     });
   });
 });
-

@@ -109,7 +109,9 @@ export class SqlAdapter implements IAdapter {
           return;
         }
 
-        file.write(`INSERT INTO ${quotedTableName} (${quotedColumns.join(', ')}) VALUES ${pendingRows.join(', ')};\n`);
+        file.write(
+          `INSERT INTO ${quotedTableName} (${quotedColumns.join(', ')}) VALUES ${pendingRows.join(', ')};\n`,
+        );
         pendingRows = [];
       };
 
