@@ -8,6 +8,7 @@ const featuresPath = path.resolve(__dirname, '../features');
 const options: IRunOptions = {
   sources: {
     paths: [
+      path.join(featuresPath, 'generateCommand.feature'),
       path.join(featuresPath, 'saveGeneratedContext.feature'),
     ],
     order: 'defined',
@@ -18,6 +19,7 @@ const options: IRunOptions = {
   support: {
     requireModules: [],
     requirePaths: [
+      path.join(featuresPath, 'step_definitions/generateCommand.steps.ts'),
       path.join(featuresPath, 'step_definitions/saveGeneratedContext.steps.ts'),
     ],
     importPaths: [],
@@ -40,7 +42,6 @@ const options: IRunOptions = {
   },
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
 const result = await runCucumber(options, {
   cwd: path.resolve(__dirname, '..'),
   stdout: process.stdout,
@@ -48,5 +49,4 @@ const result = await runCucumber(options, {
   env: process.env,
 });
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
 process.exit(result.success ? 0 : 1);

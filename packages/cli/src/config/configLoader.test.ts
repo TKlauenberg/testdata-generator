@@ -102,7 +102,7 @@ describe('loadGlobalConfig', () => {
     await writeGlobalConfig(homeDirectory, {
       defaults: {
         count: 25,
-        format: 'json',
+        format: 'csv',
       },
       context: {
         saveDirectory: 'shared-contexts',
@@ -129,7 +129,7 @@ describe('loadGlobalConfig', () => {
     expect(loaded.config).toEqual({
       defaults: {
         count: 25,
-        format: 'json',
+        format: 'csv',
       },
       context: {
         saveDirectory: 'shared-contexts',
@@ -151,6 +151,20 @@ describe('loadGlobalConfig', () => {
     });
   });
 
+  test('accepts sql as a supported defaults.format value', async () => {
+    const homeDirectory = await createHomeDirectory();
+    await writeGlobalConfig(homeDirectory, {
+      defaults: {
+        count: 10,
+        format: 'sql',
+      },
+    });
+
+    const loaded = await loadGlobalConfig({ homeDirectory });
+
+    expect(loaded.config.defaults.format).toBe('sql');
+  });
+
   test('fails clearly when the global config contains invalid JSON', async () => {
     const homeDirectory = await createHomeDirectory();
     await fs.writeFile(path.join(homeDirectory, GLOBAL_CONFIG_FILE_NAME), '{"defaults":', 'utf-8');
@@ -167,12 +181,12 @@ describe('loadGlobalConfig', () => {
     }
   });
 
-  test('rejects unsupported config values', async () => {
+  test('rejects unsupported defaults.format values', async () => {
     const homeDirectory = await createHomeDirectory();
     await writeGlobalConfig(homeDirectory, {
       defaults: {
-        count: 0,
-        format: 'csv',
+        count: 5,
+        format: 'xml',
       },
     });
 
@@ -181,7 +195,10 @@ describe('loadGlobalConfig', () => {
       throw new Error('Expected unsupported config values to throw a CliConfigError');
     } catch (error: unknown) {
       expect(error).toBeInstanceOf(CliConfigError);
-      expect(error).toHaveProperty('message', 'Invalid defaults.count: expected a positive integer');
+      expect(error).toHaveProperty(
+        'message',
+        "Invalid defaults.format: expected one of json, csv, sql, received 'xml'",
+      );
     }
   });
 

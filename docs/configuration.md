@@ -24,6 +24,7 @@ testdata-ai uses a layered configuration model. Settings at higher-priority laye
 
 **Key rules:**
 - `defaults.count` and `defaults.format` are CLI/workspace/global config only — there is no DSL equivalent.
+- `defaults.format` accepts `json`, `csv`, or `sql`. Runtime CLI resolution still applies higher-priority signals in this order: explicit `--format`, then supported `--output` extensions (`.json`, `.csv`, `.sql`), then the effective config default.
 - `context.saveDirectory` is the default directory used when `--save-context` is provided without `--save-context-dir`. The `--save-context-dir` CLI flag is a **runtime override** that does not write to any config file; it affects only the current invocation.
 - `generatorDefaults` is configured at CLI/workspace/global level and overridden by DSL `@defaults`, which is in turn overridden by explicit field declarations.
 - Uniqueness defaults are schema-level DSL only (`@defaults { unique=true }`); they have no CLI config equivalent.

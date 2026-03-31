@@ -1,6 +1,6 @@
 # Story 10.3: CLI Multi-Format Support
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -25,32 +25,32 @@ This story owns the CLI wiring only. The core CSV and SQL adapters already exist
 
 ## Tasks / Subtasks
 
-- [ ] Resolve effective format and SQL-specific CLI options (AC: 1, 4, 5)
-  - [ ] Add an explicit SQL table option to the generate command as `--table-name <name>`.
-  - [ ] Implement one format-resolution path in `packages/cli/src/commands/generate.ts` with precedence `--format` > inferred output extension > effective config default.
-  - [ ] Support extension inference only for `.json`, `.csv`, and `.sql`; unknown extensions should fall back to the validated config/default format rather than inventing new formats.
-  - [ ] Resolve SQL table names with precedence `--table-name` > `--output` file stem > input schema file stem.
-  - [ ] Reject `--table-name` when the effective format is not `sql` instead of silently ignoring it.
+- [x] Resolve effective format and SQL-specific CLI options (AC: 1, 4, 5)
+  - [x] Add an explicit SQL table option to the generate command as `--table-name <name>`.
+  - [x] Implement one format-resolution path in `packages/cli/src/commands/generate.ts` with precedence `--format` > inferred output extension > effective config default.
+  - [x] Support extension inference only for `.json`, `.csv`, and `.sql`; unknown extensions should fall back to the validated config/default format rather than inventing new formats.
+  - [x] Resolve SQL table names with precedence `--table-name` > `--output` file stem > input schema file stem.
+  - [x] Reject `--table-name` when the effective format is not `sql` instead of silently ignoring it.
 
-- [ ] Route CLI output through the correct formatting path while preserving current JSON behavior (AC: 1, 2, 3, 6, 7)
-  - [ ] Preserve the current CLI JSON contract: stdout and file output remain a plain JSON array of records, not the metadata-wrapped shape currently emitted by `JsonAdapter`.
-  - [ ] Reuse `CsvAdapter` and `SqlAdapter` from `@testdata-ai/core` rather than duplicating CSV escaping or SQL quoting logic inside the CLI package.
-  - [ ] Keep stdout support for CSV and SQL. If the existing file-path-based adapter contract requires a CLI bridge for stdout, keep that bridge localized to the CLI and clean up any temporary artifacts.
-  - [ ] Preserve the current `--save-context` semantics by saving raw generated records to the JSON context envelope independently of the selected output format.
-  - [ ] Keep large-generation progress reporting on stderr and preserve the existing exit-code behavior for validation, runtime, and file-system failures.
+- [x] Route CLI output through the correct formatting path while preserving current JSON behavior (AC: 1, 2, 3, 6, 7)
+  - [x] Preserve the current CLI JSON contract: stdout and file output remain a plain JSON array of records, not the metadata-wrapped shape currently emitted by `JsonAdapter`.
+  - [x] Reuse `CsvAdapter` and `SqlAdapter` from `@testdata-ai/core` rather than duplicating CSV escaping or SQL quoting logic inside the CLI package.
+  - [x] Keep stdout support for CSV and SQL. If the existing file-path-based adapter contract requires a CLI bridge for stdout, keep that bridge localized to the CLI and clean up any temporary artifacts.
+  - [x] Preserve the current `--save-context` semantics by saving raw generated records to the JSON context envelope independently of the selected output format.
+  - [x] Keep large-generation progress reporting on stderr and preserve the existing exit-code behavior for validation, runtime, and file-system failures.
 
-- [ ] Add focused automated coverage for CLI multi-format behavior (AC: 1, 2, 3, 4, 5, 6, 7, 8)
-  - [ ] Extend `packages/cli/src/commands/generate.test.ts` with JSON, CSV, and SQL cases for stdout and file output.
-  - [ ] Add tests for format inference from `.json`, `.csv`, and `.sql` output paths and explicit `--format` precedence over inferred extensions.
-  - [ ] Add tests for SQL table-name resolution, including explicit `--table-name`, inferred output-file stem, inferred input-file stem, and invalid non-SQL usage.
-  - [ ] Add at least one save-context scenario proving non-JSON output still saves reusable JSON context correctly.
-  - [ ] Expand CLI BDD coverage by wiring `packages/cli/features/generateCommand.feature` into the live Cucumber runner and adding the missing step definitions needed for multi-format scenarios.
+- [x] Add focused automated coverage for CLI multi-format behavior (AC: 1, 2, 3, 4, 5, 6, 7, 8)
+  - [x] Extend `packages/cli/src/commands/generate.test.ts` with JSON, CSV, and SQL cases for stdout and file output.
+  - [x] Add tests for format inference from `.json`, `.csv`, and `.sql` output paths and explicit `--format` precedence over inferred extensions.
+  - [x] Add tests for SQL table-name resolution, including explicit `--table-name`, inferred output-file stem, inferred input-file stem, and invalid non-SQL usage.
+  - [x] Add at least one save-context scenario proving non-JSON output still saves reusable JSON context correctly.
+  - [x] Expand CLI BDD coverage by wiring `packages/cli/features/generateCommand.feature` into the live Cucumber runner and adding the missing step definitions needed for multi-format scenarios.
 
-- [ ] Keep Story 10.3 scoped to CLI integration only (AC: 1, 2, 3, 5, 6, 7)
-  - [ ] Do not add the programmatic generation API promised by Story 10.4.
-  - [ ] Do not redesign the adapter architecture broadly unless a very small shared abstraction is the only clean way to support stdout.
-  - [ ] Do not change JSON output to metadata-enveloped or JSONL CLI output in this story.
-  - [ ] Do not change context file formats, metadata-tracking behavior, or Epic 12 concerns in this story.
+- [x] Keep Story 10.3 scoped to CLI integration only (AC: 1, 2, 3, 5, 6, 7)
+  - [x] Do not add the programmatic generation API promised by Story 10.4.
+  - [x] Do not redesign the adapter architecture broadly unless a very small shared abstraction is the only clean way to support stdout.
+  - [x] Do not change JSON output to metadata-enveloped or JSONL CLI output in this story.
+  - [x] Do not change context file formats, metadata-tracking behavior, or Epic 12 concerns in this story.
 
 ## Dev Notes
 
@@ -234,7 +234,7 @@ GPT-5.4
 
 - Validation workflow file `_bmad/core/tasks/validate-workflow.xml` is not present in this repository snapshot, so checklist validation was performed manually during story creation.
 - External web lookup was not available through the workflow context; latest technical guidance was derived from repo-pinned package manifests, planning artifacts, and the live source tree.
-- The CLI package already contains `packages/cli/features/generateCommand.feature`, but it is not currently wired into the live Cucumber runner and has no step-definition file yet.
+- `packages/cli/features/generateCommand.feature` is now wired into the live Cucumber runner with dedicated step definitions covering JSON, CSV, SQL, precedence, and save-context behavior.
 
 ### Implementation Plan
 
@@ -244,11 +244,26 @@ GPT-5.4
 
 ### Completion Notes List
 
-- Ultimate context engine analysis completed - comprehensive developer guide created.
-- Story status set to `ready-for-dev`.
-- Sprint tracking updated from `backlog` to `ready-for-dev` for story `10-3-cli-multi-format-support`.
+- Implemented CLI format resolution with precedence `--format` > supported output-file extension > effective config default and widened config validation to accept `json`, `csv`, and `sql` defaults.
+- Added SQL-specific CLI handling with `--table-name`, deterministic fallback to output/schema file stems, and a fast-fail validation path when `--table-name` is used outside SQL output.
+- Routed CSV and SQL output through the existing core adapters while preserving plain JSON CLI output, stdout support via a temporary CLI-local bridge, and JSON save-context persistence.
+- Added focused unit coverage and live Cucumber scenarios for JSON, CSV, SQL, format inference, explicit precedence, SQL table-name resolution, and non-JSON save-context behavior.
+- Validation passed with `runTests` on the targeted CLI tests, `runTests` across the full repository suite (`774` passing), `bun run test:bdd` in `packages/cli` (`11` scenarios passing), and targeted ESLint on the edited CLI TypeScript files.
 
 ### File List
 
 - `_bmad-output/implementation-artifacts/10-3-cli-multi-format-support.md`
 - `_bmad-output/implementation-artifacts/sprint-status.yaml`
+/- `docs/configuration.md`
+- `packages/cli/features/generateCommand.feature`
+- `packages/cli/features/step_definitions/generateCommand.steps.ts`
+- `packages/cli/src/commands/generate.test.ts`
+- `packages/cli/src/commands/generate.ts`
+- `packages/cli/src/config/configLoader.test.ts`
+- `packages/cli/src/config/configLoader.ts`
+- `packages/cli/src/config/types.ts`
+- `packages/cli/tests/run-cucumber.ts`
+
+## Change Log
+
+- 2026-03-31: Implemented CLI multi-format support with adapter-backed CSV and SQL output, SQL table-name resolution, config default widening, live Cucumber coverage, and updated configuration guidance.

@@ -16,7 +16,7 @@ import type {
   RawCliGlobalConfig,
 } from './types';
 
-const SUPPORTED_OUTPUT_FORMATS: readonly CliOutputFormat[] = ['json'];
+const SUPPORTED_OUTPUT_FORMATS: readonly CliOutputFormat[] = ['json', 'csv', 'sql'];
 const CONFIG_SECTIONS: readonly CliConfigSection[] = ['defaults', 'context', 'generatorDefaults'];
 
 export class CliConfigError extends Error {

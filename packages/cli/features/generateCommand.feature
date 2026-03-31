@@ -1,63 +1,58 @@
 Feature: Generate Command
   As a QA tester
   I want to generate test data from DSL schemas
-  So that I can create test datasets quickly
+  So that I can create test datasets in the format I need
 
   Background:
     Given the testdata-ai CLI is installed
 
-  @generate @happy-path
-  Scenario: Generate data to stdout
-    Given QA Tester has a valid DSL schema file "valid-simple.td"
+  @generate @json
+  Scenario: Generate JSON to stdout by default
+    Given QA Tester has a valid DSL schema fixture "valid-simple.td"
     When QA Tester runs "td generate valid-simple.td"
     Then QA Tester should see JSON output on stdout
-    And the exit code should be 0
-    And the generation summary should be displayed
+    And the generate command exit code should be 0
 
-  @generate @options
-  Scenario: Generate with custom count
-    Given QA Tester has a valid DSL schema file "valid-simple.td"
-    When QA Tester runs "td generate valid-simple.td --count 50"
-    Then QA Tester should see 50 records in JSON output
-    And the exit code should be 0
+  @generate @csv
+  Scenario: Infer CSV output from the output file extension
+    Given QA Tester has a valid DSL schema fixture "valid-simple.td"
+    When QA Tester runs "td generate valid-simple.td --count 2 --output reports/users.csv"
+    Then the generated file "reports/users.csv" should start with "id,name,active"
+    And the generate command exit code should be 0
 
-  @generate @determinism
-  Scenario: Deterministic generation with seed
-    Given QA Tester has a valid DSL schema file "valid-simple.td"
-    When QA Tester runs "td generate valid-simple.td --seed 12345 --count 10"
-    And QA Tester runs "td generate valid-simple.td --seed 12345 --count 10" again
-    Then both outputs should be identical
+  @generate @sql
+  Scenario: Infer SQL output and table name from the output file extension
+    Given QA Tester has a valid DSL schema fixture "valid-simple.td"
+    When QA Tester runs "td generate valid-simple.td --count 2 --output reports/audit-log.sql"
+    Then the generated file "reports/audit-log.sql" should contain SQL inserts for table "audit-log"
+    And the generate command exit code should be 0
 
-  @generate @file-output
-  Scenario: Generate to file
-    Given QA Tester has a valid DSL schema file "valid-simple.td"
-    When QA Tester runs "td generate valid-simple.td --output output.json"
-    Then the file "output.json" should contain valid JSON
-    And the exit code should be 0
+  @generate @sql
+  Scenario: Generate SQL to stdout with an explicit table name
+    Given QA Tester has a valid DSL schema fixture "valid-simple.td"
+    When QA Tester runs "td generate valid-simple.td --count 2 --format sql --table-name qa_users"
+    Then QA Tester should see SQL output for table "qa_users" on stdout
+    And the generate command exit code should be 0
 
-  @generate @validation-error
-  Scenario: Handle validation errors
-    Given QA Tester has an invalid DSL schema file "invalid-syntax.td"
-    When QA Tester runs "td generate invalid-syntax.td"
-    Then QA Tester should see validation error messages
-    And the exit code should be 1
+  @generate @precedence
+  Scenario: Let explicit format override the output file extension
+    Given QA Tester has a valid DSL schema fixture "valid-simple.td"
+    When QA Tester runs "td generate valid-simple.td --count 2 --format csv --output reports/users.json"
+    Then the generated file "reports/users.json" should start with "id,name,active"
+    And the generate command exit code should be 0
 
-  @generate @file-error
-  Scenario: Handle missing file
-    When QA Tester runs "td generate nonexistent.td"
-    Then QA Tester should see a "file not found" error
-    And the exit code should be 3
+  @generate @context
+  Scenario: Save generated context as JSON even when CSV output is selected
+    Given QA Tester has a valid DSL schema fixture "valid-simple.td"
+    When QA Tester runs "td generate valid-simple.td --count 2 --format csv --save-context csv-users"
+    Then QA Tester should see CSV output on stdout
+    And the generated context file "contexts/csv-users.json" should exist
+    And the generated context file "contexts/csv-users.json" should contain 2 records
+    And the generate command exit code should be 0
 
-  @generate @progress
-  Scenario: Show progress for large datasets
-    Given QA Tester has a valid DSL schema file "valid-simple.td"
-    When QA Tester runs "td generate valid-simple.td --count 500"
-    Then QA Tester should see progress indicators during generation
-    And the exit code should be 0
-
-  @generate @shorthand-options
-  Scenario: Use shorthand options
-    Given QA Tester has a valid DSL schema file "valid-simple.td"
-    When QA Tester runs "td generate valid-simple.td -c 25 -s 99999"
-    Then QA Tester should see 25 records in JSON output
-    And the exit code should be 0
+  @generate @validation
+  Scenario: Reject SQL table names for non-SQL formats
+    Given QA Tester has a valid DSL schema fixture "valid-simple.td"
+    When QA Tester runs "td generate valid-simple.td --format json --table-name qa_users"
+    Then stderr should contain "--table-name can only be used when the effective output format is sql"
+    And the generate command exit code should be 1

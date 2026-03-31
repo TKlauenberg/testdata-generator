@@ -3,7 +3,7 @@ import type { DefaultSpec } from '@testdata-ai/core';
 export type CliConfigSource = 'built-in' | 'global' | 'workspace';
 export type CliConfigSection = 'defaults' | 'context' | 'generatorDefaults';
 
-export type CliOutputFormat = 'json';
+export type CliOutputFormat = 'json' | 'csv' | 'sql';
 
 export interface CliConfigDefaults {
   readonly count: number;

@@ -7,11 +7,13 @@
  */
 
 import { Command } from 'commander';
-import { generateData, saveAsContext, ValidationError } from '@testdata-ai/core';
+import { CsvAdapter, generateData, saveAsContext, SqlAdapter, ValidationError } from '@testdata-ai/core';
 import type { Diagnostic, GenerateOptions } from '@testdata-ai/core';
 import * as fs from 'fs/promises';
+import * as os from 'node:os';
 import * as path from 'path';
 import { BUILT_IN_CLI_CONFIG, CliConfigError, loadEffectiveConfig, validateOutputFormat } from '../config';
+import type { CliOutputFormat } from '../config';
 import { formatErrors } from '../formatters';
 
 /**
@@ -47,6 +49,7 @@ export const generateCommand = new Command('generate')
   )
   .option('-o, --output <file>', 'Output file (default: stdout)')
   .option('-s, --seed <number>', 'Random seed for reproducibility')
+  .option('--table-name <name>', 'SQL table name (sql output only)')
   .option('--save-context <name>', 'Save generated records as reusable context')
   .option(
     '--save-context-dir <directory>',
@@ -73,11 +76,26 @@ export const generateCommand = new Command('generate')
         options.count ?? String(cliConfig.defaults.count),
         '--count',
       );
-      const format = validateOutputFormat(
-        options.format ?? cliConfig.defaults.format,
-        options.format === undefined ? 'effective config defaults.format' : '--format',
-      );
+      const format = resolveOutputFormat({
+        explicitFormat: options.format,
+        outputPath: options.output,
+        configFormat: cliConfig.defaults.format,
+      });
       const seed = options.seed ? parseIntegerOption(options.seed, '--seed') : undefined;
+
+      if (options.tableName !== undefined && format !== 'sql') {
+        process.stderr.write('Error: --table-name can only be used when the effective output format is sql\n');
+        process.exitCode = 1;
+        return;
+      }
+
+      const sqlTableName = format === 'sql'
+        ? resolveSqlTableName({
+          explicitTableName: options.tableName,
+          outputPath: options.output,
+          schemaPath: file,
+        })
+        : undefined;
 
       const saveContextDirectory = options.saveContextDir ?? cliConfig.context.saveDirectory;
 
@@ -137,27 +155,25 @@ export const generateCommand = new Command('generate')
         const duration = ((endTime - startTime) / 1000).toFixed(1);
 
         // Step 3: Format output
-        const output = formatRecords(records, format);
+        try {
+          const stdoutOutput = await writeFormattedOutput({
+            records,
+            format,
+            outputPath: options.output,
+            sqlTableName,
+          });
 
-        // Step 4: Write output
-        if (options.output) {
-          try {
-            // Create parent directories if needed
-            const outputDir = path.dirname(options.output);
-            await fs.mkdir(outputDir, { recursive: true });
-            await fs.writeFile(options.output, output);
-          } catch (err: unknown) {
-            if (isNodeError(err)) {
-              console.error(`Error writing output file: ${err.message}`);
-            } else {
-              console.error(`Error writing output file: ${String(err)}`);
-            }
+          if (stdoutOutput !== undefined) {
+            // eslint-disable-next-line no-console
+            console.log(stdoutOutput);
+          }
+        } catch (err: unknown) {
+          if (isNodeError(err)) {
+            console.error(`Error writing output file: ${err.message}`);
             process.exit(3);
           }
-        } else {
-          // Write to stdout
-          // eslint-disable-next-line no-console
-          console.log(output);
+
+          throw err;
         }
 
         if (options.saveContext) {
@@ -233,8 +249,28 @@ interface CommandOptions {
   format?: string;
   output?: string;
   seed?: string;
+  tableName?: string;
   saveContext?: string;
   saveContextDir?: string;
+}
+
+interface ResolveOutputFormatOptions {
+  readonly explicitFormat?: string;
+  readonly outputPath?: string;
+  readonly configFormat: CliOutputFormat;
+}
+
+interface ResolveSqlTableNameOptions {
+  readonly explicitTableName?: string;
+  readonly outputPath?: string;
+  readonly schemaPath: string;
+}
+
+interface WriteFormattedOutputOptions {
+  readonly records: readonly Record<string, unknown>[];
+  readonly format: CliOutputFormat;
+  readonly outputPath?: string;
+  readonly sqlTableName?: string;
 }
 
 function parsePositiveIntegerOption(rawValue: string, optionName: string): number {
@@ -260,10 +296,140 @@ function parseIntegerOption(rawValue: string, optionName: string): number {
   return value;
 }
 
-function formatRecords(records: readonly Record<string, unknown>[], format: 'json'): string {
-  if (format === 'json') {
-    return JSON.stringify(records, null, 2);
+function resolveOutputFormat(options: ResolveOutputFormatOptions): CliOutputFormat {
+  if (options.explicitFormat !== undefined) {
+    return validateOutputFormat(options.explicitFormat, '--format');
   }
 
-  return JSON.stringify(records, null, 2);
+  return inferOutputFormat(options.outputPath) ?? options.configFormat;
+}
+
+function inferOutputFormat(outputPath?: string): CliOutputFormat | undefined {
+  if (outputPath === undefined) {
+    return undefined;
+  }
+
+  const extension = path.extname(outputPath).toLowerCase();
+  if (extension === '.json') {
+    return 'json';
+  }
+
+  if (extension === '.csv') {
+    return 'csv';
+  }
+
+  if (extension === '.sql') {
+    return 'sql';
+  }
+
+  return undefined;
+}
+
+function resolveSqlTableName(options: ResolveSqlTableNameOptions): string {
+  if (options.explicitTableName !== undefined) {
+    return options.explicitTableName;
+  }
+
+  if (options.outputPath !== undefined) {
+    return path.parse(options.outputPath).name;
+  }
+
+  return path.parse(options.schemaPath).name;
+}
+
+async function writeFormattedOutput(options: WriteFormattedOutputOptions): Promise<string | undefined> {
+  if (options.outputPath !== undefined) {
+    const outputDirectory = path.dirname(options.outputPath);
+    await fs.mkdir(outputDirectory, { recursive: true });
+
+    if (options.format === 'json') {
+      await fs.writeFile(options.outputPath, JSON.stringify(options.records, null, 2));
+      return undefined;
+    }
+
+    const adapterFormat = options.format;
+    await writeAdapterOutput({
+      records: options.records,
+      format: adapterFormat,
+      outputPath: options.outputPath,
+      sqlTableName: options.sqlTableName,
+    });
+    return undefined;
+  }
+
+  const adapterFormat = options.format;
+  if (adapterFormat === 'json') {
+    return JSON.stringify(options.records, null, 2);
+  }
+
+  return renderAdapterOutputToString({
+    records: options.records,
+    format: adapterFormat,
+    outputPath: options.outputPath,
+    sqlTableName: options.sqlTableName,
+  });
+}
+
+async function renderAdapterOutputToString(options: {
+  readonly records: readonly Record<string, unknown>[];
+  readonly format: Exclude<CliOutputFormat, 'json'>;
+  readonly outputPath?: string;
+  readonly sqlTableName?: string;
+}): Promise<string> {
+  const tempDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-cli-output-'));
+  const tempOutputPath = path.join(tempDirectory, `output.${options.format}`);
+
+  try {
+    await writeAdapterOutput({
+      records: options.records,
+      format: options.format,
+      outputPath: tempOutputPath,
+      sqlTableName: options.sqlTableName,
+    });
+
+    return await fs.readFile(tempOutputPath, 'utf-8');
+  } finally {
+    await fs.rm(tempDirectory, { recursive: true, force: true });
+  }
+}
+
+async function writeAdapterOutput(options: {
+  readonly records: readonly Record<string, unknown>[];
+  readonly format: Exclude<CliOutputFormat, 'json'>;
+  readonly outputPath: string;
+  readonly sqlTableName?: string;
+}): Promise<void> {
+  if (options.format === 'csv') {
+    const adapter = new CsvAdapter({ outputPath: options.outputPath });
+    await adapter.write(createRecordStream(options.records));
+    return;
+  }
+
+  const adapter = new SqlAdapter({
+    outputPath: options.outputPath,
+    tableName: options.sqlTableName ?? 'generated_records',
+  });
+  await adapter.write(createRecordStream(options.records));
+}
+
+function createRecordStream(
+  records: readonly Record<string, unknown>[],
+): AsyncIterable<Record<string, unknown>> {
+  return {
+    [Symbol.asyncIterator](): AsyncIterator<Record<string, unknown>> {
+      let index = 0;
+
+      return {
+        next(): Promise<IteratorResult<Record<string, unknown>>> {
+          const record = records[index];
+          if (record === undefined) {
+            return Promise.resolve({ done: true, value: undefined });
+          }
+
+          index += 1;
+          return Promise.resolve({ done: false, value: record });
+        },
+      };
+    },
+  };
 }

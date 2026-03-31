@@ -16,6 +16,13 @@ function parseJson<T>(input: string): T {
   return parsed as T;
 }
 
+function parseCsvLines(input: string): string[] {
+  return input
+    .trim()
+    .split(/\r?\n/)
+    .filter((line) => line.length > 0);
+}
+
 function isRecordArray(value: unknown): value is Array<Record<string, unknown>> {
   return Array.isArray(value)
     && value.every((item) => item !== null && typeof item === 'object' && !Array.isArray(item));
@@ -861,6 +868,277 @@ describe('Generate Command - Output Handling', () => {
     } finally {
       await fs.rm(homeDirectory, { recursive: true, force: true });
     }
+  });
+});
+
+describe('Generate Command - Multi-Format Output', () => {
+  const outputDir = path.join(import.meta.dir, '../../test-output');
+
+  beforeEach(async () => {
+    await fs.mkdir(outputDir, { recursive: true });
+  });
+
+  afterEach(async () => {
+    await fs.rm(outputDir, { recursive: true, force: true });
+  });
+
+  test('uses the configured csv default when no stronger format signal is present', async () => {
+    const homeDirectory = await createGlobalConfigHome({
+      defaults: {
+        count: 2,
+        format: 'csv',
+      },
+    });
+
+    try {
+      const proc = spawn([
+        'bun',
+        CLI_PATH,
+        'generate',
+        fixture('valid-simple.td'),
+      ], {
+        env: {
+          ...process.env,
+          HOME: homeDirectory,
+        },
+      });
+
+      const stdout = await new Response(proc.stdout).text();
+      const exitCode = await proc.exited;
+
+      expect(exitCode).toBe(0);
+      expect(parseCsvLines(stdout)).toHaveLength(3);
+      expect(parseCsvLines(stdout)[0]).toBe('id,name,active');
+    } finally {
+      await fs.rm(homeDirectory, { recursive: true, force: true });
+    }
+  });
+
+  test('uses the configured sql default when no stronger format signal is present', async () => {
+    const homeDirectory = await createGlobalConfigHome({
+      defaults: {
+        count: 2,
+        format: 'sql',
+      },
+    });
+
+    try {
+      const proc = spawn([
+        'bun',
+        CLI_PATH,
+        'generate',
+        fixture('valid-simple.td'),
+      ], {
+        env: {
+          ...process.env,
+          HOME: homeDirectory,
+        },
+      });
+
+      const stdout = await new Response(proc.stdout).text();
+      const exitCode = await proc.exited;
+
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain('INSERT INTO "valid-simple"');
+      expect(stdout).toContain('("id", "name", "active")');
+    } finally {
+      await fs.rm(homeDirectory, { recursive: true, force: true });
+    }
+  });
+
+  test('infers csv format from the output file extension', async () => {
+    const outputFile = path.join(outputDir, 'records.csv');
+    const proc = spawn([
+      'bun',
+      CLI_PATH,
+      'generate',
+      fixture('valid-simple.td'),
+      '--count',
+      '2',
+      '--output',
+      outputFile,
+    ]);
+
+    const exitCode = await proc.exited;
+    const content = await fs.readFile(outputFile, 'utf-8');
+
+    expect(exitCode).toBe(0);
+    expect(parseCsvLines(content)[0]).toBe('id,name,active');
+  });
+
+  test('infers sql format and table name from the output file extension and stem', async () => {
+    const outputFile = path.join(outputDir, 'audit-log.sql');
+    const proc = spawn([
+      'bun',
+      CLI_PATH,
+      'generate',
+      fixture('valid-simple.td'),
+      '--count',
+      '2',
+      '--output',
+      outputFile,
+    ]);
+
+    const exitCode = await proc.exited;
+    const content = await fs.readFile(outputFile, 'utf-8');
+
+    expect(exitCode).toBe(0);
+    expect(content).toContain('INSERT INTO "audit-log"');
+  });
+
+  test('lets explicit --format override the inferred output extension', async () => {
+    const outputFile = path.join(outputDir, 'records.json');
+    const proc = spawn([
+      'bun',
+      CLI_PATH,
+      'generate',
+      fixture('valid-simple.td'),
+      '--count',
+      '2',
+      '--format',
+      'csv',
+      '--output',
+      outputFile,
+    ]);
+
+    const exitCode = await proc.exited;
+    const content = await fs.readFile(outputFile, 'utf-8');
+
+    expect(exitCode).toBe(0);
+    expect(content.startsWith('id,name,active')).toBe(true);
+    expect(() => parseJson(content)).toThrow();
+  });
+
+  test('falls back to the configured default when the output extension is not supported', async () => {
+    const homeDirectory = await createGlobalConfigHome({
+      defaults: {
+        count: 2,
+        format: 'csv',
+      },
+    });
+    const outputFile = path.join(outputDir, 'records.txt');
+
+    try {
+      const proc = spawn([
+        'bun',
+        CLI_PATH,
+        'generate',
+        fixture('valid-simple.td'),
+        '--output',
+        outputFile,
+      ], {
+        env: {
+          ...process.env,
+          HOME: homeDirectory,
+        },
+      });
+
+      const exitCode = await proc.exited;
+      const content = await fs.readFile(outputFile, 'utf-8');
+
+      expect(exitCode).toBe(0);
+      expect(parseCsvLines(content)[0]).toBe('id,name,active');
+    } finally {
+      await fs.rm(homeDirectory, { recursive: true, force: true });
+    }
+  });
+
+  test('prefers explicit sql table names over inferred output and input stems', async () => {
+    const outputFile = path.join(outputDir, 'audit-log.sql');
+    const proc = spawn([
+      'bun',
+      CLI_PATH,
+      'generate',
+      fixture('valid-simple.td'),
+      '--count',
+      '2',
+      '--format',
+      'sql',
+      '--table-name',
+      'qa_users',
+      '--output',
+      outputFile,
+    ]);
+
+    const exitCode = await proc.exited;
+    const content = await fs.readFile(outputFile, 'utf-8');
+
+    expect(exitCode).toBe(0);
+    expect(content).toContain('INSERT INTO "qa_users"');
+    expect(content).not.toContain('INSERT INTO "audit-log"');
+  });
+
+  test('writes sql output to stdout when no output file is provided', async () => {
+    const proc = spawn([
+      'bun',
+      CLI_PATH,
+      'generate',
+      fixture('valid-simple.td'),
+      '--count',
+      '2',
+      '--format',
+      'sql',
+      '--table-name',
+      'qa_users',
+    ]);
+
+    const stdout = await new Response(proc.stdout).text();
+    const exitCode = await proc.exited;
+
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain('INSERT INTO "qa_users"');
+  });
+
+  test('rejects --table-name when the effective output format is not sql', async () => {
+    const proc = spawn([
+      'bun',
+      CLI_PATH,
+      'generate',
+      fixture('valid-simple.td'),
+      '--format',
+      'csv',
+      '--table-name',
+      'qa_users',
+    ], {
+      stderr: 'pipe',
+    });
+
+    const stderr = await new Response(proc.stderr).text();
+    const exitCode = await proc.exited;
+
+    expect(exitCode).toBe(1);
+    expect(stderr).toContain('--table-name can only be used when the effective output format is sql');
+  });
+
+  test('keeps save-context output as reusable json when csv output is selected', async () => {
+    const proc = spawn([
+      'bun',
+      CLI_PATH,
+      'generate',
+      fixture('valid-simple.td'),
+      '--count',
+      '2',
+      '--format',
+      'csv',
+      '--save-context',
+      'csv-users',
+    ], {
+      cwd: outputDir,
+    });
+
+    const stdout = await new Response(proc.stdout).text();
+    const exitCode = await proc.exited;
+    const savedContext = parseJson<{
+      readonly metadata: {
+        readonly count: number;
+      };
+      readonly data: ReadonlyArray<Record<string, unknown>>;
+    }>(await fs.readFile(path.join(outputDir, 'contexts', 'csv-users.json'), 'utf-8'));
+
+    expect(exitCode).toBe(0);
+    expect(parseCsvLines(stdout)[0]).toBe('id,name,active');
+    expect(savedContext.metadata.count).toBe(2);
+    expect(savedContext.data).toHaveLength(2);
   });
 });
 
