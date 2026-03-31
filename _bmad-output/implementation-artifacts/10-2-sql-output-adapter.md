@@ -1,6 +1,6 @@
 # Story 10.2: SQL Output Adapter
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -27,34 +27,34 @@ This story establishes the SQL output path in core only. CLI format selection, o
 
 ## Tasks / Subtasks
 
-- [ ] Implement the SQL adapter surface in core (AC: 1, 5, 6, 7, 8)
-  - [ ] Create `packages/core/src/adapters/sqlAdapter.ts` with a `SqlAdapter` class following the existing `JsonAdapter` and `CsvAdapter` constructor-validation and `write()` shape.
-  - [ ] Extend `packages/core/src/adapters/types.ts` with `SqlAdapterOptions` rather than introducing a separate adapter abstraction.
-  - [ ] Validate `outputPath`, `tableName`, and `batchSize` eagerly with thrown `Error` values for invalid configuration.
-  - [ ] Export `SqlAdapter` and `SqlAdapterOptions` from `packages/core/src/adapters/index.ts` and preserve public exports through `packages/core/src/index.ts`.
+- [x] Implement the SQL adapter surface in core (AC: 1, 5, 6, 7, 8)
+  - [x] Create `packages/core/src/adapters/sqlAdapter.ts` with a `SqlAdapter` class following the existing `JsonAdapter` and `CsvAdapter` constructor-validation and `write()` shape.
+  - [x] Extend `packages/core/src/adapters/types.ts` with `SqlAdapterOptions` rather than introducing a separate adapter abstraction.
+  - [x] Validate `outputPath`, `tableName`, and `batchSize` eagerly with thrown `Error` values for invalid configuration.
+  - [x] Export `SqlAdapter` and `SqlAdapterOptions` from `packages/core/src/adapters/index.ts` and preserve public exports through `packages/core/src/index.ts`.
 
-- [ ] Implement streaming, batched SQL writing with portable dialect rules (AC: 2, 3, 4, 5, 6, 7)
-  - [ ] Use `Bun.write(outputPath, '')` before `Bun.file(outputPath).writer()` so reusing an output path cannot leave stale bytes behind.
-  - [ ] Discover the stable column order from the first non-empty record and reuse that order for all emitted batches.
-  - [ ] Skip leading empty records, treat missing values for known columns as `NULL`, and ignore late extra keys instead of mutating the established column set mid-stream.
-  - [ ] Quote identifiers by dialect: PostgreSQL uses `"identifier"`, MySQL uses `` `identifier` ``, and embedded identifier quote characters must be escaped correctly.
-  - [ ] Serialize values into a portable SQL subset: `NULL`, `TRUE`/`FALSE`, finite numbers, `bigint` via `String(value)`, strings with single quotes doubled, and arrays/objects as JSON string literals.
-  - [ ] Flush each completed batch as one `INSERT INTO ... VALUES (...), (...);` statement and always flush the final partial batch.
-  - [ ] Keep output limited to portable inserts only: no `RETURNING`, `ON CONFLICT`, transaction wrappers, metadata comments, or engine-specific casts in this story.
+- [x] Implement streaming, batched SQL writing with portable dialect rules (AC: 2, 3, 4, 5, 6, 7)
+  - [x] Use `Bun.write(outputPath, '')` before `Bun.file(outputPath).writer()` so reusing an output path cannot leave stale bytes behind.
+  - [x] Discover the stable column order from the first non-empty record and reuse that order for all emitted batches.
+  - [x] Skip leading empty records, treat missing values for known columns as `NULL`, and ignore late extra keys instead of mutating the established column set mid-stream.
+  - [x] Quote identifiers by dialect: PostgreSQL uses `"identifier"`, MySQL uses `` `identifier` ``, and embedded identifier quote characters must be escaped correctly.
+  - [x] Serialize values into a portable SQL subset: `NULL`, `TRUE`/`FALSE`, finite numbers, `bigint` via `String(value)`, strings with single quotes doubled, and arrays/objects as JSON string literals.
+  - [x] Flush each completed batch as one `INSERT INTO ... VALUES (...), (...);` statement and always flush the final partial batch.
+  - [x] Keep output limited to portable inserts only: no `RETURNING`, `ON CONFLICT`, transaction wrappers, metadata comments, or engine-specific casts in this story.
 
-- [ ] Add focused unit coverage for SQL generation and escaping (AC: 3, 4, 6, 7, 9)
-  - [ ] Create `packages/core/src/adapters/sqlAdapter.test.ts` next to the implementation.
-  - [ ] Verify PostgreSQL and MySQL identifier quoting and table-name handling.
-  - [ ] Verify escaping for injection-like payloads such as `O'Brien'); DROP TABLE users; --` so the value remains a single safe SQL literal.
-  - [ ] Verify `NULL`, booleans, numbers, `bigint`, and nested object/array serialization.
-  - [ ] Verify configurable batch sizes, stable column order, empty-stream behavior, leading empty-record handling, and output file truncation.
+- [x] Add focused unit coverage for SQL generation and escaping (AC: 3, 4, 6, 7, 9)
+  - [x] Create `packages/core/src/adapters/sqlAdapter.test.ts` next to the implementation.
+  - [x] Verify PostgreSQL and MySQL identifier quoting and table-name handling.
+  - [x] Verify escaping for injection-like payloads such as `O'Brien'); DROP TABLE users; --` so the value remains a single safe SQL literal.
+  - [x] Verify `NULL`, booleans, numbers, `bigint`, and nested object/array serialization.
+  - [x] Verify configurable batch sizes, stable column order, empty-stream behavior, leading empty-record handling, and output file truncation.
 
-- [ ] Add BDD execution coverage using Bun's built-in SQLite engine as a portable execution harness (AC: 10)
-  - [ ] Create `packages/core/features/sql-output-adapter.feature` for QA-facing acceptance scenarios.
-  - [ ] Add Screenplay support files mirroring the CSV adapter structure only where reuse is not practical.
-  - [ ] Use `bun:sqlite` in test code to create in-memory tables and execute generated SQL for both `postgres` and `mysql` dialect options.
-  - [ ] Keep the generated SQL within a portable subset that SQLite can execute while still preserving the dialect-specific identifier quoting differences required by the acceptance criteria.
-  - [ ] Reuse `packages/core/features/support/tasks/GenerateDataPublicAPITasks.ts` for at least one end-to-end generation scenario instead of hand-assembling every record in feature tests.
+- [x] Add BDD execution coverage using Bun's built-in SQLite engine as a portable execution harness (AC: 10)
+  - [x] Create `packages/core/features/sql-output-adapter.feature` for QA-facing acceptance scenarios.
+  - [x] Add Screenplay support files mirroring the CSV adapter structure only where reuse is not practical.
+  - [x] Use `bun:sqlite` in test code to create in-memory tables and execute generated SQL for both `postgres` and `mysql` dialect options.
+  - [x] Keep the generated SQL within a portable subset that SQLite can execute while still preserving the dialect-specific identifier quoting differences required by the acceptance criteria.
+  - [x] Reuse `packages/core/features/support/tasks/GenerateDataPublicAPITasks.ts` for at least one end-to-end generation scenario instead of hand-assembling every record in feature tests.
 
 ## Dev Notes
 
@@ -233,14 +233,42 @@ GPT-5.4
 
 - Validation framework file `_bmad/core/tasks/validate-workflow.xml` is not present in this repository snapshot, so checklist validation was performed manually during story creation.
 - External web lookup was not available through the workflow context; latest technical guidance was derived from repo-pinned package manifests, project context, and the live source tree.
+- `bun run lint` still reports pre-existing repository warnings outside this story, but the SQL adapter changes introduced no remaining lint errors.
+
+### Implementation Plan
+
+- Add a core `SqlAdapter` that streams batched `INSERT` statements with fixed column order, dialect-specific identifier quoting, and portable literal serialization.
+- Cover the adapter with co-located Bun tests for escaping, validation, batching, truncation, and empty-stream behavior.
+- Add Screenplay BDD coverage that executes generated SQL through `bun:sqlite` for both PostgreSQL-style and MySQL-style identifier quoting.
 
 ### Completion Notes List
 
 - Ultimate context engine analysis completed - comprehensive developer guide created.
 - Story status set to `ready-for-dev`.
 - Sprint tracking updated from `backlog` to `ready-for-dev` for story `10-2-sql-output-adapter`.
+- Implemented `SqlAdapter` with eager option validation, stable first-record column discovery, portable SQL literal serialization, and batched streaming writes for PostgreSQL and MySQL identifier rules.
+- Added co-located unit tests covering identifier quoting, injection-safe string escaping, null and primitive serialization, batching, truncation, and empty-stream handling.
+- Added Screenplay BDD coverage using `bun:sqlite` to execute generated SQL for both dialect options, including a public-API generation path and an escaped-string execution scenario.
+- Registered SQL adapter support in the Screenplay actor setup and the core Cucumber runner.
+- Verified the implementation with the full Bun test suite and lint, with lint finishing on pre-existing warnings only.
 
 ### File List
 
+- `packages/core/src/adapters/sqlAdapter.ts`
+- `packages/core/src/adapters/sqlAdapter.test.ts`
+- `packages/core/src/adapters/types.ts`
+- `packages/core/src/adapters/index.ts`
+- `packages/core/features/sql-output-adapter.feature`
+- `packages/core/features/step_definitions/sql-output-adapter.steps.ts`
+- `packages/core/features/support/abilities/UseSqlAdapter.ts`
+- `packages/core/features/support/abilities/UseSqlExecutionHarness.ts`
+- `packages/core/features/support/tasks/SqlAdapterTasks.ts`
+- `packages/core/features/support/questions/SqlAdapterQuestions.ts`
+- `packages/core/features/support/screenplay/Actors.ts`
+- `packages/core/tests/run-cucumber.ts`
 - `_bmad-output/implementation-artifacts/10-2-sql-output-adapter.md`
 - `_bmad-output/implementation-artifacts/sprint-status.yaml`
+
+## Change Log
+
+- 2026-03-28: Implemented the core SQL output adapter, added unit and BDD execution coverage, registered SQL Screenplay support, and updated story tracking to review.

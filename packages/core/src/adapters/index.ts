@@ -6,4 +6,12 @@
 
 export { JsonAdapter } from './jsonAdapter';
 export { CsvAdapter } from './csvAdapter';
-export type { IAdapter, AdapterMetadata, JsonAdapterOptions, CsvAdapterOptions } from './types';
+export { SqlAdapter } from './sqlAdapter';
+export type {
+	IAdapter,
+	AdapterMetadata,
+	JsonAdapterOptions,
+	CsvAdapterOptions,
+	SqlAdapterOptions,
+	SqlDialect,
+} from './types';

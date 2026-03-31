@@ -60,3 +60,23 @@ export interface CsvAdapterOptions {
   /** Field delimiter, defaults to comma */
   readonly delimiter?: string;
 }
+
+/** Supported SQL dialects for identifier quoting */
+export type SqlDialect = 'postgres' | 'mysql';
+
+/**
+ * Configuration options for SqlAdapter
+ */
+export interface SqlAdapterOptions {
+  /** Output file path */
+  readonly outputPath: string;
+
+  /** Target table name */
+  readonly tableName: string;
+
+  /** SQL dialect for identifier quoting */
+  readonly dialect?: SqlDialect;
+
+  /** Maximum rows per INSERT statement */
+  readonly batchSize?: number;
+}
