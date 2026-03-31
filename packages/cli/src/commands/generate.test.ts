@@ -1089,6 +1089,88 @@ describe('Generate Command - Multi-Format Output', () => {
     expect(stdout).toContain('INSERT INTO "qa_users"');
   });
 
+  test('keeps csv stdout byte-for-byte consistent with file output', async () => {
+    const outputFile = path.join(outputDir, 'records.csv');
+    const stdoutProc = spawn([
+      'bun',
+      CLI_PATH,
+      'generate',
+      fixture('valid-simple.td'),
+      '--count',
+      '1',
+      '--seed',
+      '42',
+      '--format',
+      'csv',
+    ]);
+    const stdout = await new Response(stdoutProc.stdout).text();
+    const stdoutExitCode = await stdoutProc.exited;
+
+    const fileProc = spawn([
+      'bun',
+      CLI_PATH,
+      'generate',
+      fixture('valid-simple.td'),
+      '--count',
+      '1',
+      '--seed',
+      '42',
+      '--format',
+      'csv',
+      '--output',
+      outputFile,
+    ]);
+    const fileExitCode = await fileProc.exited;
+    const fileContent = await fs.readFile(outputFile, 'utf-8');
+
+    expect(stdoutExitCode).toBe(0);
+    expect(fileExitCode).toBe(0);
+    expect(stdout).toBe(fileContent);
+  });
+
+  test('keeps sql stdout byte-for-byte consistent with file output', async () => {
+    const outputFile = path.join(outputDir, 'records.sql');
+    const stdoutProc = spawn([
+      'bun',
+      CLI_PATH,
+      'generate',
+      fixture('valid-simple.td'),
+      '--count',
+      '1',
+      '--seed',
+      '42',
+      '--format',
+      'sql',
+      '--table-name',
+      'qa_users',
+    ]);
+    const stdout = await new Response(stdoutProc.stdout).text();
+    const stdoutExitCode = await stdoutProc.exited;
+
+    const fileProc = spawn([
+      'bun',
+      CLI_PATH,
+      'generate',
+      fixture('valid-simple.td'),
+      '--count',
+      '1',
+      '--seed',
+      '42',
+      '--format',
+      'sql',
+      '--table-name',
+      'qa_users',
+      '--output',
+      outputFile,
+    ]);
+    const fileExitCode = await fileProc.exited;
+    const fileContent = await fs.readFile(outputFile, 'utf-8');
+
+    expect(stdoutExitCode).toBe(0);
+    expect(fileExitCode).toBe(0);
+    expect(stdout).toBe(fileContent);
+  });
+
   test('rejects --table-name when the effective output format is not sql', async () => {
     const proc = spawn([
       'bun',

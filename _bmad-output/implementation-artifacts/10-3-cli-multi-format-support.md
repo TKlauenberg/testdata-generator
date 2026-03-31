@@ -1,6 +1,6 @@
 # Story 10.3: CLI Multi-Format Support
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -248,15 +248,20 @@ GPT-5.4
 - Added SQL-specific CLI handling with `--table-name`, deterministic fallback to output/schema file stems, and a fast-fail validation path when `--table-name` is used outside SQL output.
 - Routed CSV and SQL output through the existing core adapters while preserving plain JSON CLI output, stdout support via a temporary CLI-local bridge, and JSON save-context persistence.
 - Added focused unit coverage and live Cucumber scenarios for JSON, CSV, SQL, format inference, explicit precedence, SQL table-name resolution, and non-JSON save-context behavior.
+- Fixed senior-review findings by writing stdout without an extra newline, running CLI BDD against the built `dist/td.js` entrypoint, and wiring CLI BDD plus dist verification into the normal CI flow.
 - Validation passed with `runTests` on the targeted CLI tests, `runTests` across the full repository suite (`774` passing), `bun run test:bdd` in `packages/cli` (`11` scenarios passing), and targeted ESLint on the edited CLI TypeScript files.
 
 ### File List
 
 - `_bmad-output/implementation-artifacts/10-3-cli-multi-format-support.md`
 - `_bmad-output/implementation-artifacts/sprint-status.yaml`
-/- `docs/configuration.md`
+- `.github/workflows/ci.yml`
+- `docs/configuration.md`
+- `package.json`
+- `packages/cli/dist/td.js`
 - `packages/cli/features/generateCommand.feature`
 - `packages/cli/features/step_definitions/generateCommand.steps.ts`
+- `packages/cli/package.json`
 - `packages/cli/src/commands/generate.test.ts`
 - `packages/cli/src/commands/generate.ts`
 - `packages/cli/src/config/configLoader.test.ts`
@@ -267,3 +272,19 @@ GPT-5.4
 ## Change Log
 
 - 2026-03-31: Implemented CLI multi-format support with adapter-backed CSV and SQL output, SQL table-name resolution, config default widening, live Cucumber coverage, and updated configuration guidance.
+
+## Senior Developer Review (AI)
+
+### Reviewer
+
+GPT-5.4
+
+### Outcome
+
+Approved after fixes.
+
+### Notes
+
+- Fixed the stale packaged CLI risk by rebuilding `packages/cli/dist/td.js` and adding CI verification that the generated artifact stays committed.
+- Switched CLI Gherkin coverage to execute the built `dist/td.js` entrypoint and updated the package-level `test:bdd` script to build before running scenarios.
+- Removed the extra stdout newline for adapter-backed CSV and SQL output and added regression tests that compare stdout and file output byte-for-byte.

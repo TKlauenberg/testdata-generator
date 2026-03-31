@@ -8,7 +8,7 @@
   "scripts": {
     "build": "bun build ./bin/td.ts --outdir ./dist --target bun --format esm",
     "test": "bun test",
-    "test:bdd": "bun ./tests/run-cucumber.ts"
+    "test:bdd": "bun run build && bun ./tests/run-cucumber.ts"
   },
   "dependencies": {
     "@testdata-ai/core": "workspace:*",

@@ -11,7 +11,7 @@ interface GenerateCommandState {
 }
 
 const state: GenerateCommandState = {};
-const CLI_PATH = path.resolve(import.meta.dir, '../../bin/td.ts');
+const CLI_PATH = path.resolve(import.meta.dir, '../../dist/td.js');
 const FIXTURES_DIR = path.resolve(import.meta.dir, '../../fixtures');
 
 function requireWorkspaceDir(): string {

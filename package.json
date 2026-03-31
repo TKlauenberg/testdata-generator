@@ -11,7 +11,7 @@
     "test": "bun test packages/",
     "test:core": "bun test packages/core",
     "test:cli": "bun test packages/cli",
-    "test:bdd": "bun run --cwd packages/core test:bdd",
+    "test:bdd": "bun run --cwd packages/core test:bdd && bun run --cwd packages/cli test:bdd",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",

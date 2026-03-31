@@ -164,8 +164,7 @@ export const generateCommand = new Command('generate')
           });
 
           if (stdoutOutput !== undefined) {
-            // eslint-disable-next-line no-console
-            console.log(stdoutOutput);
+            process.stdout.write(stdoutOutput);
           }
         } catch (err: unknown) {
           if (isNodeError(err)) {
