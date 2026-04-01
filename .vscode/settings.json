@@ -50,6 +50,10 @@
     "/^bun run --cwd packages/core build$/": {
       "approve": true,
       "matchCommandLine": true
+    },
+    "/^bun run --cwd packages/core test:bdd$/": {
+      "approve": true,
+      "matchCommandLine": true
     }
   }
 }
