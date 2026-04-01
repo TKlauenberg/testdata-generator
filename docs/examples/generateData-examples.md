@@ -264,7 +264,7 @@ await adapter.write(generateData(schema, { count: 1000, seed: 42 }));
 
 **Output Format (jsonl):**
 ```jsonl
-{"metadata":{"timestamp":"...","sourcePattern":"User.td","count":1000,"seed":42}}
+{"_metadata":{"timestamp":"...","sourcePattern":"User.td","count":1000,"seed":42}}
 {"id":0.703...,"name":"abc...","email":"xyz...","active":true}
 {"id":0.456...,"name":"def...","email":"uvw...","active":false}
 ...

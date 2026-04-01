@@ -23,10 +23,15 @@ export interface GenerateDataAPIState {
   records: Record<string, unknown>[];
   recordsSecondSequence: Record<string, unknown>[];
   contextCollections: Record<string, ContextCollectionInput>;
+  generatedRecordCount: number;
   lastError: Error | null;
   generationStarted: boolean;
   generationDuration: number;
+  peakHeapUsed: number;
 }
+
+const LARGE_STREAM_BUFFER_THRESHOLD = 10_000;
+const HEAP_SAMPLING_INTERVAL = 1_000;
 
 /**
  * Ability to use the public generateData() API
@@ -37,9 +42,11 @@ export class UseGenerateDataAPI extends Ability {
     records: [],
     recordsSecondSequence: [],
     contextCollections: {},
+    generatedRecordCount: 0,
     lastError: null,
     generationStarted: false,
     generationDuration: 0,
+    peakHeapUsed: 0,
   };
 
   public static withDefaultCapabilities(): UseGenerateDataAPI {
@@ -57,8 +64,17 @@ export class UseGenerateDataAPI extends Ability {
     this._state.dslSource = source;
     this._state.records = [];
     this._state.recordsSecondSequence = [];
+    this._state.generatedRecordCount = 0;
     this._state.lastError = null;
     this._state.generationStarted = false;
+    this._state.peakHeapUsed = 0;
+  }
+
+  private _updatePeakHeapUsed(): void {
+    this._state.peakHeapUsed = Math.max(
+      this._state.peakHeapUsed,
+      process.memoryUsage().heapUsed,
+    );
   }
 
   public storeContextCollection(name: string, records: readonly ContextRecord[]): void {
@@ -102,8 +118,13 @@ export class UseGenerateDataAPI extends Ability {
    */
   public async generateRecords(count: number, seed?: number): Promise<void> {
     const startTime = performance.now();
+    const shouldBufferRecords = count <= LARGE_STREAM_BUFFER_THRESHOLD;
+
     this._state.generationStarted = true;
     this._state.records = [];
+    this._state.generatedRecordCount = 0;
+    this._state.lastError = null;
+    this._state.peakHeapUsed = process.memoryUsage().heapUsed;
 
     try {
       const options = seed !== undefined
@@ -112,12 +133,22 @@ export class UseGenerateDataAPI extends Ability {
       const recordStream = generateData(this._state.dslSource, options);
 
       for await (const record of recordStream) {
-        this._state.records.push(record);
+        this._state.generatedRecordCount++;
+
+        if (shouldBufferRecords) {
+          this._state.records.push(record);
+        }
+
+        if (this._state.generatedRecordCount % HEAP_SAMPLING_INTERVAL === 0) {
+          this._updatePeakHeapUsed();
+        }
       }
 
+      this._updatePeakHeapUsed();
       this._state.generationDuration = performance.now() - startTime;
     } catch (error) {
       this._state.lastError = error as Error;
+      this._state.generationDuration = performance.now() - startTime;
       throw error;
     }
   }
@@ -132,6 +163,9 @@ export class UseGenerateDataAPI extends Ability {
   ): Promise<void> {
     const startTime = performance.now();
     this._state.generationStarted = true;
+    this._state.generatedRecordCount = 0;
+    this._state.lastError = null;
+    this._state.peakHeapUsed = process.memoryUsage().heapUsed;
 
     try {
       const recordStream = generateData(this._state.dslSource, {
@@ -143,6 +177,7 @@ export class UseGenerateDataAPI extends Ability {
 
       for await (const record of recordStream) {
         records.push(record);
+        this._state.generatedRecordCount++;
       }
 
       if (storeAsSecond) {
@@ -151,9 +186,11 @@ export class UseGenerateDataAPI extends Ability {
         this._state.records = records;
       }
 
+      this._updatePeakHeapUsed();
       this._state.generationDuration = performance.now() - startTime;
     } catch (error) {
       this._state.lastError = error as Error;
+      this._state.generationDuration = performance.now() - startTime;
       throw error;
     }
   }
@@ -163,6 +200,9 @@ export class UseGenerateDataAPI extends Ability {
    */
   public async attemptGenerateRecords(count: number): Promise<void> {
     const startTime = performance.now();
+    this._state.generatedRecordCount = 0;
+    this._state.lastError = null;
+    this._state.peakHeapUsed = process.memoryUsage().heapUsed;
 
     try {
       this._state.generationStarted = false; // Track if we even started
@@ -177,8 +217,10 @@ export class UseGenerateDataAPI extends Ability {
 
       for await (const record of recordStream) {
         this._state.records.push(record);
+        this._state.generatedRecordCount++;
       }
 
+      this._updatePeakHeapUsed();
       this._state.generationDuration = performance.now() - startTime;
     } catch (error) {
       this._state.lastError = error as Error;
@@ -209,6 +251,10 @@ export class UseGenerateDataAPI extends Ability {
     return this._state.recordsSecondSequence;
   }
 
+  public getGeneratedRecordCount(): number {
+    return this._state.generatedRecordCount;
+  }
+
   /**
    * Get last error (if any)
    */
@@ -228,5 +274,9 @@ export class UseGenerateDataAPI extends Ability {
    */
   public getGenerationDuration(): number {
     return this._state.generationDuration;
+  }
+
+  public getPeakHeapUsed(): number {
+    return this._state.peakHeapUsed;
   }
 }

@@ -33,7 +33,7 @@ export const GeneratedRecordsCount = (): ReturnType<typeof Question.about<number
     'count of generated records',
     (actor: AnswersQuestions & UsesAbilities) => {
       const api = UseGenerateDataAPI.as(actor);
-      return api.getRecords().length;
+      return api.getGeneratedRecordCount();
     },
   );
 };
@@ -188,6 +188,19 @@ export const GenerationDuration = (): ReturnType<typeof Question.about<number>> 
     (actor: AnswersQuestions & UsesAbilities) => {
       const api = UseGenerateDataAPI.as(actor);
       return api.getGenerationDuration();
+    },
+  );
+};
+
+/**
+ * Question: Get peak heap usage during generation in bytes
+ */
+export const PeakHeapUsed = (): ReturnType<typeof Question.about<number>> => {
+  return Question.about<number>(
+    'peak heap usage during generation',
+    (actor: AnswersQuestions & UsesAbilities) => {
+      const api = UseGenerateDataAPI.as(actor);
+      return api.getPeakHeapUsed();
     },
   );
 };

@@ -23,6 +23,7 @@ import {
   ErrorHasProperty,
   ErrorMessageContains,
   GenerationDuration,
+  PeakHeapUsed,
   NoGenerationStarted,
 } from '../support/questions/GenerateDataPublicAPIQuestions';
 
@@ -202,13 +203,13 @@ Then('public API generation should complete in under {int} seconds', async (seco
 });
 
 Then('public API memory usage should remain reasonable', async () => {
-  // Memory is tracked automatically during generation
-  // This step is declarative/documentation only
+  await qaTester().attemptsTo(
+    Ensure.that(PeakHeapUsed(), not(isGreaterThan(500 * 1024 * 1024))),
+  );
 });
 
 Then('the public API process should not run out of memory', async () => {
-  // If we reach this step, we didn't run out of memory
-  // Otherwise the test would have crashed
+  await qaTester().attemptsTo(Ensure.that(ErrorWasThrown(), not(isTrue())));
 });
 
 Then('exactly {int} public API records should be generated total', async (count: number) => {

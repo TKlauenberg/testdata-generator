@@ -10,6 +10,7 @@ import {
   CsvAdapter,
   SqlAdapter,
   type GenerateOptions,
+  type DefaultSpec,
   type JsonAdapterOptions,
   type CsvAdapterOptions,
   type SqlAdapterOptions,
@@ -48,7 +49,7 @@ type GenerateOptions = {
   seed?: number;
   maxRelationshipDepth?: number;
   context?: Record<string, ContextCollectionInput>;
-  defaultGenerators?: Record<string, string>;
+  defaultGenerators?: readonly DefaultSpec[];
 };
 ```
 
@@ -57,6 +58,7 @@ Notes:
 - `count` is the number of records per schema.
 - `seed` preserves deterministic output across runs.
 - `context` passes preloaded context collections into generation.
+- `defaultGenerators` accepts additive configured generator defaults using the exported `DefaultSpec` shape.
 - There is no `format` flag on `GenerateOptions`; formatting stays in adapters.
 
 ## Validation Errors

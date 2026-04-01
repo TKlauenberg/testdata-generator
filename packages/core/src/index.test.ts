@@ -57,4 +57,22 @@ describe('Core Package', () => {
     expect(sqlOptions.tableName).toBe('users');
     expect(contextData.metadata.recordCount).toBe(1);
   });
+
+  test('package manifest export paths match the built output layout', async () => {
+    const packageJson = await Bun.file(new URL('../package.json', import.meta.url)).json() as {
+      main: string;
+      types: string;
+      exports: {
+        '.': {
+          import: string;
+          types: string;
+        };
+      };
+    };
+
+    expect(packageJson.main).toBe('./dist/src/index.js');
+    expect(packageJson.types).toBe('./dist/src/index.d.ts');
+    expect(packageJson.exports['.'].import).toBe('./dist/src/index.js');
+    expect(packageJson.exports['.'].types).toBe('./dist/src/index.d.ts');
+  });
 });

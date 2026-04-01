@@ -1,6 +1,6 @@
 # Story 10.4: Programmatic API for Test Integration
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -243,7 +243,8 @@ GPT-5.4
 - Corrected the existing examples doc to use only published package-root imports and expanded it with CSV and SQL adapter usage linked from the README.
 - Tightened public API regression coverage with root-surface export assertions, adapter-composition tests, and explicit `ValidationError.diagnostics` checks while preserving the existing `generateData(source, options)` streaming contract.
 - Wired the dormant public-API Gherkin feature into `packages/core/tests/run-cucumber.ts`, switched the Screenplay ability to consume the package-root export surface, and namespaced the feature steps so they execute cleanly in the shared Cucumber harness.
-- Validation passed with focused `runTests` on the public API unit and runner files (`23` passing), direct execution of `bun test packages/core/tests/cucumber.runner.test.ts` (`1` passing), repo-wide `runTests` (`767` passing), and `bun run lint` completing without errors.
+- Fixed code-review findings by aligning `packages/core/package.json` with the emitted `dist/src` entrypoints, correcting the documented `GenerateOptions.defaultGenerators` type and JSONL metadata example, and turning the public-API memory-efficiency BDD scenario into an asserted streaming check instead of a placeholder step.
+- Validation passed with focused `runTests` on the public API unit and runner files (`24` passing), `bun run build` in `packages/core`, `bun run test:bdd` in `packages/core` (`1` passing), and an explicit dist-entrypoint existence check for `dist/src/index.js` and `dist/src/index.d.ts`.
 
 ### File List
 
@@ -255,7 +256,9 @@ GPT-5.4
 - `packages/core/features/generateData-public-api.feature`
 - `packages/core/features/step_definitions/generateData-public-api.steps.ts`
 - `packages/core/features/support/abilities/UseGenerateDataAPI.ts`
+- `packages/core/features/support/questions/GenerateDataPublicAPIQuestions.ts`
 - `packages/core/features/support/tasks/SqlAdapterTasks.ts`
+- `packages/core/package.json`
 - `packages/core/src/generateData.test.ts`
 - `packages/core/src/index.test.ts`
 - `packages/core/src/index.ts`
@@ -264,3 +267,27 @@ GPT-5.4
 ## Change Log
 
 - 2026-04-01: Hardened the core programmatic API surface with canonical docs, package-root example fixes, adapter-backed regression coverage, and live Cucumber execution for the public API feature.
+- 2026-04-01: Code review complete. Fixed the packaged core entrypoint metadata, corrected public API documentation drift, and replaced the placeholder public-API memory assertions with validated streaming checks. Story moved to `done`.
+
+## Senior Developer Review (AI)
+
+**Reviewer:** Tobi on 2026-04-01
+
+**Outcome:** Changes Requested -> Fixed
+
+### Findings
+
+| # | Severity | Description | File | Fixed |
+| --- | --- | --- | --- | --- |
+| H1 | HIGH | Published package metadata pointed at `dist/index.*` even though the build emits `dist/src/index.*`, breaking the package-root import contract for built consumers. | `packages/core/package.json` | ✅ Auto-fixed |
+| M1 | MEDIUM | Canonical API docs published the wrong `GenerateOptions.defaultGenerators` shape, which did not match the exported type surface. | `docs/api.md` | ✅ Auto-fixed |
+| M2 | MEDIUM | The JSONL example documented a `metadata` envelope even though the live adapter writes `_metadata` on the first line. | `docs/examples/generateData-examples.md` | ✅ Auto-fixed |
+| M3 | MEDIUM | The public-API memory-efficiency Gherkin steps were placeholders with no assertions, so the documented acceptance coverage overstated what CI actually verified. | `packages/core/features/step_definitions/generateData-public-api.steps.ts` | ✅ Auto-fixed |
+
+### Post-fix Verification
+
+- **Focused unit tests:** 24 pass
+- **Core build:** `bun run build` passes
+- **BDD suite:** `bun run test:bdd` passes (1 runner test invoking the shared Cucumber suite)
+- **Packaging sanity check:** `dist/src/index.js` and `dist/src/index.d.ts` exist at the paths declared in `packages/core/package.json`
+- **Git discrepancies:** 0
