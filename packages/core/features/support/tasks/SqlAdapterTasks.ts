@@ -108,12 +108,14 @@ export class PrepareSqlExecutionTable extends Task {
     return new PrepareSqlExecutionTable(this._tableName, columnDefinitions.trim());
   }
 
-  public async performAs(actor: Actor): Promise<void> {
+  public performAs(actor: Actor): Promise<void> {
     if (this._columnDefinitions.length === 0) {
       throw new Error('PrepareSqlExecutionTable requires at least one column definition');
     }
 
     actor.abilityTo(UseSqlExecutionHarness).createTable(this._tableName, this._columnDefinitions);
+
+    return Promise.resolve();
   }
 }
 

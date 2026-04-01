@@ -2,6 +2,8 @@
 
 Complete usage examples for the `generateData()` public API function.
 
+For the canonical reference, see [Programmatic API](../api.md).
+
 ## Table of Contents
 
 - [Basic Usage](#basic-usage)
@@ -177,8 +179,7 @@ console.log(`  Rate: ${(count / duration).toFixed(0)} records/sec`);
 Generate data and write to JSON file in one pipeline:
 
 ```typescript
-import { generateData } from '@testdata-ai/core';
-import { JsonAdapter } from '@testdata-ai/core/adapters';
+import { generateData, JsonAdapter } from '@testdata-ai/core';
 
 const schema = `
   schema User {
@@ -206,6 +207,42 @@ await adapter.write(
 );
 
 console.log('✓ Generated 1000 users to users.json');
+```
+
+---
+
+## Using with CSV Adapter
+
+Generate data and write it to CSV using the published package-root surface:
+
+```typescript
+import { generateData, CsvAdapter } from '@testdata-ai/core';
+
+const adapter = new CsvAdapter({
+  outputPath: 'users.csv',
+  delimiter: ',',
+});
+
+await adapter.write(generateData(schema, { count: 1000, seed: 42 }));
+```
+
+---
+
+## Using with SQL Adapter
+
+Generate data and emit batched SQL `INSERT` statements:
+
+```typescript
+import { generateData, SqlAdapter } from '@testdata-ai/core';
+
+const adapter = new SqlAdapter({
+  outputPath: 'users.sql',
+  tableName: 'public.users',
+  dialect: 'postgres',
+  batchSize: 250,
+});
+
+await adapter.write(generateData(schema, { count: 1000, seed: 42 }));
 ```
 
 **Output Format (array):**
@@ -391,6 +428,7 @@ for await (const record of data) {
 ## Support
 
 - **Docs**: [Project README](../../README.md)
+- **API Reference**: [Programmatic API](../api.md)
 - **Examples**: This file
 - **Issues**: [GitHub Issues](https://github.com/testdata-ai/testdata-ai/issues)
 

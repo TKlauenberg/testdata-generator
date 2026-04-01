@@ -1,5 +1,19 @@
 import { describe, test, expect } from 'bun:test';
-import { version } from './index';
+import {
+  version,
+  generateData,
+  ValidationError,
+  JsonAdapter,
+  CsvAdapter,
+  SqlAdapter,
+} from './index';
+import type {
+  GenerateOptions,
+  JsonAdapterOptions,
+  CsvAdapterOptions,
+  SqlAdapterOptions,
+  ContextData,
+} from './index';
 
 describe('Core Package', () => {
   test('exports version', () => {
@@ -14,5 +28,33 @@ describe('Core Package', () => {
   test('module uses ESM (has ES6 export)', () => {
     // If this test runs, it proves ESM modules work
     expect(version).toBeDefined();
+  });
+
+  test('exports the documented programmatic API surface from the package root', () => {
+    const generateOptions: GenerateOptions = { count: 1 };
+    const jsonOptions: JsonAdapterOptions = { outputPath: 'users.json' };
+    const csvOptions: CsvAdapterOptions = { outputPath: 'users.csv' };
+    const sqlOptions: SqlAdapterOptions = { outputPath: 'users.sql', tableName: 'users' };
+    const contextData: ContextData = {
+      records: [{ id: 1, email: 'qa@example.com' }],
+      metadata: {
+        source: 'users.json',
+        format: 'json',
+        loadedAt: '2026-04-01T00:00:00.000Z',
+        recordCount: 1,
+        tags: ['qa'],
+      },
+    };
+
+    expect(typeof generateData).toBe('function');
+    expect(ValidationError).toBeDefined();
+    expect(JsonAdapter).toBeDefined();
+    expect(CsvAdapter).toBeDefined();
+    expect(SqlAdapter).toBeDefined();
+    expect(generateOptions.count).toBe(1);
+    expect(jsonOptions.outputPath).toBe('users.json');
+    expect(csvOptions.outputPath).toBe('users.csv');
+    expect(sqlOptions.tableName).toBe('users');
+    expect(contextData.metadata.recordCount).toBe(1);
   });
 });

@@ -6,13 +6,14 @@
  */
 
 import { Ability, type UsesAbilities, type AbilityType } from '@serenity-js/core';
-import { generateData, ValidationError } from '../../../src/generateData';
 import {
+  generateData,
+  ValidationError,
   isContextData,
   type ContextCollectionInput,
   type ContextData,
   type ContextRecord,
-} from '../../../src/context';
+} from '../../../src/index';
 
 /**
  * Internal state for tracking generation results

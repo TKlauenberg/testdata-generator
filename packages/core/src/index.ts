@@ -1,4 +1,4 @@
-// Public API exports - will be expanded in future stories
+// Public package-root exports
 export { version } from './version';
 
 // Public API - Data Generation

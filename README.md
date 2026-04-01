@@ -275,6 +275,8 @@ bun run lint && bun run format:check && bun test
 
 See the [docs/](docs/) directory for detailed documentation:
 
+- [Programmatic API](docs/api.md) - Canonical package-root API reference for `generateData()`, adapters, public types, and test integration snippets
+- [generateData Examples](docs/examples/generateData-examples.md) - Expanded streaming, adapter, and programmatic usage examples
 - [Architecture](docs/architecture.md) - System design and technical decisions
 - [Project Context](docs/project-context.md) - Implementation rules and conventions
 - [Epics](docs/epics.md) - Feature roadmap and sprint planning

@@ -1,6 +1,6 @@
 # Story 10.4: Programmatic API for Test Integration
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -26,34 +26,34 @@ The repository already exposes a partial public API through `generateData()` in 
 
 ## Tasks / Subtasks
 
-- [ ] Finalize the public core API surface for programmatic use (AC: 1, 2, 4, 5)
-  - [ ] Confirm that the package-root export in `packages/core/src/index.ts` remains the canonical import surface for `generateData`, `ValidationError`, adapters, and related public types.
-  - [ ] Verify the published package metadata in `packages/core/package.json` matches the documented public API surface.
-  - [ ] Preserve the current `generateData(source, options)` streaming contract and avoid replacing it with a breaking Result-returning API.
-  - [ ] If a Result-style convenience API is genuinely needed for test integration, add it as a companion export instead of changing `generateData()` semantics.
+- [x] Finalize the public core API surface for programmatic use (AC: 1, 2, 4, 5)
+  - [x] Confirm that the package-root export in `packages/core/src/index.ts` remains the canonical import surface for `generateData`, `ValidationError`, adapters, and related public types.
+  - [x] Verify the published package metadata in `packages/core/package.json` matches the documented public API surface.
+  - [x] Preserve the current `generateData(source, options)` streaming contract and avoid replacing it with a breaking Result-returning API.
+  - [x] If a Result-style convenience API is genuinely needed for test integration, add it as a companion export instead of changing `generateData()` semantics.
 
-- [ ] Close documentation and example gaps for external consumers (AC: 3, 5, 6, 7)
-  - [ ] Create `docs/api.md` as the canonical programmatic API reference promised by the architecture docs.
-  - [ ] Update `docs/examples/generateData-examples.md` so every import path works with the published package surface; do not rely on undocumented subpath imports such as `@testdata-ai/core/adapters` unless this story explicitly adds and documents them.
-  - [ ] Add example integration scripts or snippets for Bun tests and at least one additional common framework style such as Playwright or Vitest/Jest-style setup.
-  - [ ] Update any README or docs links that currently point to missing or stale API documentation paths.
+- [x] Close documentation and example gaps for external consumers (AC: 3, 5, 6, 7)
+  - [x] Create `docs/api.md` as the canonical programmatic API reference promised by the architecture docs.
+  - [x] Update `docs/examples/generateData-examples.md` so every import path works with the published package surface; do not rely on undocumented subpath imports such as `@testdata-ai/core/adapters` unless this story explicitly adds and documents them.
+  - [x] Add example integration scripts or snippets for Bun tests and at least one additional common framework style such as Playwright or Vitest/Jest-style setup.
+  - [x] Update any README or docs links that currently point to missing or stale API documentation paths.
 
-- [ ] Ensure programmatic formatting guidance reuses the existing core adapters (AC: 3, 6, 7, 8)
-  - [ ] Reuse `JsonAdapter`, `CsvAdapter`, and `SqlAdapter` from `@testdata-ai/core`; do not recreate formatter logic in new helper files.
-  - [ ] Keep `generateData()` focused on raw record generation. If format-specific convenience is added, keep it narrowly scoped and layered on top of the existing adapters.
-  - [ ] Document the supported JSON, CSV, and SQL programmatic flows using the live adapter contracts and package exports.
+- [x] Ensure programmatic formatting guidance reuses the existing core adapters (AC: 3, 6, 7, 8)
+  - [x] Reuse `JsonAdapter`, `CsvAdapter`, and `SqlAdapter` from `@testdata-ai/core`; do not recreate formatter logic in new helper files.
+  - [x] Keep `generateData()` focused on raw record generation. If format-specific convenience is added, keep it narrowly scoped and layered on top of the existing adapters.
+  - [x] Document the supported JSON, CSV, and SQL programmatic flows using the live adapter contracts and package exports.
 
-- [ ] Wire the dormant public-API acceptance coverage into the live test harness (AC: 8, 9)
-  - [ ] Register `packages/core/features/generateData-public-api.feature` in `packages/core/tests/run-cucumber.ts`.
-  - [ ] Register the existing step definitions and support files needed for the public API feature in the same runner.
-  - [ ] Extend the feature and step/support layers only where the current coverage misses required programmatic scenarios such as adapter-backed output examples or external-integration-specific flows.
-  - [ ] Keep `packages/core/src/generateData.test.ts` as the focused unit/integration suite for raw API behavior and add coverage only where the live gap remains.
+- [x] Wire the dormant public-API acceptance coverage into the live test harness (AC: 8, 9)
+  - [x] Register `packages/core/features/generateData-public-api.feature` in `packages/core/tests/run-cucumber.ts`.
+  - [x] Register the existing step definitions and support files needed for the public API feature in the same runner.
+  - [x] Extend the feature and step/support layers only where the current coverage misses required programmatic scenarios such as adapter-backed output examples or external-integration-specific flows.
+  - [x] Keep `packages/core/src/generateData.test.ts` as the focused unit/integration suite for raw API behavior and add coverage only where the live gap remains.
 
-- [ ] Keep Story 10.4 scoped to core programmatic integration only (AC: 1, 3, 4, 6, 7, 8, 9)
-  - [ ] Do not modify CLI behavior or Commander option parsing in this story.
-  - [ ] Do not redesign the scanner, parser, analyzer, or generator pipeline.
-  - [ ] Do not duplicate adapter implementations or add format-specific libraries when the existing core adapters already satisfy the need.
-  - [ ] Avoid package export sprawl unless it is justified by a real published-package limitation and covered by tests and docs.
+- [x] Keep Story 10.4 scoped to core programmatic integration only (AC: 1, 3, 4, 6, 7, 8, 9)
+  - [x] Do not modify CLI behavior or Commander option parsing in this story.
+  - [x] Do not redesign the scanner, parser, analyzer, or generator pipeline.
+  - [x] Do not duplicate adapter implementations or add format-specific libraries when the existing core adapters already satisfy the need.
+  - [x] Avoid package export sprawl unless it is justified by a real published-package limitation and covered by tests and docs.
 
 ## Dev Notes
 
@@ -228,6 +228,8 @@ GPT-5.4
 - Validation workflow file `_bmad/core/tasks/validate-workflow.xml` is not present in this repository snapshot, so checklist validation was performed manually during story creation.
 - External web lookup was not available through the workflow context; technical guidance was derived from repository manifests, planning artifacts, live source files, and recent git history.
 - Story selection was resolved automatically from `_bmad-output/implementation-artifacts/sprint-status.yaml` as the first backlog story: `10-4-programmatic-api-for-test-integration`.
+- `packages/core/features/generateData-public-api.feature` needed step-language namespacing before it could be wired into the shared Cucumber suite without colliding with existing generic programmatic-generation steps.
+- Repo-wide lint initially failed on a pre-existing `require-await` error in `packages/core/features/support/tasks/SqlAdapterTasks.ts`; the error was cleared and lint now completes with warnings only.
 
 ### Implementation Plan
 
@@ -237,8 +239,28 @@ GPT-5.4
 
 ### Completion Notes List
 
-- Ultimate context engine analysis completed - comprehensive developer guide created.
+- Added canonical programmatic API documentation in `docs/api.md` with package-root imports, streaming usage, `ValidationError` handling, adapter composition, context-aware generation, and Bun plus Playwright-style integration snippets.
+- Corrected the existing examples doc to use only published package-root imports and expanded it with CSV and SQL adapter usage linked from the README.
+- Tightened public API regression coverage with root-surface export assertions, adapter-composition tests, and explicit `ValidationError.diagnostics` checks while preserving the existing `generateData(source, options)` streaming contract.
+- Wired the dormant public-API Gherkin feature into `packages/core/tests/run-cucumber.ts`, switched the Screenplay ability to consume the package-root export surface, and namespaced the feature steps so they execute cleanly in the shared Cucumber harness.
+- Validation passed with focused `runTests` on the public API unit and runner files (`23` passing), direct execution of `bun test packages/core/tests/cucumber.runner.test.ts` (`1` passing), repo-wide `runTests` (`767` passing), and `bun run lint` completing without errors.
 
 ### File List
 
-- Pending implementation.
+- `_bmad-output/implementation-artifacts/10-4-programmatic-api-for-test-integration.md`
+- `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- `README.md`
+- `docs/api.md`
+- `docs/examples/generateData-examples.md`
+- `packages/core/features/generateData-public-api.feature`
+- `packages/core/features/step_definitions/generateData-public-api.steps.ts`
+- `packages/core/features/support/abilities/UseGenerateDataAPI.ts`
+- `packages/core/features/support/tasks/SqlAdapterTasks.ts`
+- `packages/core/src/generateData.test.ts`
+- `packages/core/src/index.test.ts`
+- `packages/core/src/index.ts`
+- `packages/core/tests/run-cucumber.ts`
+
+## Change Log
+
+- 2026-04-01: Hardened the core programmatic API surface with canonical docs, package-root example fixes, adapter-backed regression coverage, and live Cucumber execution for the public API feature.

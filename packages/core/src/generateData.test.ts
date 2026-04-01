@@ -6,8 +6,15 @@
  */
 
 import { describe, test, expect } from 'bun:test';
+import { tmpdir } from 'os';
+import path from 'path';
 import { generateData } from './generateData';
+import { CsvAdapter, JsonAdapter, SqlAdapter, ValidationError } from './index';
 import type { ContextData } from './context';
+
+function createTempOutputPath(filename: string): string {
+  return path.join(tmpdir(), `${crypto.randomUUID()}-${filename}`);
+}
 
 function createTaggedContext(
   source: string,
@@ -245,22 +252,24 @@ describe('generateData()', () => {
     test('throws ValidationError for invalid schema', async () => {
       const invalidSource = `schema User { id: whoops }`;
 
-      expect.assertions(1);
+      expect.assertions(2);
       try {
         await Array.fromAsync(generateData(invalidSource, { count: 1 }));
       } catch (error) {
-        expect(error).toBeInstanceOf(Error);
+        expect(error).toBeInstanceOf(ValidationError);
+        expect((error as ValidationError).diagnostics.length).toBeGreaterThan(0);
       }
     });
 
     test('throws ValidationError for syntax errors', async () => {
       const invalidSource = `schema User { id int }`; // Missing colon
 
-      expect.assertions(1);
+      expect.assertions(2);
       try {
         await Array.fromAsync(generateData(invalidSource, { count: 1 }));
       } catch (error) {
-        expect(error).toBeInstanceOf(Error);
+        expect(error).toBeInstanceOf(ValidationError);
+        expect((error as ValidationError).diagnostics.length).toBeGreaterThan(0);
       }
     });
 
@@ -271,11 +280,12 @@ describe('generateData()', () => {
         }
       `;
 
-      expect.assertions(1);
+      expect.assertions(2);
       try {
         await Array.fromAsync(generateData(invalidSource, { count: 1 }));
       } catch (error) {
-        expect(error).toBeInstanceOf(Error);
+        expect(error).toBeInstanceOf(ValidationError);
+        expect((error as ValidationError).diagnostics.length).toBeGreaterThan(0);
       }
     });
 
@@ -356,6 +366,81 @@ describe('generateData()', () => {
       }
 
       expect(count).toBe(10000);
+    });
+  });
+
+  describe('Adapter Composition', () => {
+    test('streams generated records into JsonAdapter using the package-root export surface', async () => {
+      const source = `
+        schema User {
+          id: number
+          name: string
+        }
+      `;
+      const outputPath = createTempOutputPath('users.json');
+      const adapter = new JsonAdapter({
+        outputPath,
+        metadata: {
+          sourcePattern: 'inline-schema.td',
+          count: 2,
+          seed: 42,
+        },
+      });
+
+      await adapter.write(generateData(source, { count: 2, seed: 42 }));
+
+      const output = await Bun.file(outputPath).json() as {
+        metadata: { seed?: number; count?: number };
+        data: Array<Record<string, unknown>>;
+      };
+
+      expect(output.metadata.seed).toBe(42);
+      expect(output.metadata.count).toBe(2);
+      expect(output.data).toHaveLength(2);
+      expect(output.data[0]).toHaveProperty('id');
+      expect(output.data[0]).toHaveProperty('name');
+    });
+
+    test('streams generated records into CsvAdapter without involving CLI code', async () => {
+      const source = `
+        schema User {
+          id: number
+          email: string
+        }
+      `;
+      const outputPath = createTempOutputPath('users.csv');
+      const adapter = new CsvAdapter({ outputPath });
+
+      await adapter.write(generateData(source, { count: 2, seed: 24 }));
+
+      const output = await Bun.file(outputPath).text();
+      const lines = output.trim().split('\n');
+
+      expect(lines).toHaveLength(3);
+      expect(lines[0]).toBe('id,email');
+    });
+
+    test('streams generated records into SqlAdapter without involving CLI code', async () => {
+      const source = `
+        schema User {
+          id: number
+          active: boolean
+        }
+      `;
+      const outputPath = createTempOutputPath('users.sql');
+      const adapter = new SqlAdapter({
+        outputPath,
+        tableName: 'users',
+        dialect: 'postgres',
+        batchSize: 2,
+      });
+
+      await adapter.write(generateData(source, { count: 2, seed: 11 }));
+
+      const output = await Bun.file(outputPath).text();
+
+      expect(output).toContain('INSERT INTO "users" ("id", "active") VALUES');
+      expect(output).toMatch(/\b(TRUE|FALSE)\b/);
     });
   });
 });

@@ -4,7 +4,7 @@
 
 import { Given, When, Then } from '@cucumber/cucumber';
 import { actorCalled } from '@serenity-js/core';
-import { Ensure, equals, isGreaterThan, not, isPresent, isTrue } from '@serenity-js/assertions';
+import { Ensure, equals, isGreaterThan, not, isTrue } from '@serenity-js/assertions';
 import {
   StoreDSLSource,
   GenerateRecordsUsingPublicAPI,
@@ -29,56 +29,60 @@ import {
 // Note: Background "Given the actor {word}" is defined in primitive-generators.steps.ts
 // and shared across all feature files
 
+function qaTester(): ReturnType<typeof actorCalled> {
+  return actorCalled('QATester');
+}
+
 // DSL Source setup
 Given(
-  '{word} has DSL source code:',
+  '{word} has public API DSL source code:',
   async (actorName: string, docString: string) => {
     await actorCalled(actorName).attemptsTo(StoreDSLSource.withContent(docString));
   },
 );
 
 Given(
-  '{word} has invalid DSL source code:',
+  '{word} has invalid public API DSL source code:',
   async (actorName: string, docString: string) => {
     await actorCalled(actorName).attemptsTo(StoreDSLSource.withContent(docString));
   },
 );
 
 Given(
-  '{word} has DSL source code with syntax error:',
+  '{word} has public API DSL source code with syntax error:',
   async (actorName: string, docString: string) => {
     await actorCalled(actorName).attemptsTo(StoreDSLSource.withContent(docString));
   },
 );
 
 Given(
-  '{word} has DSL source code with semantic error:',
+  '{word} has public API DSL source code with semantic error:',
   async (actorName: string, docString: string) => {
     await actorCalled(actorName).attemptsTo(StoreDSLSource.withContent(docString));
   },
 );
 
 Given(
-  '{word} has DSL source code with multiple schemas:',
+  '{word} has public API DSL source code with multiple schemas:',
   async (actorName: string, docString: string) => {
     await actorCalled(actorName).attemptsTo(StoreDSLSource.withContent(docString));
   },
 );
 
-Given('{word} has empty DSL source code', async (actorName: string) => {
+Given('{word} has empty public API DSL source code', async (actorName: string) => {
   await actorCalled(actorName).attemptsTo(StoreDSLSource.withContent(''));
 });
 
 // Generate actions
 When(
-  '{word} generates {int} records using the public generateData API',
+  '{word} generates {int} public API records using generateData',
   async (actorName: string, count: number) => {
     await actorCalled(actorName).attemptsTo(GenerateRecordsUsingPublicAPI.withCount(count));
   },
 );
 
 When(
-  '{word} generates {int} records with seed {int} using the public generateData API',
+  '{word} generates {int} public API records with seed {int} using generateData',
   async (actorName: string, count: number, seed: number) => {
     await actorCalled(actorName).attemptsTo(
       GenerateRecordsUsingPublicAPIWithSeed.withCount(count).andSeed(seed),
@@ -87,7 +91,7 @@ When(
 );
 
 When(
-  '{word} generates another {int} records with the same seed {int}',
+  '{word} generates another {int} public API records with the same seed {int}',
   async (actorName: string, count: number, seed: number) => {
     await actorCalled(actorName).attemptsTo(
       GenerateRecordsUsingPublicAPIWithSeed.withCount(count).andSeed(seed).storeAsSecondSequence(),
@@ -96,7 +100,7 @@ When(
 );
 
 When(
-  '{word} generates another {int} records with seed {int}',
+  '{word} generates another {int} public API records with seed {int}',
   async (actorName: string, count: number, seed: number) => {
     await actorCalled(actorName).attemptsTo(
       GenerateRecordsUsingPublicAPIWithSeed.withCount(count).andSeed(seed).storeAsSecondSequence(),
@@ -105,152 +109,148 @@ When(
 );
 
 When(
-  '{word} generates {int} records per schema using the public generateData API',
+  '{word} generates {int} public API records per schema using generateData',
   async (actorName: string, count: number) => {
     await actorCalled(actorName).attemptsTo(GenerateRecordsUsingPublicAPI.withCount(count));
   },
 );
 
 When(
-  '{word} generates records using the public generateData API',
+  '{word} generates public API records using generateData',
   async (actorName: string) => {
     await actorCalled(actorName).attemptsTo(GenerateRecordsUsingPublicAPI.withCount(1));
   },
 );
 
 When(
-  '{word} attempts to generate {int} records using the public generateData API',
+  '{word} attempts to generate {int} public API records using generateData',
   async (actorName: string, count: number) => {
     await actorCalled(actorName).attemptsTo(AttemptGenerateRecordsUsingPublicAPI.withCount(count));
   },
 );
 
 When(
-  '{word} attempts to generate records using the public generateData API',
+  '{word} attempts to generate public API records using generateData',
   async (actorName: string) => {
     await actorCalled(actorName).attemptsTo(AttemptGenerateRecordsUsingPublicAPI.withCount(1));
   },
 );
 
-When('{word} generates {int} records with seed {int}', async (actorName: string, count: number, seed: number) => {
+When('{word} generates {int} public API records with seed {int}', async (actorName: string, count: number, seed: number) => {
   await actorCalled(actorName).attemptsTo(
     GenerateRecordsUsingPublicAPIWithSeed.withCount(count).andSeed(seed),
   );
 });
 
 // Assertions
-Then('exactly {int} records should be generated', async (count: number, { actor }: { actor: string }) => {
-  await actorCalled(actor).attemptsTo(Ensure.that(GeneratedRecordsCount(), equals(count)));
+Then('exactly {int} public API records should be generated', async (count: number) => {
+  await qaTester().attemptsTo(Ensure.that(GeneratedRecordsCount(), equals(count)));
 });
 
-Then('each record should have field {string}', async (fieldName: string, { actor }: { actor: string }) => {
-  await actorCalled(actor).attemptsTo(Ensure.that(RecordsHaveField(fieldName), isPresent()));
-});
-
-Then(
-  'field {string} should be of type {word}',
-  async (fieldName: string, expectedType: string, { actor }: { actor: string }) => {
-    await actorCalled(actor).attemptsTo(Ensure.that(FieldHasType(fieldName), equals(expectedType)));
-  },
-);
-
-Then('both record sequences should be identical', async ({ actor }: { actor: string }) => {
-  await actorCalled(actor).attemptsTo(Ensure.that(RecordsAreIdentical(), isTrue()));
-});
-
-Then('the two record sequences should be different', async ({ actor }: { actor: string }) => {
-  await actorCalled(actor).attemptsTo(Ensure.that(RecordsAreDifferent(), isTrue()));
-});
-
-Then('a ValidationError should be thrown', async ({ actor }: { actor: string }) => {
-  await actorCalled(actor).attemptsTo(Ensure.that(ErrorWasThrown(), isTrue()));
-});
-
-Then('the error should include diagnostic information', async ({ actor }: { actor: string }) => {
-  await actorCalled(actor).attemptsTo(Ensure.that(ErrorHasProperty('diagnostics'), isTrue()));
-});
-
-Then('the error message should mention {string}', async (text: string, { actor }: { actor: string }) => {
-  await actorCalled(actor).attemptsTo(Ensure.that(ErrorMessageContains(text), isTrue()));
+Then('each public API record should have field {string}', async (fieldName: string) => {
+  await qaTester().attemptsTo(Ensure.that(RecordsHaveField(fieldName), isTrue()));
 });
 
 Then(
-  'the error should include diagnostic information about syntax',
-  async ({ actor }: { actor: string }) => {
-    await actorCalled(actor).attemptsTo(Ensure.that(ErrorHasProperty('diagnostics'), isTrue()));
+  'public API field {string} should be of type {word}',
+  async (fieldName: string, expectedType: string) => {
+    await qaTester().attemptsTo(Ensure.that(FieldHasType(fieldName), equals(expectedType)));
+  },
+);
+
+Then('both public API record sequences should be identical', async () => {
+  await qaTester().attemptsTo(Ensure.that(RecordsAreIdentical(), isTrue()));
+});
+
+Then('the two public API record sequences should be different', async () => {
+  await qaTester().attemptsTo(Ensure.that(RecordsAreDifferent(), isTrue()));
+});
+
+Then('a public API ValidationError should be thrown', async () => {
+  await qaTester().attemptsTo(Ensure.that(ErrorWasThrown(), isTrue()));
+});
+
+Then('the public API error should include diagnostic information', async () => {
+  await qaTester().attemptsTo(Ensure.that(ErrorHasProperty('diagnostics'), isTrue()));
+});
+
+Then('the public API error message should mention {string}', async (text: string) => {
+  await qaTester().attemptsTo(Ensure.that(ErrorMessageContains(text), isTrue()));
+});
+
+Then(
+  'the public API error should include diagnostic information about syntax',
+  async () => {
+    await qaTester().attemptsTo(Ensure.that(ErrorHasProperty('diagnostics'), isTrue()));
   },
 );
 
 Then(
-  'the error should include diagnostic information about semantic errors',
-  async ({ actor }: { actor: string }) => {
-    await actorCalled(actor).attemptsTo(Ensure.that(ErrorHasProperty('diagnostics'), isTrue()));
+  'the public API error should include diagnostic information about semantic errors',
+  async () => {
+    await qaTester().attemptsTo(Ensure.that(ErrorHasProperty('diagnostics'), isTrue()));
   },
 );
 
-Then('all {int} records should be generated successfully', async (count: number, { actor }: { actor: string }) => {
-  await actorCalled(actor).attemptsTo(Ensure.that(GeneratedRecordsCount(), equals(count)));
+Then('all {int} public API records should be generated successfully', async (count: number) => {
+  await qaTester().attemptsTo(Ensure.that(GeneratedRecordsCount(), equals(count)));
 });
 
-Then('generation should complete in under {int} seconds', async (seconds: number, { actor }: { actor: string }) => {
-  const duration = await actorCalled(actor).answer(GenerationDuration());
-  await actorCalled(actor).attemptsTo(Ensure.that(duration, not(isGreaterThan(seconds * 1000))));
+Then('public API generation should complete in under {int} seconds', async (seconds: number) => {
+  const duration = await qaTester().answer(GenerationDuration());
+  await qaTester().attemptsTo(Ensure.that(duration, not(isGreaterThan(seconds * 1000))));
 });
 
-Then('all {int} records should be generated successfully', async (count: number, { actor }: { actor: string }) => {
-  await actorCalled(actor).attemptsTo(Ensure.that(GeneratedRecordsCount(), equals(count)));
-});
-
-Then('memory usage should remain reasonable', async ({ actor: _actor }: { actor: string }) => {
+Then('public API memory usage should remain reasonable', async () => {
   // Memory is tracked automatically during generation
   // This step is declarative/documentation only
 });
 
-Then('the process should not run out of memory', async ({ actor: _actor }: { actor: string }) => {
+Then('the public API process should not run out of memory', async () => {
   // If we reach this step, we didn't run out of memory
   // Otherwise the test would have crashed
 });
 
-Then('exactly {int} records should be generated total', async (count: number, { actor }: { actor: string }) => {
-  await actorCalled(actor).attemptsTo(Ensure.that(GeneratedRecordsCount(), equals(count)));
+Then('exactly {int} public API records should be generated total', async (count: number) => {
+  await qaTester().attemptsTo(Ensure.that(GeneratedRecordsCount(), equals(count)));
 });
 
-Then('{int} records should have field {string}', async (count: number, fieldName: string, { actor }: { actor: string }) => {
-  await actorCalled(actor).attemptsTo(Ensure.that(RecordCountWithFields(fieldName), equals(count)));
+Then('{int} public API records should have field {string}', async (count: number, fieldName: string) => {
+  await qaTester().attemptsTo(Ensure.that(RecordCountWithFields(fieldName), equals(count)));
 });
 
 Then(
-  '{int} records should have fields {string} and {string}',
-  async (count: number, field1: string, field2: string, { actor }: { actor: string }) => {
-    await actorCalled(actor).attemptsTo(Ensure.that(RecordCountWithFields(field1, field2), equals(count)));
+  '{int} public API records should have fields {string} and {string}',
+  async (count: number, field1: string, field2: string) => {
+    await qaTester().attemptsTo(Ensure.that(RecordCountWithFields(field1, field2), equals(count)));
   },
 );
 
-Then('no records should be generated', async ({ actor }: { actor: string }) => {
-  await actorCalled(actor).attemptsTo(Ensure.that(GeneratedRecordsCount(), equals(0)));
+Then('no public API records should be generated', async () => {
+  await qaTester().attemptsTo(Ensure.that(GeneratedRecordsCount(), equals(0)));
 });
 
-Then('a ValidationError should be thrown immediately', async ({ actor }: { actor: string }) => {
-  await actorCalled(actor).attemptsTo(Ensure.that(ErrorWasThrown(), isPresent()));
+Then('a public API ValidationError should be thrown immediately', async () => {
+  await qaTester().attemptsTo(Ensure.that(ErrorWasThrown(), isTrue()));
 });
 
-Then('no generation should have started', async ({ actor }: { actor: string }) => {
-  await actorCalled(actor).attemptsTo(Ensure.that(NoGenerationStarted(), isPresent()));
+Then('no public API generation should have started', async () => {
+  await qaTester().attemptsTo(Ensure.that(NoGenerationStarted(), isTrue()));
 });
 
-Then('each record should have exactly {int} fields', async (count: number, { actor }: { actor: string }) => {
-  const records = await actorCalled(actor).answer(GeneratedRecords());
+Then('each public API record should have exactly {int} fields', async (count: number) => {
+  const records = await qaTester().answer(GeneratedRecords());
   for (const record of records) {
-    await actorCalled(actor).attemptsTo(Ensure.that(Object.keys(record).length, equals(count)));
+    await qaTester().attemptsTo(Ensure.that(Object.keys(record).length, equals(count)));
   }
 });
 
 Then(
-  'each record should have field {string} of type {word}',
-  async (fieldName: string, expectedType: string, { actor }: { actor: string }) => {
-    const records = await actorCalled(actor).answer(GeneratedRecords());
+  'each public API record should have field {string} of type {word}',
+  async (fieldName: string, expectedType: string) => {
+    const records = await qaTester().answer(GeneratedRecords());
     for (const record of records) {
-      await actorCalled(actor).attemptsTo(Ensure.that(typeof record[fieldName], equals(expectedType)));
+      await qaTester().attemptsTo(Ensure.that(typeof record[fieldName], equals(expectedType)));
     }
   },
 );
