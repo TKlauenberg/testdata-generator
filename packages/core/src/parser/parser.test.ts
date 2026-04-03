@@ -26,7 +26,7 @@ function eof(line: number = 1, column: number = 1): Token {
 }
 
 // Helper: Create keyword token
-function keyword(value: 'schema' | 'unique', line: number, column: number): Token {
+function keyword(value: 'schema' | 'profile' | 'context' | 'unique', line: number, column: number): Token {
   return { kind: 'keyword', value, location: loc(line, column, value.length) };
 }
 
@@ -424,6 +424,60 @@ describe('Parser - Import Declarations', () => {
       expect(
         result.errors.some((error) => error.message.includes('Import declarations must appear before other top-level declarations')),
       ).toBe(true);
+    }
+  });
+});
+
+describe('Parser - Profile And Context Declarations', () => {
+  test('parses profile declarations with generator defaults', () => {
+    const tokens: Token[] = [
+      keyword('profile', 1, 1),
+      ident('SharedDefaults', 1, 9),
+      op('{', 1, 24),
+      ident('string', 2, 3),
+      ident('generator', 2, 10),
+      op('=', 2, 19),
+      ident('randomString', 2, 20),
+      op('(', 2, 32),
+      ident('length', 2, 33),
+      op('=', 2, 39),
+      num(12, 2, 40),
+      op(')', 2, 42),
+      op('}', 3, 1),
+      eof(3, 2),
+    ];
+
+    const result = parse(tokens);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.declarations).toHaveLength(1);
+      expect(result.value.declarations[0]?.kind).toBe('profile');
+      if (result.value.declarations[0]?.kind === 'profile') {
+        expect(result.value.declarations[0].name).toBe('SharedDefaults');
+        expect(result.value.declarations[0].defaults).toHaveLength(1);
+        expect(result.value.declarations[0].defaults[0]?.fieldType).toBe('string');
+        expect(result.value.declarations[0].defaults[0]?.generator.name).toBe('randomString');
+      }
+    }
+  });
+
+  test('parses context declarations', () => {
+    const tokens: Token[] = [
+      keyword('context', 1, 1),
+      ident('ReusableUsers', 1, 9),
+      eof(1, 22),
+    ];
+
+    const result = parse(tokens);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.declarations).toHaveLength(1);
+      expect(result.value.declarations[0]?.kind).toBe('context');
+      if (result.value.declarations[0]?.kind === 'context') {
+        expect(result.value.declarations[0].name).toBe('ReusableUsers');
+      }
     }
   });
 });

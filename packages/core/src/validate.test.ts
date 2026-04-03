@@ -623,6 +623,52 @@ describe('validateSchema()', () => {
       }
     });
 
+    test('accepts imported profile and context declarations alongside imported schemas', async () => {
+      const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-imported-symbols-'));
+      const importedFile = path.join(workspace, 'shared.td');
+      const rootFile = path.join(workspace, 'main.td');
+
+      await fs.writeFile(
+        importedFile,
+        [
+          'profile SharedDefaults {',
+          '  string generator=randomString(length=12)',
+          '}',
+          '',
+          'context SharedUsers',
+          '',
+          'schema Profile {',
+          '  id: uuid',
+          '}',
+          '',
+        ].join('\n'),
+        'utf-8',
+      );
+
+      const source = [
+        '@import "./shared.td"',
+        '',
+        'schema User {',
+        '  account: Profile',
+        '}',
+        '',
+      ].join('\n');
+
+      try {
+        const result = validateSchema(source, rootFile, {
+          currentFile: rootFile,
+        });
+
+        expect(result.ok).toBe(true);
+        if (result.ok) {
+          expect(result.value.schemas.has('Profile')).toBe(true);
+          expect(result.value.schemas.has('User')).toBe(true);
+        }
+      } finally {
+        await fs.rm(workspace, { recursive: true, force: true });
+      }
+    });
+
     test('fails clearly when imports are used without file-system context', () => {
       const source = [
         '@import "./common.td"',

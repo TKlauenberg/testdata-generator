@@ -1,6 +1,6 @@
 # Story 11.1: DSL Import Statement Support
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -56,6 +56,10 @@ The live codebase currently parses only top-level `schema` declarations, already
   - [x] Add filesystem-backed feature coverage under `packages/core/features/` using dedicated import fixtures.
   - [x] Register any new feature files and step-definition files in `packages/core/tests/run-cucumber.ts`; do not add scenarios only to dormant features that are not executed by the current runner.
   - [x] Keep unit coverage focused on parser/validation/import-graph behavior and use BDD coverage for real multi-file user workflows.
+
+### Review Findings
+
+- [x] [Review][Patch] Imported profiles and contexts are still unsupported [packages/core/src/parser/parser.ts:432]
 
 ## Dev Notes
 

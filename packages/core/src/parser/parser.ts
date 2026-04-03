@@ -13,6 +13,8 @@ import type {
   Program,
   Declaration,
   ImportNode,
+  ProfileNode,
+  ContextNode,
   SchemaNode,
   SchemaDefaults,
   FieldNode,
@@ -414,8 +416,6 @@ export class Parser {
    * Parses a declaration (schema, profile, or context).
    *
    * Grammar: Declaration ::= SchemaDeclaration | ProfileDeclaration | ContextDeclaration
-   *
-   * Currently only SchemaDeclaration is implemented.
    */
   private _parseDeclaration(): Result<Declaration, Diagnostic[]> {
     const token = this._currentToken();
@@ -428,19 +428,17 @@ export class Parser {
       return this._parseSchemaDeclaration();
     }
 
-    // Future: profile, context declarations
-    if (this._check('keyword', 'profile') || this._check('keyword', 'context')) {
-      this._addError(
-        `'${token.kind === 'keyword' ? token.value : ''}' declarations are not yet implemented`,
-        token.location,
-        ['Only schema declarations are supported in this version'],
-      );
-      return { ok: false, errors: this._errors };
+    if (this._check('keyword', 'profile')) {
+      return this._parseProfileDeclaration();
+    }
+
+    if (this._check('keyword', 'context')) {
+      return this._parseContextDeclaration();
     }
 
     // Unexpected token at top level
     this._addError(`Unexpected ${this._tokenDescription(token)} at top level`, token.location, [
-      'Expected a schema declaration',
+      'Expected a top-level declaration (schema, profile, context, or @import)',
     ]);
     return { ok: false, errors: this._errors };
   }
@@ -501,6 +499,129 @@ export class Parser {
       value: {
         kind: 'import',
         path: pathResult.value.value,
+        location,
+      },
+    };
+  }
+
+  /**
+   * Parses a profile declaration.
+   *
+   * Grammar: ProfileDeclaration ::= 'profile' Identifier '{' DefaultGenerator* '}'
+   */
+  private _parseProfileDeclaration(): Result<ProfileNode, Diagnostic[]> {
+    const startToken = this._currentToken();
+
+    const profileResult = this._expect('keyword', 'profile');
+    if (!profileResult.ok) return { ok: false, errors: this._errors };
+
+    const nameResult = this._expect('identifier');
+    if (!nameResult.ok || nameResult.value.kind !== 'identifier') {
+      this._addError('Expected identifier for profile name', this._currentToken().location);
+      return { ok: false, errors: this._errors };
+    }
+    const name = nameResult.value.value;
+
+    const openBraceResult = this._expect('operator', '{');
+    if (!openBraceResult.ok) return { ok: false, errors: this._errors };
+
+    const defaults: DefaultSpec[] = [];
+    const seenFieldTypes = new Set<string>();
+
+    while (!this._check('operator', '}') && !this._isAtEnd()) {
+      if (this._check('identifier')) {
+        const fieldTypeToken = this._currentToken();
+        const generatorDefaultResult = this._parseSchemaDefaultGenerator();
+        if (generatorDefaultResult.ok) {
+          if (seenFieldTypes.has(generatorDefaultResult.value.fieldType)) {
+            this._addError(
+              `Profile '${name}' contains a duplicate generator default for type '${generatorDefaultResult.value.fieldType}'`,
+              fieldTypeToken.location,
+              [`Remove the duplicate '${generatorDefaultResult.value.fieldType}' generator default; only one is allowed per profile`],
+            );
+          } else {
+            seenFieldTypes.add(generatorDefaultResult.value.fieldType);
+            defaults.push(generatorDefaultResult.value);
+          }
+        } else {
+          this._synchronizeToNextSchemaDefaultEntry();
+        }
+        continue;
+      }
+
+      this._addError(
+        `Unexpected ${this._tokenDescription(this._currentToken())} in profile '${name}' declaration`,
+        this._currentToken().location,
+        ['Profile syntax: profile SharedDefaults { string generator=randomString(length=12) }'],
+      );
+      this._synchronizeToNextSchemaDefaultEntry();
+    }
+
+    const closeBraceResult = this._expect('operator', '}');
+    if (!closeBraceResult.ok) {
+      this._addError(
+        `Expected '}' to close profile declaration '${name}' started at line ${startToken.location.line}`,
+        this._currentToken().location,
+        ['Check for unclosed braces in profile body'],
+      );
+      return { ok: false, errors: this._errors };
+    }
+
+    const endToken = this._tokens[this._current - 1];
+    const location: SourceLocation = {
+      file: startToken.location.file,
+      line: startToken.location.line,
+      column: startToken.location.column,
+      length:
+        endToken.location.line === startToken.location.line
+          ? endToken.location.column + endToken.location.length - startToken.location.column
+          : endToken.location.length,
+    };
+
+    return {
+      ok: true,
+      value: {
+        kind: 'profile',
+        name,
+        defaults,
+        location,
+      },
+    };
+  }
+
+  /**
+   * Parses a context declaration.
+   *
+   * Grammar: ContextDeclaration ::= 'context' Identifier
+   */
+  private _parseContextDeclaration(): Result<ContextNode, Diagnostic[]> {
+    const startToken = this._currentToken();
+
+    const contextResult = this._expect('keyword', 'context');
+    if (!contextResult.ok) return { ok: false, errors: this._errors };
+
+    const nameResult = this._expect('identifier');
+    if (!nameResult.ok || nameResult.value.kind !== 'identifier') {
+      this._addError('Expected identifier for context name', this._currentToken().location);
+      return { ok: false, errors: this._errors };
+    }
+
+    const endToken = nameResult.value;
+    const location: SourceLocation = {
+      file: startToken.location.file,
+      line: startToken.location.line,
+      column: startToken.location.column,
+      length:
+        endToken.location.line === startToken.location.line
+          ? endToken.location.column + endToken.location.length - startToken.location.column
+          : endToken.location.length,
+    };
+
+    return {
+      ok: true,
+      value: {
+        kind: 'context',
+        name: nameResult.value.value,
         location,
       },
     };
