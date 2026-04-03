@@ -6,6 +6,7 @@
  */
 
 import { describe, test, expect } from 'bun:test';
+import * as fs from 'node:fs/promises';
 import { tmpdir } from 'os';
 import path from 'path';
 import { generateData } from './generateData';
@@ -245,6 +246,41 @@ describe('generateData()', () => {
       // Next 2 should be Product records
       expect(records[2]).toHaveProperty('sku');
       expect(records[3]).toHaveProperty('sku');
+    });
+
+    test('generates records when schemas are imported from disk', async () => {
+      const workspace = await fs.mkdtemp(path.join(tmpdir(), 'testdata-ai-generate-imports-'));
+      const importedFile = path.join(workspace, 'common.td');
+      const rootFile = path.join(workspace, 'main.td');
+
+      await fs.writeFile(
+        importedFile,
+        ['schema Profile {', '  id: uuid generator=uuid', '}', ''].join('\n'),
+        'utf-8',
+      );
+
+      const source = [
+        '@import "./common.td"',
+        '',
+        'schema User {',
+        '  id: uuid generator=uuid',
+        '}',
+        '',
+      ].join('\n');
+
+      try {
+        const records = await Array.fromAsync(generateData(source, {
+          count: 1,
+          seed: 7,
+          currentFile: rootFile,
+        }));
+
+        expect(records).toHaveLength(2);
+        expect(records[0]).toHaveProperty('id');
+        expect(records[1]).toHaveProperty('id');
+      } finally {
+        await fs.rm(workspace, { recursive: true, force: true });
+      }
     });
   });
 

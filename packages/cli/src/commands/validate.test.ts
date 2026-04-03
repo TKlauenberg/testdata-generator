@@ -1,5 +1,7 @@
 import { describe, test, expect } from 'bun:test';
 import { spawn } from 'bun';
+import * as fs from 'node:fs/promises';
+import * as os from 'node:os';
 import * as path from 'path';
 
 const CLI_ROOT = path.resolve(import.meta.dir, '../..');
@@ -65,6 +67,33 @@ describe('Validate Command - Validation Success', () => {
     const json = JSON.parse(output) as { valid: boolean; errors: unknown[] };
     expect(json.valid).toBe(true);
     expect(json.errors).toEqual([]);
+  });
+
+  test('validates schemas that use relative imports', async () => {
+    const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-cli-validate-imports-'));
+    const importedFile = path.join(workspace, 'common.td');
+    const rootFile = path.join(workspace, 'main.td');
+
+    await fs.writeFile(importedFile, 'schema Profile { id: uuid }\n', 'utf-8');
+    await fs.writeFile(
+      rootFile,
+      ['@import "./common.td"', '', 'schema User {', '  account: Profile', '}', ''].join('\n'),
+      'utf-8',
+    );
+
+    try {
+      const proc = spawn(['bun', CLI_PATH, 'validate', 'main.td'], {
+        cwd: workspace,
+      });
+
+      const output = await new Response(proc.stdout).text();
+      const exitCode = await proc.exited;
+
+      expect(exitCode).toBe(0);
+      expect(output).toContain('✓ Schema is valid');
+    } finally {
+      await fs.rm(workspace, { recursive: true, force: true });
+    }
   });
 });
 

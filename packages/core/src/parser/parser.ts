@@ -11,6 +11,8 @@
 import type { Token, TokenKind } from '../scanner/tokens';
 import type {
   Program,
+  Declaration,
+  ImportNode,
   SchemaNode,
   SchemaDefaults,
   FieldNode,
@@ -303,7 +305,7 @@ export class Parser {
 
     // Unexpected token at top level - guide toward valid declarations
     if (expectedKind === 'keyword' && expectedValue === 'schema' && found.kind === 'identifier') {
-      suggestions.push('Files must start with a declaration (schema, profile, or context)');
+      suggestions.push('Files must start with a declaration (schema, profile, context, or @import)');
       suggestions.push('Example: schema UserProfile { ... }');
     }
 
@@ -333,6 +335,7 @@ export class Parser {
     while (!this._isAtEnd()) {
       // Stop at schema, profile, or context keywords (declaration boundaries)
       if (
+        this._isImportDeclarationStart() ||
         this._check('keyword', 'schema') ||
         this._check('keyword', 'profile') ||
         this._check('keyword', 'context')
@@ -352,14 +355,28 @@ export class Parser {
    * Grammar: Program ::= Declaration* EOF
    */
   private _parseProgram(): Result<Program, Diagnostic[]> {
-    const declarations: SchemaNode[] = [];
+    const declarations: Declaration[] = [];
     const startLocation = this._currentToken().location;
+    let encounteredNonImportDeclaration = false;
 
     while (!this._isAtEnd()) {
       const declResult = this._parseDeclaration();
 
       if (declResult.ok) {
-        declarations.push(declResult.value);
+        if (declResult.value.kind === 'import') {
+          if (encounteredNonImportDeclaration) {
+            this._addError(
+              'Import declarations must appear before other top-level declarations',
+              declResult.value.location,
+              ['Move all @import declarations to the top of the file'],
+            );
+          } else {
+            declarations.push(declResult.value);
+          }
+        } else {
+          encounteredNonImportDeclaration = true;
+          declarations.push(declResult.value);
+        }
       } else {
         // Error already recorded, synchronize to next declaration
         this._synchronize();
@@ -400,8 +417,12 @@ export class Parser {
    *
    * Currently only SchemaDeclaration is implemented.
    */
-  private _parseDeclaration(): Result<SchemaNode, Diagnostic[]> {
+  private _parseDeclaration(): Result<Declaration, Diagnostic[]> {
     const token = this._currentToken();
+
+    if (this._isImportDeclarationStart()) {
+      return this._parseImportDeclaration();
+    }
 
     if (this._check('keyword', 'schema')) {
       return this._parseSchemaDeclaration();
@@ -422,6 +443,67 @@ export class Parser {
       'Expected a schema declaration',
     ]);
     return { ok: false, errors: this._errors };
+  }
+
+  private _isImportDeclarationStart(): boolean {
+    const currentToken = this._currentToken();
+    const nextToken = this._peek();
+
+    return (
+      currentToken.kind === 'operator' &&
+      currentToken.value === '@' &&
+      nextToken.kind === 'identifier' &&
+      nextToken.value === 'import'
+    );
+  }
+
+  private _parseImportDeclaration(): Result<ImportNode, Diagnostic[]> {
+    const startToken = this._currentToken();
+
+    const atResult = this._expect('operator', '@');
+    if (!atResult.ok) {
+      return { ok: false, errors: this._errors };
+    }
+
+    const importKeywordResult = this._expect('identifier', 'import');
+    if (!importKeywordResult.ok) {
+      this._addError(
+        "Expected 'import' after '@' for an import declaration",
+        this._currentToken().location,
+        ['Import syntax: @import "./shared.td"'],
+      );
+      return { ok: false, errors: this._errors };
+    }
+
+    const pathResult = this._expect('string');
+    if (!pathResult.ok || pathResult.value.kind !== 'string') {
+      this._addError(
+        'Import declarations require a string path',
+        this._currentToken().location,
+        ['Import syntax: @import "./shared.td"'],
+      );
+      return { ok: false, errors: this._errors };
+    }
+
+    const endToken = pathResult.value;
+    const location: SourceLocation = {
+      file: startToken.location.file,
+      line: startToken.location.line,
+      column: startToken.location.column,
+      length:
+        endToken.location.line === startToken.location.line
+          ? endToken.location.column + endToken.location.length - startToken.location.column
+          : endToken.location.length,
+    };
+
+    return {
+      ok: true,
+      value: {
+        kind: 'import',
+        path: pathResult.value.value,
+        location,
+      },
+    };
   }
 
   /**

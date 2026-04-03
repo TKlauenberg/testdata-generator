@@ -373,6 +373,61 @@ describe('Parser - Basic Functionality', () => {
   });
 });
 
+describe('Parser - Import Declarations', () => {
+  test('parses top-level import declarations before schemas', () => {
+    const tokens: Token[] = [
+      op('@', 1, 1),
+      ident('import', 1, 2),
+      str('./common.td', 1, 9),
+      keyword('schema', 3, 1),
+      ident('User', 3, 8),
+      op('{', 3, 13),
+      ident('id', 4, 3),
+      op(':', 4, 5),
+      ident('uuid', 4, 7),
+      op('}', 5, 1),
+      eof(5, 2),
+    ];
+
+    const result = parse(tokens);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.declarations).toHaveLength(2);
+      expect(result.value.declarations[0]?.kind).toBe('import');
+      if (result.value.declarations[0]?.kind === 'import') {
+        expect(result.value.declarations[0].path).toBe('./common.td');
+      }
+      expect(result.value.declarations[1]?.kind).toBe('schema');
+    }
+  });
+
+  test('rejects imports after non-import declarations', () => {
+    const tokens: Token[] = [
+      keyword('schema', 1, 1),
+      ident('User', 1, 8),
+      op('{', 1, 13),
+      ident('id', 2, 3),
+      op(':', 2, 5),
+      ident('uuid', 2, 7),
+      op('}', 3, 1),
+      op('@', 5, 1),
+      ident('import', 5, 2),
+      str('./common.td', 5, 9),
+      eof(5, 22),
+    ];
+
+    const result = parse(tokens);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(
+        result.errors.some((error) => error.message.includes('Import declarations must appear before other top-level declarations')),
+      ).toBe(true);
+    }
+  });
+});
+
 describe('Parser - Generator Specifications', () => {
   test('parses field with simple generator (no parameters)', () => {
     // schema User { id: string generator=uuid }

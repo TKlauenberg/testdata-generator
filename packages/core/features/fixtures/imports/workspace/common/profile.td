@@ -1,0 +1,3 @@
+schema SharedProfile {
+  id: uuid
+}

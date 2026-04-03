@@ -11,14 +11,18 @@
 import { Scanner } from './scanner/scanner';
 import { Parser } from './parser/parser';
 import { analyze } from './analyzer/analyzer';
+import { resolveProgramImports } from './imports/importResolver';
 import type { Result } from './common/result';
 import type { Diagnostic } from './common/diagnostic';
 import type { ValidatedProgram } from './analyzer/types';
 import type { DefaultSpec } from './parser/ast';
+import * as path from 'node:path';
 
 export interface ValidationOptions {
   readonly availableContextCollections?: readonly string[];
   readonly defaultGenerators?: readonly DefaultSpec[];
+  readonly currentFile?: string;
+  readonly workspaceRoot?: string;
 }
 
 /**
@@ -54,8 +58,11 @@ export function validateSchema(
   filename: string,
   options: ValidationOptions = {},
 ): Result<ValidatedProgram, Diagnostic[]> {
+  const currentFile = options.currentFile ?? (path.isAbsolute(filename) ? filename : undefined);
+  const effectiveFilename = currentFile ?? filename;
+
   // Phase 1: Lexical Analysis
-  const scanner = new Scanner(source, filename);
+  const scanner = new Scanner(source, effectiveFilename);
   const scanResult = scanner.scan();
 
   if (!scanResult.ok) {
@@ -76,8 +83,20 @@ export function validateSchema(
     };
   }
 
+  const importResolutionResult = resolveProgramImports(parseResult.value, {
+    currentFile,
+    workspaceRoot: options.workspaceRoot,
+  });
+
+  if (!importResolutionResult.ok) {
+    return {
+      ok: false,
+      errors: sortDiagnostics(importResolutionResult.errors),
+    };
+  }
+
   // Phase 3: Semantic Analysis
-  const analysisResult = analyze(parseResult.value, {
+  const analysisResult = analyze(importResolutionResult.value, {
     availableContextCollections: options.availableContextCollections,
     defaultGenerators: options.defaultGenerators,
   });

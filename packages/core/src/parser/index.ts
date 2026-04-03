@@ -8,6 +8,7 @@ export type {
   FieldNode,
   ProfileNode,
   ContextNode,
+  ImportNode,
   SchemaDefaults,
   SchemaDefaultConstraints,
   GeneratorSpec,
@@ -18,7 +19,7 @@ export type {
 } from './ast';
 
 // Type Guards
-export { isSchemaNode, isFieldNode, isProfileNode, isContextNode, isProgramNode } from './ast';
+export { isSchemaNode, isFieldNode, isProfileNode, isContextNode, isImportNode, isProgramNode } from './ast';
 
 // Parser
 export { Parser, parse } from './parser';

@@ -1,7 +1,9 @@
 import { Command } from 'commander';
 import * as fs from 'fs/promises';
-import { scan, parse, analyze } from '@testdata-ai/core';
+import * as path from 'node:path';
+import { validateSchema } from '@testdata-ai/core';
 import type { Diagnostic } from '@testdata-ai/core';
+import { findWorkspaceConfigPath } from '../config';
 import { formatErrors } from '../formatters';
 
 export const validateCommand = new Command('validate')
@@ -10,18 +12,29 @@ export const validateCommand = new Command('validate')
   .option('--json', 'Output validation results as JSON')
   .action(async (file: string, options: { json?: boolean }) => {
     try {
-      // 1. Read file
-      const source = await fs.readFile(file, 'utf-8');
+      const absoluteFile = path.resolve(file);
+      const workspaceConfigPath = await findWorkspaceConfigPath({
+        currentDirectory: path.dirname(absoluteFile),
+      });
+      const workspaceRoot = workspaceConfigPath !== undefined
+        ? path.dirname(workspaceConfigPath)
+        : undefined;
 
-      // 2. Validate (scan → parse → analyze)
-      const errors = validateSchema(source);
+      // 1. Read file
+      const source = await fs.readFile(absoluteFile, 'utf-8');
+
+      // 2. Validate using the shared core pipeline
+      const result = validateSchema(source, absoluteFile, {
+        currentFile: absoluteFile,
+        workspaceRoot,
+      });
 
       // 3. Display results
-      if (errors.length === 0) {
+      if (result.ok) {
         displaySuccess(options.json);
         process.exit(0);
       } else {
-        displayErrors(errors, source, options.json);
+        displayErrors(result.errors, source, options.json);
         process.exit(1);
       }
     } catch (err) {
@@ -29,32 +42,6 @@ export const validateCommand = new Command('validate')
       handleFileError(err, file);
     }
   });
-
-function validateSchema(source: string): Diagnostic[] {
-  const errors: Diagnostic[] = [];
-
-  // Scan
-  const scanResult = scan(source);
-  if (!scanResult.ok) {
-    errors.push(...scanResult.errors);
-    return errors; // Stop at scan errors
-  }
-
-  // Parse
-  const parseResult = parse(scanResult.value);
-  if (!parseResult.ok) {
-    errors.push(...parseResult.errors);
-    return errors; // Stop at parse errors
-  }
-
-  // Analyze
-  const analyzeResult = analyze(parseResult.value);
-  if (!analyzeResult.ok) {
-    errors.push(...analyzeResult.errors);
-  }
-
-  return errors;
-}
 
 function displaySuccess(jsonMode?: boolean): void {
   if (jsonMode) {

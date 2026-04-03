@@ -1,6 +1,6 @@
 # Story 11.1: DSL Import Statement Support
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -26,36 +26,36 @@ The live codebase currently parses only top-level `schema` declarations, already
 
 ## Tasks / Subtasks
 
-- [ ] Extend the AST and parser for import declarations without disturbing existing directive syntax (AC: 1)
-  - [ ] Add an `ImportNode` to `packages/core/src/parser/ast.ts` and allow `Program.declarations` to contain imports plus existing declarations.
-  - [ ] Reuse the current `@defaults` parsing style by treating `@import` as `@` + identifier + string literal, unless a scanner keyword change is genuinely required.
-  - [ ] Enforce file-top placement for imports so `@import` after a schema declaration produces a clear parse error instead of ambiguous behavior.
-  - [ ] Preserve source locations so diagnostics for imported files still point to the originating file path and line.
+- [x] Extend the AST and parser for import declarations without disturbing existing directive syntax (AC: 1)
+  - [x] Add an `ImportNode` to `packages/core/src/parser/ast.ts` and allow `Program.declarations` to contain imports plus existing declarations.
+  - [x] Reuse the current `@defaults` parsing style by treating `@import` as `@` + identifier + string literal, unless a scanner keyword change is genuinely required.
+  - [x] Enforce file-top placement for imports so `@import` after a schema declaration produces a clear parse error instead of ambiguous behavior.
+  - [x] Preserve source locations so diagnostics for imported files still point to the originating file path and line.
 
-- [ ] Add import resolution to the shared core validation path rather than only to CLI commands (AC: 2, 3, 4, 5, 6, 7)
-  - [ ] Extend core validation inputs with additive context such as `currentFile` and `workspaceRoot` so relative and workspace imports resolve deterministically.
-  - [ ] Resolve imports before semantic validation and merge imported declarations into the effective `Program` used by the analyzer.
-  - [ ] Use canonical absolute paths during recursive resolution and cycle detection so `./a.td`, `../dir/../a.td`, and equivalent paths do not bypass circular-import checks.
-  - [ ] Fail clearly when an import is used without enough file-system context to resolve it, rather than guessing from process cwd.
-  - [ ] Keep the public sync contract stable for `validateSchema()` and `generateData()`; do not introduce a breaking async-only API for this story.
+- [x] Add import resolution to the shared core validation path rather than only to CLI commands (AC: 2, 3, 4, 5, 6, 7)
+  - [x] Extend core validation inputs with additive context such as `currentFile` and `workspaceRoot` so relative and workspace imports resolve deterministically.
+  - [x] Resolve imports before semantic validation and merge imported declarations into the effective `Program` used by the analyzer.
+  - [x] Use canonical absolute paths during recursive resolution and cycle detection so `./a.td`, `../dir/../a.td`, and equivalent paths do not bypass circular-import checks.
+  - [x] Fail clearly when an import is used without enough file-system context to resolve it, rather than guessing from process cwd.
+  - [x] Keep the public sync contract stable for `validateSchema()` and `generateData()`; do not introduce a breaking async-only API for this story.
 
-- [ ] Preserve semantic-analysis and symbol-table behavior across imported declarations (AC: 3, 4, 5, 7)
-  - [ ] Make imported schemas and profiles visible to the importing file using the existing symbol-table and analyzer rules rather than a parallel lookup mechanism.
-  - [ ] Report duplicate definitions across local and imported files with analyzer-style diagnostics.
-  - [ ] Validate imported declarations with the same generator, template, uniqueness, context, and dependency checks as local declarations.
-  - [ ] Keep imported declaration handling compatible with later Epic 11 stories for schema extension and reference validation.
+- [x] Preserve semantic-analysis and symbol-table behavior across imported declarations (AC: 3, 4, 5, 7)
+  - [x] Make imported schemas and profiles visible to the importing file using the existing symbol-table and analyzer rules rather than a parallel lookup mechanism.
+  - [x] Report duplicate definitions across local and imported files with analyzer-style diagnostics.
+  - [x] Validate imported declarations with the same generator, template, uniqueness, context, and dependency checks as local declarations.
+  - [x] Keep imported declaration handling compatible with later Epic 11 stories for schema extension and reference validation.
 
-- [ ] Thread source-file and workspace-root context through CLI entry points consistently (AC: 2, 6, 7)
-  - [ ] Update `packages/cli/src/commands/validate.ts` to reuse the shared validation entry point instead of maintaining a separate scan/parse/analyze path with no filename/workspace context.
-  - [ ] Update `packages/cli/src/commands/generate.ts` to pass the source file path and discovered workspace root into core validation/generation.
-  - [ ] Reuse Epic 9 workspace discovery rules when resolving `@workspace/...` imports. The workspace root should come from the discovered `.tdconfig.json` location when available.
-  - [ ] Define user-facing failure behavior for `@workspace/...` imports when no workspace root can be determined.
+- [x] Thread source-file and workspace-root context through CLI entry points consistently (AC: 2, 6, 7)
+  - [x] Update `packages/cli/src/commands/validate.ts` to reuse the shared validation entry point instead of maintaining a separate scan/parse/analyze path with no filename/workspace context.
+  - [x] Update `packages/cli/src/commands/generate.ts` to pass the source file path and discovered workspace root into core validation/generation.
+  - [x] Reuse Epic 9 workspace discovery rules when resolving `@workspace/...` imports. The workspace root should come from the discovered `.tdconfig.json` location when available.
+  - [x] Define user-facing failure behavior for `@workspace/...` imports when no workspace root can be determined.
 
-- [ ] Add unit and BDD regression coverage that actually runs in the current test harness (AC: 8, 9)
-  - [ ] Extend parser and validation unit tests for valid imports, missing import paths, duplicate imported symbols, unresolved files, workspace imports, and circular imports.
-  - [ ] Add filesystem-backed feature coverage under `packages/core/features/` using dedicated import fixtures.
-  - [ ] Register any new feature files and step-definition files in `packages/core/tests/run-cucumber.ts`; do not add scenarios only to dormant features that are not executed by the current runner.
-  - [ ] Keep unit coverage focused on parser/validation/import-graph behavior and use BDD coverage for real multi-file user workflows.
+- [x] Add unit and BDD regression coverage that actually runs in the current test harness (AC: 8, 9)
+  - [x] Extend parser and validation unit tests for valid imports, missing import paths, duplicate imported symbols, unresolved files, workspace imports, and circular imports.
+  - [x] Add filesystem-backed feature coverage under `packages/core/features/` using dedicated import fixtures.
+  - [x] Register any new feature files and step-definition files in `packages/core/tests/run-cucumber.ts`; do not add scenarios only to dormant features that are not executed by the current runner.
+  - [x] Keep unit coverage focused on parser/validation/import-graph behavior and use BDD coverage for real multi-file user workflows.
 
 ## Dev Notes
 
@@ -222,6 +222,10 @@ GPT-5.4
 - Discovery sources loaded: Epic 11 shard, PRD, project context, architecture shards, active core and CLI source files, active BDD runner, and recent git history.
 - No previous Epic 11 implementation artifact exists, so workspace-config behavior from Story 9.2 was used as the closest relevant precedent.
 - The repo contains parser and semantic-analysis feature files, but the active Cucumber runner does not currently execute them. This is a concrete test-wiring risk for this story.
+- Implemented top-level `@import` parsing with file-top enforcement and preserved imported-file source locations across parsed declarations.
+- Added sync core import resolution in `packages/core/src/imports/importResolver.ts` and threaded additive `currentFile` / `workspaceRoot` context through `validateSchema()` and `generateData()`.
+- Updated CLI `validate` and `generate` commands to use the shared core validation path and to derive workspace roots from `.tdconfig.json` discovery.
+- Validation executed successfully with `bun test packages/`, `bun run --cwd packages/core test:bdd`, and `bun run lint`.
 
 ### Implementation Plan
 
@@ -233,11 +237,41 @@ GPT-5.4
 
 ### Completion Notes List
 
-- Ultimate context engine analysis completed - comprehensive developer guide created.
-- Story file created for `11-1-dsl-import-statement-support` with implementation guardrails for parser, validation, analyzer, CLI, and BDD integration.
-- Sprint tracking updated so Epic 11 is now `in-progress` and Story 11.1 is `ready-for-dev`.
+- Added `ImportNode` support to the AST and parser, including `@import "..."` parsing and parse-time rejection of imports that appear after non-import declarations.
+- Implemented sync recursive import resolution in core validation with relative-path support, `@workspace/...` support, canonical path cycle detection, and clear diagnostics when file context is missing.
+- Preserved analyzer and symbol-table behavior by merging imported declarations into the effective program before semantic analysis and continuing to use existing duplicate-schema checks.
+- Updated `generateData()` and both CLI entry points to pass file and workspace context into the shared import-aware validation pipeline without breaking the existing sync public API.
+- Added parser, validation, generateData, CLI, and active BDD coverage with real filesystem fixtures for relative imports, workspace imports, circular imports, and duplicate imported symbols.
+- Verified the implementation with the full Bun unit suite, the core Cucumber runner, and ESLint.
 
 ### File List
 
 - `_bmad-output/implementation-artifacts/11-1-dsl-import-statement-support.md`
 - `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- `packages/core/src/parser/ast.ts`
+- `packages/core/src/parser/index.ts`
+- `packages/core/src/parser/parser.ts`
+- `packages/core/src/imports/importResolver.ts`
+- `packages/core/src/validate.ts`
+- `packages/core/src/generateData.ts`
+- `packages/core/src/analyzer/analyzer.ts`
+- `packages/core/src/parser/parser.test.ts`
+- `packages/core/src/validate.test.ts`
+- `packages/core/src/generateData.test.ts`
+- `packages/core/tests/run-cucumber.ts`
+- `packages/core/features/import-resolution.feature`
+- `packages/core/features/step_definitions/import-resolution.steps.ts`
+- `packages/core/features/fixtures/imports/relative/common.td`
+- `packages/core/features/fixtures/imports/relative/main.td`
+- `packages/core/features/fixtures/imports/workspace/common/profile.td`
+- `packages/core/features/fixtures/imports/workspace/apps/main.td`
+- `packages/core/features/fixtures/imports/circular/a.td`
+- `packages/core/features/fixtures/imports/circular/b.td`
+- `packages/cli/src/commands/validate.ts`
+- `packages/cli/src/commands/validate.test.ts`
+- `packages/cli/src/commands/generate.ts`
+- `packages/cli/src/commands/generate.test.ts`
+
+## Change Log
+
+- 2026-04-03: Implemented DSL import statement support across parser, core validation, CLI entry points, and active regression coverage; moved story to review.

@@ -12,7 +12,13 @@ import type { Diagnostic, GenerateOptions } from '@testdata-ai/core';
 import * as fs from 'fs/promises';
 import * as os from 'node:os';
 import * as path from 'path';
-import { BUILT_IN_CLI_CONFIG, CliConfigError, loadEffectiveConfig, validateOutputFormat } from '../config';
+import {
+  BUILT_IN_CLI_CONFIG,
+  CliConfigError,
+  findWorkspaceConfigPath,
+  loadEffectiveConfig,
+  validateOutputFormat,
+} from '../config';
 import type { CliOutputFormat } from '../config';
 import { formatErrors } from '../formatters';
 
@@ -57,10 +63,12 @@ export const generateCommand = new Command('generate')
   )
   .action(async (file: string, options: CommandOptions) => {
     try {
+      const absoluteFile = path.resolve(file);
+      const sourceDirectory = path.dirname(absoluteFile);
       const workingDirectory = process.cwd();
       let cliConfig = BUILT_IN_CLI_CONFIG;
       try {
-        const loadedConfig = await loadEffectiveConfig({ currentDirectory: workingDirectory });
+        const loadedConfig = await loadEffectiveConfig({ currentDirectory: sourceDirectory });
         cliConfig = loadedConfig.config;
       } catch (error: unknown) {
         if (error instanceof CliConfigError) {
@@ -70,6 +78,11 @@ export const generateCommand = new Command('generate')
 
         throw error;
       }
+
+      const workspaceConfigPath = await findWorkspaceConfigPath({ currentDirectory: sourceDirectory });
+      const workspaceRoot = workspaceConfigPath !== undefined
+        ? path.dirname(workspaceConfigPath)
+        : undefined;
 
       // Parse options
       const count = parsePositiveIntegerOption(
@@ -102,7 +115,7 @@ export const generateCommand = new Command('generate')
       // Step 1: Read file
       let source: string;
       try {
-        source = await fs.readFile(file, 'utf-8');
+        source = await fs.readFile(absoluteFile, 'utf-8');
       } catch (err: unknown) {
         if (isNodeError(err)) {
           if (err.code === 'ENOENT') {
@@ -135,6 +148,8 @@ export const generateCommand = new Command('generate')
         for await (const record of generateData(source, {
           ...genOptions,
           defaultGenerators: cliConfig.generatorDefaults,
+          currentFile: absoluteFile,
+          workspaceRoot,
         })) {
           records.push(record);
           recordCount++;
@@ -178,7 +193,7 @@ export const generateCommand = new Command('generate')
         if (options.saveContext) {
           try {
             const contextDirectory = path.resolve(workingDirectory, saveContextDirectory);
-            const sourcePattern = path.relative(workingDirectory, path.resolve(file));
+            const sourcePattern = path.relative(workingDirectory, absoluteFile);
 
             await saveAsContext(records, options.saveContext, [], {
               directory: contextDirectory,

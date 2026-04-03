@@ -12,6 +12,11 @@ import { validateSchema } from './validate';
 import { generate, type GenerateOptions } from './generator';
 import type { Diagnostic } from './common/diagnostic';
 
+export interface GenerateDataOptions extends GenerateOptions {
+  readonly currentFile?: string;
+  readonly workspaceRoot?: string;
+}
+
 /**
  * ValidationError is thrown when schema validation fails.
  *
@@ -124,13 +129,15 @@ export class ValidationError extends Error {
  */
 export async function* generateData(
   source: string,
-  options: GenerateOptions
+  options: GenerateDataOptions
 ): AsyncIterable<Record<string, unknown>> {
   // Step 1: Validate schema FIRST (fail fast on invalid input)
   // This ensures we never start generating invalid data
-  const validationResult = validateSchema(source, 'inline-schema.td', {
+  const validationResult = validateSchema(source, options.currentFile ?? 'inline-schema.td', {
     availableContextCollections: Object.keys(options.context ?? {}),
     defaultGenerators: options.defaultGenerators,
+    currentFile: options.currentFile,
+    workspaceRoot: options.workspaceRoot,
   });
 
   if (!validationResult.ok) {

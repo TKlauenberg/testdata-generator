@@ -1,0 +1,3 @@
+schema Profile {
+  id: uuid
+}

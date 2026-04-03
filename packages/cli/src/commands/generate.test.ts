@@ -547,6 +547,68 @@ describe('Generate Command - Generation Options', () => {
     }
   });
 
+  test('resolves @workspace imports relative to the discovered workspace root', async () => {
+    const homeDirectory = await createGlobalConfigHome({});
+    const workspaceDirectory = await createWorkspaceConfigDirectory({
+      defaults: {
+        count: 1,
+        format: 'json',
+      },
+    });
+    const sharedDirectory = path.join(workspaceDirectory, 'shared');
+    const appDirectory = path.join(workspaceDirectory, 'apps');
+    const schemaPath = path.join(appDirectory, 'seed-users.td');
+
+    await fs.mkdir(sharedDirectory, { recursive: true });
+    await fs.mkdir(appDirectory, { recursive: true });
+    await fs.writeFile(
+      path.join(sharedDirectory, 'profile.td'),
+      ['schema SharedProfile {', '  id: uuid generator=uuid', '}', ''].join('\n'),
+      'utf-8',
+    );
+    await fs.writeFile(
+      schemaPath,
+      [
+        '@import "@workspace/shared/profile.td"',
+        '',
+        'schema SeedUser {',
+        '  id: uuid generator=uuid',
+        '}',
+        '',
+      ].join('\n'),
+      'utf-8',
+    );
+
+    try {
+      const proc = spawn([
+        'bun',
+        CLI_PATH,
+        'generate',
+        'apps/seed-users.td',
+      ], {
+        cwd: workspaceDirectory,
+        env: {
+          ...process.env,
+          HOME: homeDirectory,
+        },
+      });
+
+      const output = await new Response(proc.stdout).text();
+      const records = parseJson<unknown>(output);
+
+      if (!isRecordArray(records)) {
+        throw new Error('Expected generated output to be a JSON array of records');
+      }
+
+      expect(records).toHaveLength(2);
+      expect(records[0]).toHaveProperty('id');
+      expect(records[1]).toHaveProperty('id');
+    } finally {
+      await fs.rm(homeDirectory, { recursive: true, force: true });
+      await fs.rm(workspaceDirectory, { recursive: true, force: true });
+    }
+  });
+
   test('does not override explicit field generators with workspace generator defaults', async () => {
     const homeDirectory = await createGlobalConfigHome({});
     const workspaceDirectory = await createWorkspaceConfigDirectory({

@@ -4,7 +4,7 @@ import type { SourceLocation } from '../common/diagnostic';
  * Discriminator for all AST node types.
  * Used in discriminated unions to enable type-safe exhaustive checking.
  */
-export type NodeKind = 'program' | 'schema' | 'field' | 'profile' | 'context'; // Reserved for future use
+export type NodeKind = 'program' | 'schema' | 'field' | 'profile' | 'context' | 'import'; // Reserved for future use
 
 /**
  * Base interface for all AST nodes.
@@ -170,10 +170,19 @@ export interface ContextNode extends ASTNode {
 }
 
 /**
+ * Top-level import declaration for loading reusable DSL files.
+ */
+export interface ImportNode extends ASTNode {
+  readonly kind: 'import';
+  readonly path: string;
+  readonly location: SourceLocation;
+}
+
+/**
  * Top-level declarations that can appear in a DSL file.
  * Discriminated union enabling type-safe exhaustive checking.
  */
-export type Declaration = SchemaNode | ProfileNode | ContextNode;
+export type Declaration = SchemaNode | ProfileNode | ContextNode | ImportNode;
 
 /**
  * Root node containing all top-level declarations in a DSL file.
@@ -232,6 +241,15 @@ export function isProfileNode(node: ASTNode): node is ProfileNode {
  */
 export function isContextNode(node: ASTNode): node is ContextNode {
   return node.kind === 'context';
+}
+
+/**
+ * Type guard to check if a node is an ImportNode.
+ * @param node - The node to check
+ * @returns true if the node is an ImportNode
+ */
+export function isImportNode(node: ASTNode): node is ImportNode {
+  return node.kind === 'import';
 }
 
 /**

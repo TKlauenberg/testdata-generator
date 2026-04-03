@@ -252,12 +252,27 @@ function buildSymbolTable(ast: Program): Result<SymbolTable, Diagnostic[]> {
         errors.push(...schemaResult.errors);
       }
 
-      // Define fields within schema
       for (const field of declaration.fields) {
         const fieldResult = symbolTable.defineField(declaration.name, field.name, field);
         if (!fieldResult.ok) {
           errors.push(...fieldResult.errors);
         }
+      }
+      continue;
+    }
+
+    if (declaration.kind === 'profile') {
+      const profileResult = symbolTable.defineProfile(declaration.name, declaration);
+      if (!profileResult.ok) {
+        errors.push(...profileResult.errors);
+      }
+      continue;
+    }
+
+    if (declaration.kind === 'context') {
+      const contextResult = symbolTable.defineContext(declaration.name, declaration);
+      if (!contextResult.ok) {
+        errors.push(...contextResult.errors);
       }
     }
   }

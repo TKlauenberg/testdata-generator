@@ -3,6 +3,9 @@
  */
 
 import { describe, test, expect } from 'bun:test';
+import * as fs from 'node:fs/promises';
+import * as os from 'node:os';
+import * as path from 'node:path';
 import { validateSchema } from './validate';
 
 describe('validateSchema()', () => {
@@ -553,6 +556,155 @@ describe('validateSchema()', () => {
   });
 
   describe('performance requirements', () => {
+    test('resolves relative imports from the current file', async () => {
+      const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-imports-'));
+      const importedFile = path.join(workspace, 'common.td');
+      const rootFile = path.join(workspace, 'main.td');
+
+      await fs.writeFile(importedFile, 'schema Profile { id: uuid }\n', 'utf-8');
+
+      const source = [
+        '@import "./common.td"',
+        '',
+        'schema User {',
+        '  account: Profile',
+        '}',
+        '',
+      ].join('\n');
+
+      try {
+        const result = validateSchema(source, rootFile, {
+          currentFile: rootFile,
+        });
+
+        expect(result.ok).toBe(true);
+        if (result.ok) {
+          expect(result.value.schemas.has('Profile')).toBe(true);
+          expect(result.value.schemas.has('User')).toBe(true);
+        }
+      } finally {
+        await fs.rm(workspace, { recursive: true, force: true });
+      }
+    });
+
+    test('resolves @workspace imports when a workspace root is provided', async () => {
+      const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-workspace-imports-'));
+      const commonDirectory = path.join(workspace, 'common');
+      const appDirectory = path.join(workspace, 'apps');
+      const importedFile = path.join(commonDirectory, 'shared.td');
+      const rootFile = path.join(appDirectory, 'main.td');
+
+      await fs.mkdir(commonDirectory, { recursive: true });
+      await fs.mkdir(appDirectory, { recursive: true });
+      await fs.writeFile(importedFile, 'schema SharedProfile { id: uuid }\n', 'utf-8');
+
+      const source = [
+        '@import "@workspace/common/shared.td"',
+        '',
+        'schema User {',
+        '  account: SharedProfile',
+        '}',
+        '',
+      ].join('\n');
+
+      try {
+        const result = validateSchema(source, rootFile, {
+          currentFile: rootFile,
+          workspaceRoot: workspace,
+        });
+
+        expect(result.ok).toBe(true);
+        if (result.ok) {
+          expect(result.value.schemas.has('SharedProfile')).toBe(true);
+          expect(result.value.schemas.has('User')).toBe(true);
+        }
+      } finally {
+        await fs.rm(workspace, { recursive: true, force: true });
+      }
+    });
+
+    test('fails clearly when imports are used without file-system context', () => {
+      const source = [
+        '@import "./common.td"',
+        '',
+        'schema User {',
+        '  id: uuid',
+        '}',
+        '',
+      ].join('\n');
+
+      const result = validateSchema(source, 'inline-schema.td');
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.errors.some((error) => error.code === 'analyzer.unresolvedImport')).toBe(true);
+        expect(result.errors.some((error) => error.message.includes('without a source file path'))).toBe(true);
+      }
+    });
+
+    test('detects circular imports using canonical absolute paths', async () => {
+      const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-circular-imports-'));
+      const aFile = path.join(workspace, 'a.td');
+      const bFile = path.join(workspace, 'nested', 'b.td');
+
+      await fs.mkdir(path.dirname(bFile), { recursive: true });
+      await fs.writeFile(
+        aFile,
+        ['@import "./nested/b.td"', '', 'schema User {', '  account: Profile', '}', ''].join('\n'),
+        'utf-8',
+      );
+      await fs.writeFile(
+        bFile,
+        ['@import "../nested/../a.td"', '', 'schema Profile {', '  id: uuid', '}', ''].join('\n'),
+        'utf-8',
+      );
+
+      try {
+        const source = await fs.readFile(aFile, 'utf-8');
+        const result = validateSchema(source, aFile, {
+          currentFile: aFile,
+        });
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+          expect(result.errors.some((error) => error.code === 'analyzer.circularDependency')).toBe(true);
+          expect(result.errors.some((error) => error.message.includes('a.td') && error.message.includes('b.td'))).toBe(true);
+        }
+      } finally {
+        await fs.rm(workspace, { recursive: true, force: true });
+      }
+    });
+
+    test('reports duplicate imported and local schema definitions through the analyzer', async () => {
+      const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-duplicate-imports-'));
+      const importedFile = path.join(workspace, 'common.td');
+      const rootFile = path.join(workspace, 'main.td');
+
+      await fs.writeFile(importedFile, 'schema User { id: uuid }\n', 'utf-8');
+
+      const source = [
+        '@import "./common.td"',
+        '',
+        'schema User {',
+        '  email: string',
+        '}',
+        '',
+      ].join('\n');
+
+      try {
+        const result = validateSchema(source, rootFile, {
+          currentFile: rootFile,
+        });
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+          expect(result.errors.some((error) => error.code === 'analyzer.duplicateSchema')).toBe(true);
+        }
+      } finally {
+        await fs.rm(workspace, { recursive: true, force: true });
+      }
+    });
+
     test('@performance should validate small schema in reasonable time', () => {
       const source = generateSchema(5, 4); // 5 schemas, 4 fields each
       const start = performance.now();
