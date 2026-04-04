@@ -289,6 +289,26 @@ schema ExtendedUser extends User {
       }
     });
 
+    test('should report undefined multiline extends targets at the base schema token', () => {
+      const source = `schema ExtendedUser extends
+  Missing {
+  id: string
+}`;
+
+      const result = validateSchema(source, 'test.td');
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        const undefinedSchemaError = result.errors.find((error) => error.code === 'analyzer.undefinedSchema');
+        expect(undefinedSchemaError?.location).toEqual({
+          file: 'test.td',
+          line: 2,
+          column: 3,
+          length: 7,
+        });
+      }
+    });
+
     test('should handle empty source string gracefully', () => {
       const source = '';
       const result = validateSchema(source, 'test.td');

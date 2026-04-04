@@ -677,17 +677,23 @@ export class Parser {
       }
 
       extendsSchema = baseSchemaToken.value;
-      extendsSchemaLocation = {
-        file: extendsToken.location.file,
-        line: extendsToken.location.line,
-        column: extendsToken.location.column,
-        length:
-          baseSchemaToken.location.line === extendsToken.location.line
-            ? baseSchemaToken.location.column +
-              baseSchemaToken.location.length -
-              extendsToken.location.column
-            : baseSchemaToken.location.length,
-      };
+      extendsSchemaLocation =
+        baseSchemaToken.location.line === extendsToken.location.line
+          ? {
+              file: extendsToken.location.file,
+              line: extendsToken.location.line,
+              column: extendsToken.location.column,
+              length:
+                baseSchemaToken.location.column +
+                baseSchemaToken.location.length -
+                extendsToken.location.column,
+            }
+          : {
+              file: baseSchemaToken.location.file,
+              line: baseSchemaToken.location.line,
+              column: baseSchemaToken.location.column,
+              length: baseSchemaToken.location.length,
+            };
     }
 
     // Match opening brace

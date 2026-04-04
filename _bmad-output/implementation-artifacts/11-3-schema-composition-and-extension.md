@@ -1,6 +1,6 @@
 # Story 11.3: Schema Composition and Extension
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -50,6 +50,10 @@ The live codebase already supports imported schemas, workspace-aware validation 
   - [x] Add generation-focused tests proving inherited fields appear in derived output, overridden fields replace base behavior, and template references from derived fields can depend on inherited fields.
   - [x] Add an executed core BDD feature for schema extension under `packages/core/features/` with real `.td` fixtures, and register both the feature and its step definitions in `packages/core/tests/run-cucumber.ts` instead of relying on dormant parser or semantic-analysis feature files.
   - [x] If the final syntax is surfaced in repository docs or examples, update only existing docs in `docs/api.md`, `docs/foundation-patterns.md`, or `docs/examples/generateData-examples.md` as appropriate; do not create speculative documentation surfaces.
+
+  ### Review Findings
+
+  - [x] [Review][Patch] Multiline `extends` diagnostics highlight the wrong source span [packages/core/src/parser/parser.ts:680]
 
 ## Dev Notes
 
