@@ -129,7 +129,7 @@ development_status:
   11-1-dsl-import-statement-support: done
   11-2-shared-generator-definitions: done
   11-3-schema-composition-and-extension: done
-  11-4-reference-validation-and-type-safety: ready-for-dev
+  11-4-reference-validation-and-type-safety: review
   epic-11-retrospective: optional
 
   epic-12: backlog

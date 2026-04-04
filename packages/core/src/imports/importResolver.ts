@@ -5,6 +5,7 @@ import { Parser } from '../parser/parser';
 import type { Diagnostic } from '../common/diagnostic';
 import type { Result } from '../common/result';
 import type { Declaration, ImportNode, Program } from '../parser/ast';
+import { findSimilar, toImportPath } from '../common/suggestions';
 
 export interface ResolveImportsOptions {
   readonly currentFile?: string;
@@ -126,11 +127,13 @@ function resolveImportDeclaration(
   } catch (error: unknown) {
     const nodeError = error as NodeJS.ErrnoException;
     if (nodeError.code === 'ENOENT') {
+      const suggestion = suggestMissingImportPath(declaration.path, importerFile, state.workspaceRoot);
       return {
         ok: false,
         errors: [createImportDiagnostic(
           declaration,
           `Imported file '${declaration.path}' could not be found`,
+          suggestion,
         )],
       };
     }
@@ -174,6 +177,102 @@ function resolveImportDeclaration(
 
   state.cache.set(canonicalPath, resolvedDeclarations.value);
   return { ok: true, value: resolvedDeclarations.value };
+}
+
+function suggestMissingImportPath(
+  importPath: string,
+  importerFile: string,
+  workspaceRoot?: string,
+): string | undefined {
+  const importerDirectory = path.dirname(importerFile);
+  const candidateEntries = importPath.startsWith('@workspace/')
+    ? collectWorkspaceImportCandidates(workspaceRoot)
+    : collectRelativeImportCandidates(importerDirectory, workspaceRoot);
+
+  if (candidateEntries.length === 0) {
+    return undefined;
+  }
+
+  const candidateByDisplay = new Map(candidateEntries.map((candidate) => [candidate.display, candidate]));
+  const similarCandidates = findSimilar(importPath, candidateEntries.map((candidate) => candidate.display));
+  const bestMatch = similarCandidates[0];
+  if (!bestMatch) {
+    return undefined;
+  }
+
+  return candidateByDisplay.get(bestMatch)?.display;
+}
+
+function collectRelativeImportCandidates(
+  importerDirectory: string,
+  workspaceRoot?: string,
+): Array<{ readonly display: string }> {
+  const roots = new Set<string>([importerDirectory]);
+  if (workspaceRoot !== undefined) {
+    roots.add(workspaceRoot);
+  }
+
+  const suggestions = new Set<string>();
+  for (const root of roots) {
+    for (const filePath of collectTdFiles(root)) {
+      suggestions.add(toImportPath(importerDirectory, filePath));
+    }
+  }
+
+  return Array.from(suggestions).map((display) => ({ display }));
+}
+
+function collectWorkspaceImportCandidates(
+  workspaceRoot?: string,
+): Array<{ readonly display: string }> {
+  if (workspaceRoot === undefined) {
+    return [];
+  }
+
+  return collectTdFiles(workspaceRoot).map((filePath) => ({
+    display: `@workspace/${path.relative(workspaceRoot, filePath).split(path.sep).join('/')}`,
+  }));
+}
+
+function collectTdFiles(root: string): string[] {
+  if (!fs.existsSync(root)) {
+    return [];
+  }
+
+  const stack = [root];
+  const files: string[] = [];
+
+  while (stack.length > 0) {
+    const current = stack.pop();
+    if (current === undefined) {
+      continue;
+    }
+
+    let entries: fs.Dirent[];
+    try {
+      entries = fs.readdirSync(current, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+
+    for (const entry of entries) {
+      if (entry.name === 'node_modules' || entry.name.startsWith('.git')) {
+        continue;
+      }
+
+      const entryPath = path.join(current, entry.name);
+      if (entry.isDirectory()) {
+        stack.push(entryPath);
+        continue;
+      }
+
+      if (entry.isFile() && entry.name.endsWith('.td')) {
+        files.push(entryPath);
+      }
+    }
+  }
+
+  return files;
 }
 
 function resolveImportPath(

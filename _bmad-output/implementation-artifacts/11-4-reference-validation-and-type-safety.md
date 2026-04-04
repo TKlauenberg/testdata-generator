@@ -1,6 +1,6 @@
 # Story 11.4: Reference Validation and Type Safety
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -27,27 +27,27 @@ The current codebase already performs several reference checks in the core pipel
 
 ## Tasks / Subtasks
 
-- [ ] Audit and normalize the existing reference-validation entry points instead of introducing a second subsystem (AC: 1, 2, 3, 4, 5, 8)
-  - [ ] Reuse `packages/core/src/imports/importResolver.ts` for file-level import validation and `packages/core/src/analyzer/analyzer.ts` for semantic validation, keeping the pipeline `scan -> parse -> import resolution -> analyze -> generate` intact.
-  - [ ] Ensure `packages/core/src/validate.ts` and `packages/core/src/generateData.ts` continue to surface reference failures before generation starts rather than relying on generator-time exceptions.
-  - [ ] Keep diagnostic accumulation behavior so multiple broken references can be reported in one validation run.
+- [x] Audit and normalize the existing reference-validation entry points instead of introducing a second subsystem (AC: 1, 2, 3, 4, 5, 8)
+  - [x] Reuse `packages/core/src/imports/importResolver.ts` for file-level import validation and `packages/core/src/analyzer/analyzer.ts` for semantic validation, keeping the pipeline `scan -> parse -> import resolution -> analyze -> generate` intact.
+  - [x] Ensure `packages/core/src/validate.ts` and `packages/core/src/generateData.ts` continue to surface reference failures before generation starts rather than relying on generator-time exceptions.
+  - [x] Keep diagnostic accumulation behavior so multiple broken references can be reported in one validation run.
 
-- [ ] Close the remaining diagnostic and suggestion gaps across all supported reference classes (AC: 1, 2, 3, 4, 5, 6, 7, 8)
-  - [ ] Extend missing-context diagnostics in `packages/core/src/analyzer/analyzer.ts` to use fuzzy matching against available collection names instead of only dumping the collection list.
-  - [ ] Improve import-path diagnostics in `packages/core/src/imports/importResolver.ts` so common typos and wrong suffix/path cases can suggest a nearby `.td` file or workspace-relative alternative when one is detectable.
-  - [ ] Reuse the existing Levenshtein-based `findSimilar()` helper for schema names, template field names, context collections, and workspace generators rather than adding a third-party fuzzy-matching package.
-  - [ ] Preserve the most precise available locations already tracked by the parser and AST, especially import declarations and `extends` clauses; only add finer-grained location tracking if an acceptance criterion cannot be satisfied without it.
+- [x] Close the remaining diagnostic and suggestion gaps across all supported reference classes (AC: 1, 2, 3, 4, 5, 6, 7, 8)
+  - [x] Extend missing-context diagnostics in `packages/core/src/analyzer/analyzer.ts` to use fuzzy matching against available collection names instead of only dumping the collection list.
+  - [x] Improve import-path diagnostics in `packages/core/src/imports/importResolver.ts` so common typos and wrong suffix/path cases can suggest a nearby `.td` file or workspace-relative alternative when one is detectable.
+  - [x] Reuse the existing Levenshtein-based `findSimilar()` helper for schema names, template field names, context collections, and workspace generators rather than adding a third-party fuzzy-matching package.
+  - [x] Preserve the most precise available locations already tracked by the parser and AST, especially import declarations and `extends` clauses; only add finer-grained location tracking if an acceptance criterion cannot be satisfied without it.
 
-- [ ] Strengthen regression coverage in the active unit and BDD harnesses (AC: 6, 7, 8, 9, 10)
-  - [ ] Extend `packages/core/src/analyzer/analyzer.test.ts` to cover misspelled schema references, template fields, context collections, workspace generators, and multi-error accumulation in the same validation pass.
-  - [ ] Add a co-located `packages/core/src/imports/importResolver.test.ts` to cover unresolved relative imports, workspace imports without a workspace root, circular imports, and typo-driven suggestion behavior.
-  - [ ] Add or extend an executed feature under `packages/core/features/` with real fixtures proving helpful broken-reference diagnostics for imports, inherited schemas, context references, template references, and workspace generators.
-  - [ ] Register any new feature and matching step definitions in `packages/core/tests/run-cucumber.ts`; existing dormant feature files are not sufficient because the active runner is curated.
+- [x] Strengthen regression coverage in the active unit and BDD harnesses (AC: 6, 7, 8, 9, 10)
+  - [x] Extend `packages/core/src/analyzer/analyzer.test.ts` to cover misspelled schema references, template fields, context collections, workspace generators, and multi-error accumulation in the same validation pass.
+  - [x] Add a co-located `packages/core/src/imports/importResolver.test.ts` to cover unresolved relative imports, workspace imports without a workspace root, circular imports, and typo-driven suggestion behavior.
+  - [x] Add or extend an executed feature under `packages/core/features/` with real fixtures proving helpful broken-reference diagnostics for imports, inherited schemas, context references, template references, and workspace generators.
+  - [x] Register any new feature and matching step definitions in `packages/core/tests/run-cucumber.ts`; existing dormant feature files are not sufficient because the active runner is curated.
 
-- [ ] Keep the story scoped to semantic validation quality and pre-generation safety (AC: 6, 7, 8)
-  - [ ] Do not introduce a new reference DSL, runtime fallback resolver, or post-generation validation pass.
-  - [ ] Do not change CLI command behavior unless a failing acceptance test proves the public entry points are not surfacing analyzer/import diagnostics correctly.
-  - [ ] Update docs only if current user-facing docs or examples already describe reference-validation behavior and need correction or clarification.
+- [x] Keep the story scoped to semantic validation quality and pre-generation safety (AC: 6, 7, 8)
+  - [x] Do not introduce a new reference DSL, runtime fallback resolver, or post-generation validation pass.
+  - [x] Do not change CLI command behavior unless a failing acceptance test proves the public entry points are not surfacing analyzer/import diagnostics correctly.
+  - [x] Update docs only if current user-facing docs or examples already describe reference-validation behavior and need correction or clarification.
 
 ## Dev Notes
 
@@ -188,24 +188,55 @@ Apply `_bmad-output/planning-artifacts/project-context.md` exactly:
 
 GPT-5.4
 
+### Implementation Plan
+
+- Centralize fuzzy matching in a shared core helper so analyzer and import resolution diagnostics use the same similarity rules.
+- Improve analyzer context diagnostics without changing the validation pipeline or weakening multi-error accumulation.
+- Add import-path suggestion logic only on unresolved-file failures so the existing resolver flow stays intact.
+- Extend unit and curated BDD coverage with real fixtures for imports, inheritance, context references, template references, and workspace generators.
+
 ### Debug Log References
 
 - Story selected automatically from `_bmad-output/implementation-artifacts/sprint-status.yaml` as the first backlog story: `11-4-reference-validation-and-type-safety`.
 - Discovery sources loaded: BMM config, sprint status, create-story workflow helpers, Epic 11 shard, requirements inventory, PRD matches for FR29, architecture shards, project context, repository memory notes, Story 11.3 artifact, current analyzer/import/context code, active BDD runner, recent git history, and current Bun and Commander reference pages.
 - No dedicated UX planning artifact matching `*ux*.md` was found in planning artifacts.
 - Current code already implements major parts of reference validation; the story is intentionally framed to close diagnostic-quality and acceptance-coverage gaps without duplicating existing analyzers and resolvers.
+- Added `packages/core/src/common/suggestions.ts` and reused it from the analyzer plus import resolver suggestion paths.
+- Extended unresolved import handling to suggest nearby relative or workspace `.td` files while preserving import declaration locations.
+- Registered `packages/core/features/reference-validation.feature` in the curated core BDD runner with fixture-backed scenarios.
+- Validation commands run: targeted `bun test` for analyzer/import resolver, curated core Cucumber runner, workspace `bun run test`, workspace `bun run test:bdd`, and workspace `bun run lint`.
 
 ### Completion Notes List
 
 - Ultimate context engine analysis completed - comprehensive developer guide created.
 - Story file created for `11-4-reference-validation-and-type-safety` with status `ready-for-dev`.
 - Sprint tracking advanced this story from `backlog` to `ready-for-dev`.
+- Added shared fuzzy-matching utilities and used them for schema, template, context, workspace generator, and import-path suggestions.
+- Added import resolver regression tests for unresolved relative imports, missing workspace roots, circular imports, and workspace-path typos.
+- Added fixture-backed BDD coverage for broken imports, inheritance references, context collections, template fields, and workspace generators in the active runner.
+- Confirmed reference failures still surface before generation via the existing validation pipeline and full workspace regression checks.
 
 ### File List
 
 - `_bmad-output/implementation-artifacts/11-4-reference-validation-and-type-safety.md`
 - `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- `packages/core/src/common/suggestions.ts`
+- `packages/core/src/analyzer/analyzer.ts`
+- `packages/core/src/analyzer/analyzer.test.ts`
+- `packages/core/src/imports/importResolver.ts`
+- `packages/core/src/imports/importResolver.test.ts`
+- `packages/core/features/reference-validation.feature`
+- `packages/core/features/step_definitions/reference-validation.steps.ts`
+- `packages/core/features/fixtures/reference-validation/imports/typo/main.td`
+- `packages/core/features/fixtures/reference-validation/imports/typo/common/profile.td`
+- `packages/core/features/fixtures/reference-validation/inheritance/missing-base.td`
+- `packages/core/features/fixtures/reference-validation/context/missing-collection.td`
+- `packages/core/features/fixtures/reference-validation/templates/missing-field.td`
+- `packages/core/features/fixtures/reference-validation/workspace/project/.tdconfig.json`
+- `packages/core/features/fixtures/reference-validation/workspace/project/apps/user-with-typo.td`
+- `packages/core/tests/run-cucumber.ts`
 
 ### Change Log
 
 - 2026-04-05: Created story context artifact via create-story workflow and updated sprint status to `ready-for-dev`.
+- 2026-04-05: Implemented shared reference suggestion handling, import typo diagnostics, active fixture-backed BDD coverage, and regression tests for Story 11.4; status advanced to `review`.

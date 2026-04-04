@@ -1,0 +1,21 @@
+{
+  "generators": [
+    {
+      "name": "sharedEmail",
+      "template": "{{localPart}}@example.com",
+      "generators": {
+        "localPart": {
+          "name": "pick",
+          "parameters": [
+            {
+              "name": "array",
+              "value": [
+                "qa.team"
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

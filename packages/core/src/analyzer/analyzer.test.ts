@@ -308,6 +308,25 @@ describe('analyze()', () => {
         expect(generatorError?.suggestion).toContain('@workspace.generators.sharedEmail');
       }
     });
+
+    test('does not emit a misleading workspace generator suggestion when no close match exists', () => {
+      const program = createProgram([
+        createSchema('User', [createField('email', 'string', '@workspace.generators.entirelyDifferentGenerator')]),
+      ]);
+
+      const result = analyze(program, {
+        workspaceGenerators: createWorkspaceGenerators(),
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        const generatorError = result.errors.find(
+          (error) => error.code === 'analyzer.undefinedWorkspaceGenerator',
+        );
+        expect(generatorError).toBeDefined();
+        expect(generatorError?.suggestion).toBeUndefined();
+      }
+    });
   });
 
   describe('template reference validation', () => {
@@ -330,6 +349,30 @@ describe('analyze()', () => {
         );
         expect(templateError).toBeDefined();
         expect(templateError?.message).toContain('missingField');
+      }
+    });
+
+    test('suggests similar template field names and preserves the field location', () => {
+      const location = createLocation(4, 3, 8);
+      const program = createProgram([
+        createSchema('User', [
+          createField('firstName', 'string', undefined, undefined, createLocation(2, 3, 9)),
+          createField('email', 'string', 'pick', [
+            { name: 'array', value: ['{{fristName}}@example.com'] },
+          ], location),
+        ]),
+      ]);
+
+      const result = analyze(program);
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        const templateError = result.errors.find(
+          (error) => error.code === 'analyzer.undefinedTemplateField',
+        );
+        expect(templateError).toBeDefined();
+        expect(templateError?.suggestion).toContain('firstName');
+        expect(templateError?.location).toEqual(location);
       }
     });
 
@@ -492,6 +535,50 @@ describe('analyze()', () => {
       }
     });
 
+    test('uses fuzzy matching suggestions for missing context collections', () => {
+      const location = createLocation(3, 5, 5);
+      const program = createProgram([
+        createSchema('User', [
+          createField('email', 'string', 'pick', [
+            { name: 'array', value: ['@context.usres.random.email'] },
+          ], location),
+        ]),
+      ]);
+
+      const result = analyze(program, {
+        availableContextCollections: ['users', 'orders'],
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        const error = result.errors.find((item) => item.code === 'analyzer.undefinedContextCollection');
+        expect(error).toBeDefined();
+        expect(error?.suggestion).toContain('users');
+        expect(error?.location).toEqual(location);
+      }
+    });
+
+    test('avoids misleading context suggestions when nothing is close', () => {
+      const program = createProgram([
+        createSchema('User', [
+          createField('email', 'string', 'pick', [
+            { name: 'array', value: ['@context.customers.random.email'] },
+          ]),
+        ]),
+      ]);
+
+      const result = analyze(program, {
+        availableContextCollections: ['users', 'orders'],
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        const error = result.errors.find((item) => item.code === 'analyzer.undefinedContextCollection');
+        expect(error).toBeDefined();
+        expect(error?.suggestion).toBeUndefined();
+      }
+    });
+
     test('rejects unsupported OR tag syntax with a diagnostic', () => {
       const program = createProgram([
         createSchema('User', [
@@ -625,6 +712,24 @@ describe('analyze()', () => {
         const schemaError = result.errors.find((error) => error.code === 'analyzer.undefinedSchema');
         expect(schemaError).toBeDefined();
         expect(schemaError?.message).toContain('Profile');
+      }
+    });
+
+    test('suggests close schema names for misspelled schema references', () => {
+      const location = createLocation(6, 7, 7);
+      const program = createProgram([
+        createSchema('Profile', [createField('id', 'uuid')]),
+        createSchema('User', [createField('profile', 'Profiel', undefined, undefined, location)]),
+      ]);
+
+      const result = analyze(program);
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        const schemaError = result.errors.find((error) => error.code === 'analyzer.undefinedSchema');
+        expect(schemaError).toBeDefined();
+        expect(schemaError?.suggestion).toContain('Profile');
+        expect(schemaError?.location).toEqual(location);
       }
     });
 
@@ -785,6 +890,37 @@ describe('analyze()', () => {
         expect(userSchema?.fields[0]?.effective?.uniqueSource).toBe('schema');
         expect(userSchema?.fields[1]?.resolvedGenerator).toBe('email');
         expect(userSchema?.fields[1]?.effective?.generatorSource).toBe('field');
+      }
+    });
+  });
+
+  describe('reference validation accumulation', () => {
+    test('accumulates broken schema, template, context, and workspace generator references in one pass', () => {
+      const program = createProgram([
+        createSchema('Profile', [createField('id', 'uuid')]),
+        createSchema('User', [
+          createField('profile', 'Profiel', undefined, undefined, createLocation(2, 3, 7)),
+          createField('email', 'string', '@workspace.generators.sharedEmai', undefined, createLocation(3, 3, 5)),
+          createField('handle', 'string', 'pick', [
+            { name: 'array', value: ['{{fristName}}'] },
+          ], createLocation(4, 3, 6)),
+          createField('sourceEmail', 'string', 'pick', [
+            { name: 'array', value: ['@context.usres.random.email'] },
+          ], createLocation(5, 3, 11)),
+        ]),
+      ]);
+
+      const result = analyze(program, {
+        availableContextCollections: ['users'],
+        workspaceGenerators: createWorkspaceGenerators(),
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.errors.some((error) => error.code === 'analyzer.undefinedSchema')).toBe(true);
+        expect(result.errors.some((error) => error.code === 'analyzer.undefinedWorkspaceGenerator')).toBe(true);
+        expect(result.errors.some((error) => error.code === 'analyzer.undefinedTemplateField')).toBe(true);
+        expect(result.errors.some((error) => error.code === 'analyzer.undefinedContextCollection')).toBe(true);
       }
     });
   });

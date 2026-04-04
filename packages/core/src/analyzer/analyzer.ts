@@ -41,6 +41,7 @@ import {
   isContextReferenceExpression,
   parseContextReferenceExpression,
 } from '../context/contextReference';
+import { findSimilar as sharedFindSimilar } from '../common/suggestions';
 
 // Supported primitive types in the DSL
 const SUPPORTED_TYPES = new Set(['string', 'number', 'boolean', 'uuid', 'date', 'timestamp']);
@@ -76,6 +77,15 @@ type EffectiveSchemaContext = {
 
 type DependencyKind = 'inheritance' | 'schema-reference' | 'template-reference';
 type DependencyGraph = Map<string, Map<string, DependencyKind>>;
+
+const findSimilarImpl = sharedFindSimilar as (
+  target: string,
+  candidates: readonly string[],
+) => string[];
+
+function findSimilar(target: string, candidates: readonly string[]): string[] {
+  return findSimilarImpl(target, candidates);
+}
 
 export interface AnalyzeOptions {
   readonly availableContextCollections?: readonly string[];
@@ -791,15 +801,19 @@ function validateContextReferences(
 
         const collectionName = parseResult.value.collection;
         if (!availableContextCollections.has(collectionName)) {
+          const suggestions = findSimilar(collectionName, Array.from(availableContextCollections));
+
           errors.push({
             code: 'analyzer.undefinedContextCollection',
             message: `Context collection '${collectionName}' is not available for reference '${expression}'`,
             severity: 'error',
             location: effectiveField.field.location,
             suggestion:
-              availableContextCollections.size > 0
-                ? `Available collections: ${Array.from(availableContextCollections).join(', ')}`
-                : 'Provide context collections in generation options before using @context references',
+              suggestions.length > 0
+                ? `Did you mean '${suggestions[0]}'?`
+                : availableContextCollections.size === 0
+                  ? 'Provide context collections in generation options before using @context references'
+                  : undefined,
           });
         }
       }
@@ -1060,51 +1074,3 @@ function detectCircularDependencies(
   return { ok: true, value: undefined };
 }
 
-/**
- * Finds similar strings using Levenshtein distance.
- * Returns up to 3 most similar candidates with distance <= 3.
- */
-function findSimilar(target: string, candidates: string[]): string[] {
-  return candidates
-    .map((candidate) => ({
-      name: candidate,
-      distance: levenshteinDistance(target.toLowerCase(), candidate.toLowerCase()),
-    }))
-    .filter((item) => item.distance <= 3)
-    .sort((a, b) => a.distance - b.distance)
-    .slice(0, 3)
-    .map((item) => item.name);
-}
-
-/**
- * Calculates Levenshtein distance between two strings.
- * Used for "Did you mean?" suggestions.
- */
-function levenshteinDistance(a: string, b: string): number {
-  const matrix: number[][] = [];
-
-  // Initialize first column and row
-  for (let i = 0; i <= b.length; i++) {
-    matrix[i] = [i];
-  }
-  for (let j = 0; j <= a.length; j++) {
-    matrix[0][j] = j;
-  }
-
-  // Fill matrix
-  for (let i = 1; i <= b.length; i++) {
-    for (let j = 1; j <= a.length; j++) {
-      if (b.charAt(i - 1) === a.charAt(j - 1)) {
-        matrix[i][j] = matrix[i - 1][j - 1];
-      } else {
-        matrix[i][j] = Math.min(
-          matrix[i - 1][j - 1] + 1, // substitution
-          matrix[i][j - 1] + 1, // insertion
-          matrix[i - 1][j] + 1, // deletion
-        );
-      }
-    }
-  }
-
-  return matrix[b.length][a.length];
-}
