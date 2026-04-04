@@ -60,11 +60,22 @@ type EffectiveFieldContext = {
   readonly referencedSchema?: string;
 };
 
-type EffectiveSchemaContext = {
+type LocalSchemaContext = {
   readonly schema: SchemaNode;
   readonly resolvedDefaults: ResolvedSchemaDefaults;
   readonly fields: readonly EffectiveFieldContext[];
 };
+
+type EffectiveSchemaContext = {
+  readonly schema: SchemaNode;
+  readonly resolvedDefaults: ResolvedSchemaDefaults;
+  readonly fields: readonly EffectiveFieldContext[];
+  readonly compositeUniques: readonly (readonly string[])[];
+  readonly baseSchema?: string;
+};
+
+type DependencyKind = 'inheritance' | 'schema-reference' | 'template-reference';
+type DependencyGraph = Map<string, Map<string, DependencyKind>>;
 
 export interface AnalyzeOptions {
   readonly availableContextCollections?: readonly string[];
@@ -139,33 +150,53 @@ export function analyze(
     }
   }
 
-  const effectiveSchemas = new Map<string, EffectiveSchemaContext>();
+  const schemaMap = new Map(schemas.map((schema) => [schema.name, schema]));
+  const localSchemaContexts = new Map<string, LocalSchemaContext>();
+
+  for (const schema of schemas) {
+    localSchemaContexts.set(schema.name, resolveEffectiveSchema(schema, configuredGeneratorDefaults));
+  }
+
+  const inheritanceResult = validateBaseSchemas(schemas, schemaMap);
+  if (!inheritanceResult.ok) {
+    errors.push(...inheritanceResult.errors);
+  }
+
+  const dependencyGraph = buildDependencyGraph(schemas, localSchemaContexts);
+  const circularResult = detectCircularDependencies(dependencyGraph, schemas);
+  if (!circularResult.ok) {
+    errors.push(...circularResult.errors);
+  }
+
+  const effectiveSchemas = buildEffectiveSchemaContexts(schemas, schemaMap, localSchemaContexts);
 
   // Step 2: Validate each schema's fields
   for (const schema of schemas) {
-    const effectiveSchema = resolveEffectiveSchema(schema, configuredGeneratorDefaults);
-    effectiveSchemas.set(schema.name, effectiveSchema);
+    const effectiveSchema = effectiveSchemas.get(schema.name);
+    if (!effectiveSchema) {
+      continue;
+    }
 
     // Validate field types
-    const typeResult = validateFieldTypes(schema, symbolTable, schemas);
+    const typeResult = validateFieldTypes(schema, effectiveSchema.fields, symbolTable, schemas);
     if (!typeResult.ok) {
       errors.push(...typeResult.errors);
     }
 
     // Validate generator names
-    const genResult = validateGenerators(schema, effectiveSchema.fields, workspaceGeneratorDefinitions);
+    const genResult = validateGenerators(effectiveSchema.fields, workspaceGeneratorDefinitions);
     if (!genResult.ok) {
       errors.push(...genResult.errors);
     }
 
     // Validate template references
-    const templateResult = validateTemplateReferences(schema, effectiveSchema.fields, symbolTable);
+    const templateResult = validateTemplateReferences(schema, effectiveSchema, effectiveSchemas);
     if (!templateResult.ok) {
       errors.push(...templateResult.errors);
     }
 
     // Validate uniqueness constraints
-    const uniqueResult = validateUniqueConstraints(schema);
+    const uniqueResult = validateUniqueConstraints(effectiveSchema.fields);
     if (!uniqueResult.ok) {
       errors.push(...uniqueResult.errors);
     }
@@ -181,19 +212,16 @@ export function analyze(
     }
 
     // Validate composite uniqueness constraints
-    const fieldNames = new Set(schema.fields.map((field) => field.name));
-    const compositeUniqueResult = validateCompositeUniqueConstraints(schema, fieldNames);
+    const fieldNames = new Set(effectiveSchema.fields.map((field) => field.field.name));
+    const compositeUniqueResult = validateCompositeUniqueConstraints(
+      schema,
+      effectiveSchema.compositeUniques,
+      fieldNames,
+      effectiveSchema.fields,
+    );
     if (!compositeUniqueResult.ok) {
       errors.push(...compositeUniqueResult.errors);
     }
-
-  }
-
-  // Step 3: Detect circular dependencies
-  const dependencyGraph = buildDependencyGraph(schemas, effectiveSchemas);
-  const circularResult = detectCircularDependencies(dependencyGraph, schemas);
-  if (!circularResult.ok) {
-    errors.push(...circularResult.errors);
   }
 
   // If any errors occurred, return them all
@@ -212,7 +240,7 @@ export function analyze(
       continue;
     }
 
-    const dependencies = dependencyGraph.get(schema.name) ?? new Set();
+    const dependencies = new Set(dependencyGraph.get(schema.name)?.keys() ?? []);
     const validatedFields: ValidatedField[] = effectiveSchema.fields.map((field) => ({
       node: field.field,
       effective: field.effective,
@@ -225,16 +253,17 @@ export function analyze(
 
     validatedSchemas.set(schema.name, {
       node: schema,
+      baseSchema: effectiveSchema.baseSchema,
       workspaceGenerators:
         workspaceGeneratorDefinitions.size > 0 ? workspaceGeneratorDefinitions : undefined,
       resolvedDefaults: effectiveSchema.resolvedDefaults,
       fields: validatedFields,
       dependencies,
-      compositeUniques: schema.compositeUniques ?? [],
+      compositeUniques: effectiveSchema.compositeUniques,
       sortOrder: sortOrder.get(schema.name) ?? 0,
     });
 
-    totalFields += schema.fields.length;
+    totalFields += validatedFields.length;
   }
 
   return {
@@ -303,13 +332,15 @@ function buildSymbolTable(ast: Program): Result<SymbolTable, Diagnostic[]> {
  */
 function validateFieldTypes(
   schema: SchemaNode,
+  effectiveFields: readonly EffectiveFieldContext[],
   symbolTable: SymbolTable,
   schemas: SchemaNode[],
 ): Result<void, Diagnostic[]> {
   const errors: Diagnostic[] = [];
   const schemaNames = schemas.map((item) => item.name);
 
-  for (const field of schema.fields) {
+  for (const effectiveField of effectiveFields) {
+    const field = effectiveField.field;
     const schemaReference = parseSchemaReference(field.type);
 
     if (schemaReference) {
@@ -351,7 +382,6 @@ function validateFieldTypes(
  * Validates all generator names in a schema are recognized.
  */
 function validateGenerators(
-  schema: SchemaNode,
   effectiveFields: readonly EffectiveFieldContext[],
   workspaceGenerators: ReadonlyMap<string, WorkspaceGeneratorDefinition>,
 ): Result<void, Diagnostic[]> {
@@ -409,63 +439,43 @@ function validateGenerators(
  */
 function validateTemplateReferences(
   schema: SchemaNode,
-  effectiveFields: readonly EffectiveFieldContext[],
-  symbolTable: SymbolTable,
+  effectiveSchema: EffectiveSchemaContext,
+  effectiveSchemas: ReadonlyMap<string, EffectiveSchemaContext>,
 ): Result<void, Diagnostic[]> {
   const errors: Diagnostic[] = [];
-  const schemaFieldNames = schema.fields.map((field) => field.name);
+  const schemaFieldNames = effectiveSchema.fields.map((field) => field.field.name);
 
-  for (const effectiveField of effectiveFields) {
-    const references = effectiveField.templateReferences;
-    for (const reference of references) {
-      if (reference.schema && reference.schema !== schema.name) {
-        const referencedSchema = symbolTable.lookupSchema(reference.schema);
-        if (!referencedSchema) {
-          const schemaSuggestions = findSimilar(
-            reference.schema,
-            Array.from(symbolTable.getAllSymbols())
-              .filter((symbol) => symbol.kind === 'schema')
-              .map((symbol) => symbol.name),
-          );
-          errors.push({
-            code: 'analyzer.undefinedSchema',
-            message: `Schema '${reference.schema}' is not defined`,
-            severity: 'error',
-            location: effectiveField.field.location,
-            suggestion:
-              schemaSuggestions.length > 0 ? `Did you mean '${schemaSuggestions[0]}'?` : undefined,
-          });
-          continue;
-        }
+  for (const effectiveField of effectiveSchema.fields) {
+    for (const reference of effectiveField.templateReferences) {
+      const targetSchemaName = reference.schema ?? schema.name;
+      const targetSchema = effectiveSchemas.get(targetSchemaName);
 
-        const referencedField = symbolTable.lookupField(reference.schema, reference.field);
-        if (!referencedField) {
-          const schemaNode = referencedSchema.astNode;
-          const candidateFields: string[] = [];
-          if (schemaNode.kind === 'schema') {
-            const typedSchemaNode = schemaNode as SchemaNode;
-            candidateFields.push(...typedSchemaNode.fields.map((item) => item.name));
-          }
-          const suggestions = findSimilar(reference.field, candidateFields);
-
-          errors.push({
-            code: 'analyzer.undefinedTemplateField',
-            message: `Undefined field '${reference.field}' in template for schema '${reference.schema}'`,
-            severity: 'error',
-            location: effectiveField.field.location,
-            suggestion: suggestions.length > 0 ? `Did you mean '${suggestions[0]}'?` : undefined,
-          });
-        }
-
+      if (!targetSchema) {
+        const schemaSuggestions = findSimilar(targetSchemaName, Array.from(effectiveSchemas.keys()));
+        errors.push({
+          code: 'analyzer.undefinedSchema',
+          message: `Schema '${targetSchemaName}' is not defined`,
+          severity: 'error',
+          location: effectiveField.field.location,
+          suggestion:
+            schemaSuggestions.length > 0 ? `Did you mean '${schemaSuggestions[0]}'?` : undefined,
+        });
         continue;
       }
 
-      const referencedField = symbolTable.lookupField(schema.name, reference.field);
-      if (!referencedField) {
-        const suggestions = findSimilar(reference.field, schemaFieldNames);
+      const targetFieldNames = targetSchema.fields.map((field) => field.field.name);
+      if (!targetFieldNames.includes(reference.field)) {
+        const suggestions = findSimilar(
+          reference.field,
+          targetSchemaName === schema.name ? schemaFieldNames : targetFieldNames,
+        );
+
         errors.push({
           code: 'analyzer.undefinedTemplateField',
-          message: `Undefined field '${reference.field}' in template`,
+          message:
+            targetSchemaName === schema.name
+              ? `Undefined field '${reference.field}' in template`
+              : `Undefined field '${reference.field}' in template for schema '${targetSchemaName}'`,
           severity: 'error',
           location: effectiveField.field.location,
           suggestion: suggestions.length > 0 ? `Did you mean '${suggestions[0]}'?` : undefined,
@@ -487,10 +497,13 @@ function validateTemplateReferences(
  * Parser grammar only emits `unique` as boolean true. This check defends
  * against malformed AST payloads from direct programmatic construction.
  */
-function validateUniqueConstraints(schema: SchemaNode): Result<void, Diagnostic[]> {
+function validateUniqueConstraints(
+  effectiveFields: readonly EffectiveFieldContext[],
+): Result<void, Diagnostic[]> {
   const errors: Diagnostic[] = [];
 
-  for (const field of schema.fields) {
+  for (const effectiveField of effectiveFields) {
+    const field = effectiveField.field;
     if (field.constraints?.unique === undefined) {
       continue;
     }
@@ -515,11 +528,12 @@ function validateUniqueConstraints(schema: SchemaNode): Result<void, Diagnostic[
 
 function validateCompositeUniqueConstraints(
   schema: SchemaNode,
+  compositeUniques: readonly (readonly string[])[],
   fieldNames: ReadonlySet<string>,
+  effectiveFields: readonly EffectiveFieldContext[],
 ): Result<void, Diagnostic[]> {
   const errors: Diagnostic[] = [];
-  const compositeUniques = schema.compositeUniques ?? [];
-  const fieldByName = new Map(schema.fields.map((field) => [field.name, field]));
+  const fieldByName = new Map(effectiveFields.map((field) => [field.field.name, field.field]));
 
   for (const compositeConstraint of compositeUniques) {
     if (compositeConstraint.length < 2 || compositeConstraint.length > 5) {
@@ -568,7 +582,116 @@ function validateCompositeUniqueConstraints(
   return { ok: true, value: undefined };
 }
 
-function getTemplateReferencesForSchema(effectiveFields: readonly EffectiveFieldContext[]): TemplateReference[] {
+function validateBaseSchemas(
+  schemas: readonly SchemaNode[],
+  schemaMap: ReadonlyMap<string, SchemaNode>,
+): Result<void, Diagnostic[]> {
+  const errors: Diagnostic[] = [];
+  const schemaNames = Array.from(schemaMap.keys());
+
+  for (const schema of schemas) {
+    if (!schema.extendsSchema) {
+      continue;
+    }
+
+    if (schemaMap.has(schema.extendsSchema)) {
+      continue;
+    }
+
+    const suggestions = findSimilar(schema.extendsSchema, schemaNames);
+    errors.push({
+      code: 'analyzer.undefinedSchema',
+      message: `Schema '${schema.extendsSchema}' is not defined`,
+      severity: 'error',
+      location: schema.extendsSchemaLocation ?? schema.location,
+      suggestion: suggestions.length > 0 ? `Did you mean '${suggestions[0]}'?` : undefined,
+    });
+  }
+
+  if (errors.length > 0) {
+    return { ok: false, errors };
+  }
+
+  return { ok: true, value: undefined };
+}
+
+function buildEffectiveSchemaContexts(
+  schemas: readonly SchemaNode[],
+  schemaMap: ReadonlyMap<string, SchemaNode>,
+  localSchemaContexts: ReadonlyMap<string, LocalSchemaContext>,
+): Map<string, EffectiveSchemaContext> {
+  const effectiveSchemas = new Map<string, EffectiveSchemaContext>();
+  const resolving = new Set<string>();
+
+  const resolve = (schemaName: string): EffectiveSchemaContext => {
+    const cached = effectiveSchemas.get(schemaName);
+    if (cached) {
+      return cached;
+    }
+
+    const localContext = localSchemaContexts.get(schemaName);
+    const schema = schemaMap.get(schemaName);
+    if (!localContext || !schema) {
+      throw new Error(`Missing schema context for '${schemaName}' during inheritance resolution`);
+    }
+
+    if (resolving.has(schemaName)) {
+      return {
+        schema,
+        resolvedDefaults: localContext.resolvedDefaults,
+        fields: localContext.fields,
+        compositeUniques: schema.compositeUniques ?? [],
+        baseSchema: schema.extendsSchema,
+      };
+    }
+
+    resolving.add(schemaName);
+
+    let fields = localContext.fields;
+    let compositeUniques = schema.compositeUniques ?? [];
+
+    if (schema.extendsSchema && schemaMap.has(schema.extendsSchema)) {
+      const baseSchema = resolve(schema.extendsSchema);
+      fields = mergeEffectiveFields(baseSchema.fields, localContext.fields);
+      compositeUniques = [...baseSchema.compositeUniques, ...(schema.compositeUniques ?? [])];
+    }
+
+    const resolvedSchema: EffectiveSchemaContext = {
+      schema,
+      resolvedDefaults: localContext.resolvedDefaults,
+      fields,
+      compositeUniques,
+      baseSchema: schema.extendsSchema,
+    };
+
+    effectiveSchemas.set(schemaName, resolvedSchema);
+    resolving.delete(schemaName);
+    return resolvedSchema;
+  };
+
+  for (const schema of schemas) {
+    resolve(schema.name);
+  }
+
+  return effectiveSchemas;
+}
+
+function mergeEffectiveFields(
+  baseFields: readonly EffectiveFieldContext[],
+  localFields: readonly EffectiveFieldContext[],
+): readonly EffectiveFieldContext[] {
+  const localFieldsByName = new Map(localFields.map((field) => [field.field.name, field]));
+  const baseFieldNames = new Set(baseFields.map((field) => field.field.name));
+
+  return [
+    ...baseFields.map((field) => localFieldsByName.get(field.field.name) ?? field),
+    ...localFields.filter((field) => !baseFieldNames.has(field.field.name)),
+  ];
+}
+
+function getTemplateReferencesForSchema(
+  effectiveFields: readonly EffectiveFieldContext[],
+): TemplateReference[] {
   return effectiveFields.flatMap((field) => field.templateReferences);
 }
 
@@ -605,8 +728,8 @@ function extractTemplateReferencesFromValue(value: unknown): TemplateReference[]
   }
 
   if (value !== null && typeof value === 'object') {
-    return Object.values(value as Record<string, unknown>).flatMap((v) =>
-      extractTemplateReferencesFromValue(v),
+    return Object.values(value as Record<string, unknown>).flatMap((entry) =>
+      extractTemplateReferencesFromValue(entry),
     );
   }
 
@@ -692,28 +815,32 @@ function validateContextReferences(
 
 function buildDependencyGraph(
   schemas: SchemaNode[],
-  effectiveSchemas: Map<string, EffectiveSchemaContext>,
-): Map<string, Set<string>> {
-  const graph = new Map<string, Set<string>>();
+  localSchemaContexts: ReadonlyMap<string, LocalSchemaContext>,
+): DependencyGraph {
+  const graph: DependencyGraph = new Map();
   const schemaNames = new Set(schemas.map((schema) => schema.name));
 
   for (const schema of schemas) {
-    const dependencies = new Set<string>();
+    const dependencies = new Map<string, DependencyKind>();
 
     for (const field of schema.fields) {
       const schemaReference = parseSchemaReference(field.type);
       if (schemaReference && schemaNames.has(schemaReference)) {
-        dependencies.add(schemaReference);
+        dependencies.set(schemaReference, 'schema-reference');
       }
     }
 
     const templateReferences = getTemplateReferencesForSchema(
-      effectiveSchemas.get(schema.name)?.fields ?? [],
+      localSchemaContexts.get(schema.name)?.fields ?? [],
     );
     for (const reference of templateReferences) {
       if (reference.schema && schemaNames.has(reference.schema)) {
-        dependencies.add(reference.schema);
+        dependencies.set(reference.schema, 'template-reference');
       }
+    }
+
+    if (schema.extendsSchema && schemaNames.has(schema.extendsSchema)) {
+      dependencies.set(schema.extendsSchema, 'inheritance');
     }
 
     graph.set(schema.name, dependencies);
@@ -725,7 +852,7 @@ function buildDependencyGraph(
 function resolveEffectiveSchema(
   schema: SchemaNode,
   configuredGeneratorDefaults: readonly DefaultSpec[],
-): EffectiveSchemaContext {
+): LocalSchemaContext {
   const resolvedDefaults = resolveSchemaDefaults(schema, configuredGeneratorDefaults);
 
   return {
@@ -826,7 +953,7 @@ function cloneLiteralValue(value: LiteralValue): LiteralValue {
   return value;
 }
 
-function computeSortOrder(graph: Map<string, Set<string>>): Map<string, number> {
+function computeSortOrder(graph: DependencyGraph): Map<string, number> {
   const visited = new Set<string>();
   const order: string[] = [];
 
@@ -837,8 +964,8 @@ function computeSortOrder(graph: Map<string, Set<string>>): Map<string, number> 
 
     visited.add(node);
 
-    const dependencies = graph.get(node) ?? new Set();
-    for (const dependency of dependencies) {
+    const dependencies = graph.get(node) ?? new Map<string, DependencyKind>();
+    for (const dependency of dependencies.keys()) {
       visit(dependency);
     }
 
@@ -861,7 +988,7 @@ function computeSortOrder(graph: Map<string, Set<string>>): Map<string, number> 
  * Detects circular dependencies between schemas using depth-first search.
  */
 function detectCircularDependencies(
-  graph: Map<string, Set<string>>,
+  graph: DependencyGraph,
   schemas: SchemaNode[],
 ): Result<void, Diagnostic[]> {
   const errors: Diagnostic[] = [];
@@ -875,19 +1002,29 @@ function detectCircularDependencies(
   const visited = new Set<string>();
   const visiting = new Set<string>();
 
-  function visit(schemaName: string, path: string[]): void {
+  function visit(
+    schemaName: string,
+    path: string[],
+    incoming?: { readonly from: string; readonly kind: DependencyKind },
+  ): void {
     if (visiting.has(schemaName)) {
       // Found a cycle
       const cycleStart = path.indexOf(schemaName);
       const cycle = [...path.slice(cycleStart), schemaName];
-      const schema = schemaMap.get(schemaName);
+      const incomingSchema = incoming ? schemaMap.get(incoming.from) : schemaMap.get(schemaName);
 
       errors.push({
         code: 'analyzer.circularDependency',
         message: `Circular dependency detected: ${cycle.join(' → ')}`,
         severity: 'error',
-        location: schema?.location,
-        suggestion: 'Break the cycle by removing one of the references',
+        location:
+          incoming?.kind === 'inheritance'
+            ? incomingSchema?.extendsSchemaLocation ?? incomingSchema?.location
+            : incomingSchema?.location,
+        suggestion:
+          incoming?.kind === 'inheritance'
+            ? 'Break the inheritance cycle by removing or restructuring one of the extends clauses'
+            : 'Break the cycle by removing one of the references',
       });
       return;
     }
@@ -899,9 +1036,9 @@ function detectCircularDependencies(
     visiting.add(schemaName);
     path.push(schemaName);
 
-    const dependencies = graph.get(schemaName) ?? new Set();
-    for (const dep of dependencies) {
-      visit(dep, path);
+    const dependencies = graph.get(schemaName) ?? new Map<string, DependencyKind>();
+    for (const [dep, kind] of dependencies) {
+      visit(dep, path, { from: schemaName, kind });
     }
 
     path.pop();

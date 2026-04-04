@@ -59,12 +59,12 @@ describe('Scanner', () => {
     });
 
     test('scans all keywords', () => {
-      const source = 'schema profile context unique template';
+      const source = 'schema profile context unique template extends';
       const result = scan(source, 'test.td');
 
       expect(result.ok).toBe(true);
       if (result.ok) {
-        expect(result.value).toHaveLength(6); // 5 keywords + eof
+        expect(result.value).toHaveLength(7); // 6 keywords + eof
         expect(result.value[0].kind).toBe('keyword');
         expect(tokenWithValueAt(result.value, 0).value).toBe('schema');
         expect(result.value[1].kind).toBe('keyword');
@@ -75,6 +75,8 @@ describe('Scanner', () => {
         expect(tokenWithValueAt(result.value, 3).value).toBe('unique');
         expect(result.value[4].kind).toBe('keyword');
         expect(tokenWithValueAt(result.value, 4).value).toBe('template');
+        expect(result.value[5].kind).toBe('keyword');
+        expect(tokenWithValueAt(result.value, 5).value).toBe('extends');
       }
     });
 

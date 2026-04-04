@@ -173,6 +173,30 @@ describe('generateData()', () => {
       expect(records).toHaveLength(1);
       expect(records[0]?.code).toBe('QA-7');
     });
+
+    test('generates inherited, overridden, and derived fields from extended schemas', async () => {
+      const source = `
+        schema User {
+          id: string generator=pick(array=["base-id"])
+          email: string generator=pick(array=["base@example.com"])
+          fullName: string generator=pick(array=["Base User"])
+        }
+
+        schema ExtendedUser extends User {
+          email: string generator=pick(array=["extended@example.com"])
+          slug: string generator=pick(array=["{{id}}-qa"])
+        }
+      `;
+
+      const records = await Array.fromAsync(generateData(source, { count: 1, seed: 7 }));
+
+      expect(records).toHaveLength(2);
+      expect(records[0]?.email).toBe('base@example.com');
+      expect(records[1]?.id).toBe('base-id');
+      expect(records[1]?.fullName).toBe('Base User');
+      expect(records[1]?.email).toBe('extended@example.com');
+      expect(records[1]?.slug).toBe('base-id-qa');
+    });
   });
 
   describe('Determinism (Seed Parameter)', () => {

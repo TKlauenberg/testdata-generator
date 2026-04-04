@@ -61,6 +61,26 @@ Notes:
 - `defaultGenerators` accepts additive configured generator defaults using the exported `DefaultSpec` shape.
 - There is no `format` flag on `GenerateOptions`; formatting stays in adapters.
 
+### Schema Extension Syntax
+
+The DSL supports single-schema inheritance with `extends`.
+
+```typescript
+const source = `
+  schema User {
+    id: string generator=pick(array=["base-id"])
+    email: string generator=pick(array=["base@example.com"])
+  }
+
+  schema ExtendedUser extends User {
+    email: string generator=pick(array=["extended@example.com"])
+    slug: string generator=pick(array=["{{id}}-qa"])
+  }
+`;
+```
+
+Derived schemas inherit base fields, can add new fields, and can override inherited field definitions without mutating the base schema.
+
 ## Validation Errors
 
 Validation failures preserve the existing exception-based public contract.

@@ -69,10 +69,14 @@ function createSchema(
   location?: SourceLocation,
   compositeUniques?: readonly (readonly string[])[],
   defaults?: SchemaDefaults,
+  extendsSchema?: string,
+  extendsSchemaLocation?: SourceLocation,
 ): SchemaNode {
   return {
     kind: 'schema',
     name,
+    extendsSchema,
+    extendsSchemaLocation,
     defaults,
     fields,
     compositeUniques,
@@ -140,6 +144,62 @@ describe('analyze()', () => {
         expect(result.value.metadata.analyzedAt).toBeInstanceOf(Date);
         expect(result.value.metadata.schemaCount).toBe(1);
         expect(result.value.metadata.totalFields).toBe(1);
+      }
+    });
+
+    test('flattens inherited fields, preserves override order, and allows templates to reference inherited fields', () => {
+      const program = createProgram([
+        createSchema('User', [
+          createField('id', 'string', 'pick', [{ name: 'array', value: ['base-id'] }], createLocation(1, 1, 4)),
+          createField('email', 'string', 'email', undefined, createLocation(2, 1, 5)),
+        ]),
+        createSchema(
+          'ExtendedUser',
+          [
+            createField('email', 'string', 'pick', [{ name: 'array', value: ['extended@example.com'] }], createLocation(4, 1, 5)),
+            createField('slug', 'string', 'pick', [{ name: 'array', value: ['{{id}}-qa'] }], createLocation(5, 1, 4)),
+          ],
+          createLocation(3, 1, 12),
+          undefined,
+          undefined,
+          'User',
+          createLocation(3, 21, 12),
+        ),
+      ]);
+
+      const result = analyze(program);
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        const extended = result.value.schemas.get('ExtendedUser');
+        expect(extended?.baseSchema).toBe('User');
+        expect(extended?.fields.map((field) => field.node.name)).toEqual(['id', 'email', 'slug']);
+        expect(extended?.fields[1]?.resolvedGenerator).toBe('pick');
+        expect(extended?.fields[2]?.templateReferences).toEqual(['id']);
+      }
+    });
+
+    test('does not mutate the base schema when derived schemas override inherited fields', () => {
+      const baseSchema = createSchema('User', [
+        createField('email', 'string', 'email', undefined, createLocation(1, 1, 5)),
+      ]);
+      const derivedSchema = createSchema(
+        'ExtendedUser',
+        [createField('email', 'string', 'pick', [{ name: 'array', value: ['override@example.com'] }], createLocation(2, 1, 5))],
+        createLocation(2, 1, 12),
+        undefined,
+        undefined,
+        'User',
+        createLocation(2, 21, 12),
+      );
+
+      const result = analyze(createProgram([baseSchema, derivedSchema]));
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(baseSchema.fields[0]?.generator?.name).toBe('email');
+        expect(result.value.schemas.get('User')?.fields[0]?.resolvedGenerator).toBe('email');
+        expect(result.value.schemas.get('ExtendedUser')?.fields[0]?.resolvedGenerator).toBe('pick');
       }
     });
   });
@@ -500,6 +560,39 @@ describe('analyze()', () => {
 
       expect(result.ok).toBe(true);
     });
+    
+      test('detects circular inheritance and reports the extends clause location', () => {
+        const program = createProgram([
+          createSchema(
+            'User',
+            [createField('id', 'string')],
+            createLocation(1, 1, 4),
+            undefined,
+            undefined,
+            'Admin',
+            createLocation(1, 13, 13),
+          ),
+          createSchema(
+            'Admin',
+            [createField('role', 'string')],
+            createLocation(2, 1, 5),
+            undefined,
+            undefined,
+            'User',
+            createLocation(2, 14, 12),
+          ),
+        ]);
+
+        const result = analyze(program);
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+          const circularError = result.errors.find((error) => error.code === 'analyzer.circularDependency');
+          expect(circularError).toBeDefined();
+          expect(circularError?.location?.line).toBe(2);
+          expect(circularError?.location?.column).toBe(14);
+        }
+      });
   });
 
   describe('schema reference validation', () => {
@@ -549,6 +642,31 @@ describe('analyze()', () => {
         expect(schemaError?.message).toContain('MissingProfile');
       }
     });
+    
+      test('detects undefined base schemas at the extends clause location', () => {
+        const program = createProgram([
+          createSchema(
+            'ExtendedUser',
+            [createField('id', 'string')],
+            createLocation(1, 1, 12),
+            undefined,
+            undefined,
+            'Usr',
+            createLocation(1, 21, 11),
+          ),
+        ]);
+
+        const result = analyze(program);
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+          const undefinedSchemaError = result.errors.find((error) => error.code === 'analyzer.undefinedSchema');
+          expect(undefinedSchemaError).toBeDefined();
+          expect(undefinedSchemaError?.message).toContain('Usr');
+          expect(undefinedSchemaError?.location?.line).toBe(1);
+          expect(undefinedSchemaError?.location?.column).toBe(21);
+        }
+      });
   });
 
   describe('single-field uniqueness metadata', () => {

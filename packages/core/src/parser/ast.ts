@@ -197,6 +197,8 @@ export interface FieldNode extends ASTNode {
 export interface SchemaNode extends ASTNode {
   readonly kind: 'schema';
   readonly name: string;
+  readonly extendsSchema?: string;
+  readonly extendsSchemaLocation?: SourceLocation;
   readonly defaults?: SchemaDefaults;
   readonly fields: readonly FieldNode[];
   readonly compositeUniques?: readonly (readonly string[])[];

@@ -246,6 +246,49 @@ describe('validateSchema()', () => {
       }
     });
 
+    test('should validate schemas that extend imported base schemas', async () => {
+      const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-inheritance-'));
+      const commonDir = path.join(workspaceRoot, 'common');
+      const appsDir = path.join(workspaceRoot, 'apps');
+      await fs.mkdir(commonDir, { recursive: true });
+      await fs.mkdir(appsDir, { recursive: true });
+
+      const basePath = path.join(commonDir, 'base.td');
+      const mainPath = path.join(appsDir, 'main.td');
+
+      await fs.writeFile(
+        basePath,
+        `schema User {
+  id: string generator=pick(array=["base-id"])
+  email: string generator=pick(array=["base@example.com"])
+}`,
+      );
+      await fs.writeFile(
+        mainPath,
+        `@import "../common/base.td"
+
+schema ExtendedUser extends User {
+  email: string generator=pick(array=["extended@example.com"])
+  team: string generator=pick(array=["qa"])
+}`,
+      );
+
+      const source = await fs.readFile(mainPath, 'utf-8');
+      const result = validateSchema(source, mainPath, {
+        currentFile: mainPath,
+        workspaceRoot,
+      });
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        const extendedUser = result.value.schemas.get('ExtendedUser');
+        expect(result.value.schemas.has('User')).toBe(true);
+        expect(extendedUser?.baseSchema).toBe('User');
+        expect(extendedUser?.fields.map((field) => field.node.name)).toEqual(['id', 'email', 'team']);
+        expect(extendedUser?.fields[1]?.resolvedGenerator).toBe('pick');
+      }
+    });
+
     test('should handle empty source string gracefully', () => {
       const source = '';
       const result = validateSchema(source, 'test.td');

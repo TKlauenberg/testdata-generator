@@ -631,7 +631,7 @@ export class Parser {
   /**
    * Parses a schema declaration.
    *
-   * Grammar: SchemaDeclaration ::= 'schema' Identifier '{' FieldDeclaration* '}'
+  * Grammar: SchemaDeclaration ::= 'schema' Identifier ('extends' Identifier)? '{' FieldDeclaration* '}'
    */
   private _parseSchemaDeclaration(): Result<SchemaNode, Diagnostic[]> {
     const startToken = this._currentToken();
@@ -651,6 +651,45 @@ export class Parser {
     }
     const name = nameResult.value.value;
 
+    let extendsSchema: string | undefined;
+    let extendsSchemaLocation: SourceLocation | undefined;
+
+    if (this._check('keyword', 'extends')) {
+      const extendsToken = this._advance();
+
+      if (!this._check('identifier')) {
+        this._addError(
+          `Expected base schema name after 'extends' in schema declaration '${name}'`,
+          this._currentToken().location,
+          ['Schema syntax: schema Child extends Parent { ... }'],
+        );
+        return { ok: false, errors: this._errors };
+      }
+
+      const baseSchemaToken = this._advance();
+      if (baseSchemaToken.kind !== 'identifier' || extendsToken.kind !== 'keyword') {
+        this._addError(
+          `Expected valid inheritance clause for schema '${name}'`,
+          baseSchemaToken.location,
+          ['Schema syntax: schema Child extends Parent { ... }'],
+        );
+        return { ok: false, errors: this._errors };
+      }
+
+      extendsSchema = baseSchemaToken.value;
+      extendsSchemaLocation = {
+        file: extendsToken.location.file,
+        line: extendsToken.location.line,
+        column: extendsToken.location.column,
+        length:
+          baseSchemaToken.location.line === extendsToken.location.line
+            ? baseSchemaToken.location.column +
+              baseSchemaToken.location.length -
+              extendsToken.location.column
+            : baseSchemaToken.location.length,
+      };
+    }
+
     // Match opening brace
     const openBraceResult = this._expect('operator', '{');
     if (!openBraceResult.ok) return openBraceResult;
@@ -660,6 +699,19 @@ export class Parser {
     const fields: FieldNode[] = [];
     const compositeUniques: string[][] = [];
     while (!this._check('operator', '}') && !this._isAtEnd()) {
+      if (this._check('keyword', 'extends')) {
+        this._addError(
+          `Schema '${name}' must declare 'extends' immediately after the schema name`,
+          this._currentToken().location,
+          ['Schema syntax: schema Child extends Parent { ... }'],
+        );
+        this._advance();
+        if (this._check('identifier')) {
+          this._advance();
+        }
+        continue;
+      }
+
       if (this._isSchemaDefaultsBlockStart()) {
         const defaultsResult = this._parseSchemaDefaultsBlock();
         if (fields.length > 0 || compositeUniques.length > 0 || defaults !== undefined) {
@@ -731,6 +783,8 @@ export class Parser {
       value: {
         kind: 'schema',
         name,
+        extendsSchema,
+        extendsSchemaLocation,
         defaults,
         fields,
         compositeUniques,

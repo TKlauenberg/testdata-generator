@@ -1,6 +1,6 @@
 # Story 11.3: Schema Composition and Extension
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -25,31 +25,31 @@ The live codebase already supports imported schemas, workspace-aware validation 
 
 ## Tasks / Subtasks
 
-- [ ] Extend scanner, AST, and parser support for single-schema inheritance syntax (AC: 1)
-  - [ ] Add `extends` to the DSL keyword set in `packages/core/src/scanner/tokens.ts` so the parser can distinguish it from identifiers without adding new operator tokens.
-  - [ ] Extend `SchemaNode` in `packages/core/src/parser/ast.ts` with an additive optional base-schema property such as `extendsSchema?: string`, preserving existing schema shape for non-inheriting declarations.
-  - [ ] Update `packages/core/src/parser/parser.ts` so `_parseSchemaDeclaration()` accepts `schema Name extends BaseName { ... }` between the schema name and opening brace, with clear parse errors for malformed or misplaced `extends` clauses.
-  - [ ] Preserve source locations for the derived schema and the base-schema reference so analyzer diagnostics for undefined or cyclic inheritance point to the actual `extends` clause.
+- [x] Extend scanner, AST, and parser support for single-schema inheritance syntax (AC: 1)
+  - [x] Add `extends` to the DSL keyword set in `packages/core/src/scanner/tokens.ts` so the parser can distinguish it from identifiers without adding new operator tokens.
+  - [x] Extend `SchemaNode` in `packages/core/src/parser/ast.ts` with an additive optional base-schema property such as `extendsSchema?: string`, preserving existing schema shape for non-inheriting declarations.
+  - [x] Update `packages/core/src/parser/parser.ts` so `_parseSchemaDeclaration()` accepts `schema Name extends BaseName { ... }` between the schema name and opening brace, with clear parse errors for malformed or misplaced `extends` clauses.
+  - [x] Preserve source locations for the derived schema and the base-schema reference so analyzer diagnostics for undefined or cyclic inheritance point to the actual `extends` clause.
 
-- [ ] Implement inheritance-aware semantic analysis and effective schema construction in core (AC: 2, 3, 4, 5, 6)
-  - [ ] Validate that the base schema exists in the merged program after Story 11.1 import resolution, so derived schemas can extend imported bases as well as local ones.
-  - [ ] Extend the existing dependency-graph and circular-dependency detection path in `packages/core/src/analyzer/analyzer.ts` to include inheritance edges in addition to schema-reference and template-reference edges.
-  - [ ] Build effective derived-schema field lists by flattening base fields plus derived overrides, keeping declaration order stable where possible and ensuring overrides replace the inherited field definition instead of producing duplicate-field errors.
-  - [ ] Keep the base `SchemaNode` immutable and independent: no mutation of the base AST node, symbol table entries, or validated field arrays when constructing the derived schema.
-  - [ ] Reuse existing validation passes for supported types, generators, templates, context references, uniqueness, and schema references against the effective field set so inherited fields behave like local fields during validation and generation.
-  - [ ] Keep scope bounded to single inheritance for this story. Do not introduce multiple inheritance, mixins, or a second schema-composition DSL.
+- [x] Implement inheritance-aware semantic analysis and effective schema construction in core (AC: 2, 3, 4, 5, 6)
+  - [x] Validate that the base schema exists in the merged program after Story 11.1 import resolution, so derived schemas can extend imported bases as well as local ones.
+  - [x] Extend the existing dependency-graph and circular-dependency detection path in `packages/core/src/analyzer/analyzer.ts` to include inheritance edges in addition to schema-reference and template-reference edges.
+  - [x] Build effective derived-schema field lists by flattening base fields plus derived overrides, keeping declaration order stable where possible and ensuring overrides replace the inherited field definition instead of producing duplicate-field errors.
+  - [x] Keep the base `SchemaNode` immutable and independent: no mutation of the base AST node, symbol table entries, or validated field arrays when constructing the derived schema.
+  - [x] Reuse existing validation passes for supported types, generators, templates, context references, uniqueness, and schema references against the effective field set so inherited fields behave like local fields during validation and generation.
+  - [x] Keep scope bounded to single inheritance for this story. Do not introduce multiple inheritance, mixins, or a second schema-composition DSL.
 
-- [ ] Thread inherited-field behavior through validated output and generation without changing public API shape unnecessarily (AC: 2, 3, 4, 6)
-  - [ ] Update `packages/core/src/analyzer/types.ts` and validated-schema construction so generation receives the effective flattened field list for a derived schema rather than only the local AST fields.
-  - [ ] Ensure `packages/core/src/generator/generator.ts` continues to work through `sortFieldsByDependency(schema.fields)` using the validated effective field list, so inherited fields and overridden template dependencies generate in the correct order.
-  - [ ] Preserve field-level precedence semantics established in earlier stories: explicit derived field definitions override inherited field definitions, while unresolved fields still follow existing schema defaults, workspace generator, and built-in resolution rules.
-  - [ ] Avoid unnecessary CLI command changes unless a failing integration test proves otherwise; `validateSchema()` and `generateData()` already provide the shared core entry points for syntax and generation behavior.
+- [x] Thread inherited-field behavior through validated output and generation without changing public API shape unnecessarily (AC: 2, 3, 4, 6)
+  - [x] Update `packages/core/src/analyzer/types.ts` and validated-schema construction so generation receives the effective flattened field list for a derived schema rather than only the local AST fields.
+  - [x] Ensure `packages/core/src/generator/generator.ts` continues to work through `sortFieldsByDependency(schema.fields)` using the validated effective field list, so inherited fields and overridden template dependencies generate in the correct order.
+  - [x] Preserve field-level precedence semantics established in earlier stories: explicit derived field definitions override inherited field definitions, while unresolved fields still follow existing schema defaults, workspace generator, and built-in resolution rules.
+  - [x] Avoid unnecessary CLI command changes unless a failing integration test proves otherwise; `validateSchema()` and `generateData()` already provide the shared core entry points for syntax and generation behavior.
 
-- [ ] Add regression coverage in the active unit and BDD harnesses, and update docs if syntax examples become user-facing (AC: 7, 8)
-  - [ ] Extend parser, analyzer, and generation unit tests for valid inheritance, missing base schemas, inheritance cycles, additive fields, overrides, imported base schemas, and non-mutation of base schemas after derived-schema validation.
-  - [ ] Add generation-focused tests proving inherited fields appear in derived output, overridden fields replace base behavior, and template references from derived fields can depend on inherited fields.
-  - [ ] Add an executed core BDD feature for schema extension under `packages/core/features/` with real `.td` fixtures, and register both the feature and its step definitions in `packages/core/tests/run-cucumber.ts` instead of relying on dormant parser or semantic-analysis feature files.
-  - [ ] If the final syntax is surfaced in repository docs or examples, update only existing docs in `docs/api.md`, `docs/foundation-patterns.md`, or `docs/examples/generateData-examples.md` as appropriate; do not create speculative documentation surfaces.
+- [x] Add regression coverage in the active unit and BDD harnesses, and update docs if syntax examples become user-facing (AC: 7, 8)
+  - [x] Extend parser, analyzer, and generation unit tests for valid inheritance, missing base schemas, inheritance cycles, additive fields, overrides, imported base schemas, and non-mutation of base schemas after derived-schema validation.
+  - [x] Add generation-focused tests proving inherited fields appear in derived output, overridden fields replace base behavior, and template references from derived fields can depend on inherited fields.
+  - [x] Add an executed core BDD feature for schema extension under `packages/core/features/` with real `.td` fixtures, and register both the feature and its step definitions in `packages/core/tests/run-cucumber.ts` instead of relying on dormant parser or semantic-analysis feature files.
+  - [x] If the final syntax is surfaced in repository docs or examples, update only existing docs in `docs/api.md`, `docs/foundation-patterns.md`, or `docs/examples/generateData-examples.md` as appropriate; do not create speculative documentation surfaces.
 
 ## Dev Notes
 
@@ -218,18 +218,46 @@ GPT-5.4
 - Current code already supports imports and workspace generators, but schema declarations still parse only `schema Name { ... }`, the analyzer still derives validated fields from local schema fields, and generation still consumes the validated field list directly.
 - The active BDD runner is curated and does not auto-run dormant parser or semantic-analysis feature files, so schema-extension acceptance coverage must be registered explicitly.
 - The story is intentionally scoped to additive single-schema inheritance with clear undefined-base and cycle diagnostics, flattened effective fields for generation, and no mutation of base schemas.
+- Implemented `extends` as a reserved keyword, added additive AST metadata for base-schema name and extends-clause source location, and widened parser grammar plus parser diagnostics for malformed or misplaced inheritance clauses.
+- Refactored analyzer validation to build local effective fields, extend dependency graphs with inheritance edges, flatten inherited validated fields without mutating base schemas, inherit composite uniqueness metadata, and point undefined-base/circular-inheritance diagnostics at the actual extends clause.
+- Added unit coverage across scanner, parser, analyzer, validate, and generateData; added executed fixture-backed BDD coverage under `packages/core/features/schema-extension.feature`; updated `docs/api.md` with user-facing inheritance syntax.
+- Verification completed with focused Bun test files, the active cucumber runner (`82 scenarios`, `441 steps`, all passing), full `bun test` regression, and `bun run lint` with only pre-existing repository warnings outside this story's files.
 
 ### Completion Notes List
 
 - Ultimate context engine analysis completed - comprehensive developer guide created.
 - Story file created for `11-3-schema-composition-and-extension` with status `ready-for-dev`.
 - Sprint tracking advanced this story from `backlog` to `ready-for-dev`.
+- Added end-to-end single inheritance support for `schema Child extends Base { ... }`, including extends-clause location tracking and clear parse/analyzer diagnostics.
+- Flattened inherited fields into validated derived schemas so generation, template dependency ordering, and override behavior reuse the existing core pipeline without CLI changes.
+- Confirmed imported base schemas are valid inheritance targets and that derived schema validation does not mutate base schema definitions.
+- Added executed acceptance coverage with real fixture files plus regression tests for valid inheritance, overrides, missing bases, cycles, imported bases, and inherited template references.
+- Documented the new inheritance syntax in the programmatic API docs and advanced the story to `review`.
 
 ### File List
 
 - `_bmad-output/implementation-artifacts/11-3-schema-composition-and-extension.md`
 - `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- `docs/api.md`
+- `packages/core/src/analyzer/analyzer.test.ts`
+- `packages/core/src/analyzer/analyzer.ts`
+- `packages/core/src/analyzer/types.ts`
+- `packages/core/src/generateData.test.ts`
+- `packages/core/src/parser/ast.ts`
+- `packages/core/src/parser/parser.test.ts`
+- `packages/core/src/parser/parser.ts`
+- `packages/core/src/scanner/scanner.test.ts`
+- `packages/core/src/scanner/tokens.ts`
+- `packages/core/src/validate.test.ts`
+- `packages/core/tests/run-cucumber.ts`
+- `packages/core/features/schema-extension.feature`
+- `packages/core/features/step_definitions/schema-extension.steps.ts`
+- `packages/core/features/fixtures/schema-extension/apps/extended.td`
+- `packages/core/features/fixtures/schema-extension/circular.td`
+- `packages/core/features/fixtures/schema-extension/common/base.td`
+- `packages/core/features/fixtures/schema-extension/missing-base.td`
 
 ### Change Log
 
 - 2026-04-04: Created story context artifact via create-story workflow and updated sprint status to `ready-for-dev`.
+- 2026-04-04: Implemented schema extension syntax and inheritance-aware validation/generation, added unit plus executed BDD regression coverage, updated API docs, and moved story to `review`.

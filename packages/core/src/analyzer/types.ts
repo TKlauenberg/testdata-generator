@@ -57,6 +57,9 @@ export interface ValidatedSchema {
   /** Reference to original AST node */
   readonly node: SchemaNode;
 
+  /** Name of the base schema when this schema extends another schema */
+  readonly baseSchema?: string;
+
   /** Workspace-scoped shared generator definitions available to this schema */
   readonly workspaceGenerators?: ReadonlyMap<string, WorkspaceGeneratorDefinition>;
 

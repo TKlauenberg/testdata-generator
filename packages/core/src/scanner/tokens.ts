@@ -6,7 +6,7 @@
  * All token types include source location information for error reporting.
  *
  * Token kinds represent different lexical elements:
- * - keyword: Reserved DSL keywords (schema, profile, context, unique, template)
+ * - keyword: Reserved DSL keywords (schema, profile, context, unique, template, extends)
  * - identifier: User-defined names (schema names, field names, etc.)
  * - string: String literals with escape sequences
  * - number: Numeric literals (integers and floats)
@@ -26,7 +26,7 @@ export type TokenKind = 'keyword' | 'identifier' | 'string' | 'number' | 'operat
  *
  * These are reserved words that have special meaning in the DSL.
  */
-export const KEYWORD_VALUES = ['schema', 'profile', 'context', 'unique', 'template'] as const;
+export const KEYWORD_VALUES = ['schema', 'profile', 'context', 'unique', 'template', 'extends'] as const;
 export type KeywordType = (typeof KEYWORD_VALUES)[number];
 
 /**

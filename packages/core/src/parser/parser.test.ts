@@ -26,7 +26,7 @@ function eof(line: number = 1, column: number = 1): Token {
 }
 
 // Helper: Create keyword token
-function keyword(value: 'schema' | 'profile' | 'context' | 'unique', line: number, column: number): Token {
+function keyword(value: 'schema' | 'profile' | 'context' | 'unique' | 'extends', line: number, column: number): Token {
   return { kind: 'keyword', value, location: loc(line, column, value.length) };
 }
 
@@ -131,6 +131,31 @@ describe('Parser - Basic Functionality', () => {
 
       expect(schema.fields[2].name).toBe('age');
       expect(schema.fields[2].type).toBe('number');
+    }
+  });
+
+  test('parses schema extension syntax and tracks extends clause location', () => {
+    const tokens: Token[] = [
+      keyword('schema', 1, 1),
+      ident('ExtendedUser', 1, 8),
+      keyword('extends', 1, 21),
+      ident('User', 1, 29),
+      op('{', 1, 34),
+      ident('email', 2, 3),
+      op(':', 2, 8),
+      ident('string', 2, 10),
+      op('}', 3, 1),
+      eof(3, 2),
+    ];
+
+    const result = parse(tokens);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const schema = result.value.declarations[0] as SchemaNode;
+      expect(schema.extendsSchema).toBe('User');
+      expect(schema.extendsSchemaLocation).toEqual(loc(1, 21, 12));
+      expect(schema.fields).toHaveLength(1);
     }
   });
 
@@ -920,6 +945,52 @@ describe('Parser - Constraints', () => {
 });
 
 describe('Parser - Error Detection', () => {
+  test('error: missing base schema name after extends', () => {
+    const tokens: Token[] = [
+      keyword('schema', 1, 1),
+      ident('ExtendedUser', 1, 8),
+      keyword('extends', 1, 21),
+      op('{', 1, 29),
+      op('}', 1, 30),
+      eof(1, 31),
+    ];
+
+    const result = parse(tokens);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(
+        result.errors.some((error) => error.message.includes("Expected base schema name after 'extends'")),
+      ).toBe(true);
+    }
+  });
+
+  test('error: reports misplaced extends clause inside schema body', () => {
+    const tokens: Token[] = [
+      keyword('schema', 1, 1),
+      ident('ExtendedUser', 1, 8),
+      op('{', 1, 21),
+      keyword('extends', 2, 3),
+      ident('User', 2, 11),
+      ident('email', 3, 3),
+      op(':', 3, 8),
+      ident('string', 3, 10),
+      op('}', 4, 1),
+      eof(4, 2),
+    ];
+
+    const result = parse(tokens);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(
+        result.errors.some((error) =>
+          error.message.includes("must declare 'extends' immediately after the schema name"),
+        ),
+      ).toBe(true);
+    }
+  });
+
   test('error: missing colon after field name', () => {
     // schema User { email string }
     const tokens: Token[] = [
