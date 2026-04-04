@@ -44,6 +44,94 @@ export interface GeneratorParameter {
 export interface GeneratorSpec {
   readonly name: string;
   readonly parameters?: readonly GeneratorParameter[];
+  readonly source?: 'builtin' | 'workspace';
+  readonly reference?: string;
+}
+
+export const WORKSPACE_GENERATOR_REFERENCE_PREFIX = '@workspace.generators.' as const;
+
+const WORKSPACE_GENERATOR_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
+export interface WorkspaceGeneratorTemplateDefinition {
+  readonly type: 'template';
+  readonly template: string;
+  readonly generators: Readonly<Record<string, GeneratorSpec>>;
+}
+
+export interface WorkspaceGeneratorCompositionLiteralPart {
+  readonly type: 'literal';
+  readonly value: string;
+}
+
+export interface WorkspaceGeneratorCompositionGeneratorPart {
+  readonly type: 'generator';
+  readonly generator: GeneratorSpec;
+}
+
+export type WorkspaceGeneratorCompositionPart =
+  | WorkspaceGeneratorCompositionLiteralPart
+  | WorkspaceGeneratorCompositionGeneratorPart;
+
+export interface WorkspaceGeneratorCompositionDefinition {
+  readonly type: 'composition';
+  readonly compose: readonly WorkspaceGeneratorCompositionPart[];
+}
+
+export type WorkspaceGeneratorDefinition =
+  | WorkspaceGeneratorTemplateDefinition
+  | WorkspaceGeneratorCompositionDefinition;
+
+export interface WorkspaceGeneratorSpec {
+  readonly name: string;
+  readonly definition: WorkspaceGeneratorDefinition;
+}
+
+export function getWorkspaceGeneratorName(reference: string): string | undefined {
+  if (!reference.startsWith(WORKSPACE_GENERATOR_REFERENCE_PREFIX)) {
+    return undefined;
+  }
+
+  const name = reference.slice(WORKSPACE_GENERATOR_REFERENCE_PREFIX.length);
+  return WORKSPACE_GENERATOR_NAME_PATTERN.test(name) ? name : undefined;
+}
+
+export function isWorkspaceGeneratorReference(reference: string): boolean {
+  return getWorkspaceGeneratorName(reference) !== undefined;
+}
+
+export function createWorkspaceGeneratorReference(name: string): GeneratorSpec {
+  return {
+    name,
+    source: 'workspace',
+    reference: `${WORKSPACE_GENERATOR_REFERENCE_PREFIX}${name}`,
+  };
+}
+
+export function collectWorkspaceGeneratorReferences(
+  definition: WorkspaceGeneratorDefinition,
+): readonly string[] {
+  const references = new Set<string>();
+
+  const visitGenerator = (generator: GeneratorSpec): void => {
+    if (generator.source === 'workspace') {
+      references.add(generator.name);
+    }
+  };
+
+  if (definition.type === 'template') {
+    for (const generator of Object.values(definition.generators)) {
+      visitGenerator(generator);
+    }
+    return Array.from(references);
+  }
+
+  for (const part of definition.compose) {
+    if (part.type === 'generator') {
+      visitGenerator(part.generator);
+    }
+  }
+
+  return Array.from(references);
 }
 
 /**

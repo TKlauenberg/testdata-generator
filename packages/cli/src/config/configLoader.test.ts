@@ -121,6 +121,17 @@ describe('loadGlobalConfig', () => {
           },
         },
       ],
+      generators: [
+        {
+          name: 'sharedEmail',
+          template: '{{localPart}}@example.com',
+          generators: {
+            localPart: {
+              name: 'firstName',
+            },
+          },
+        },
+      ],
     });
 
     const loaded = await loadGlobalConfig({ homeDirectory });
@@ -145,6 +156,20 @@ describe('loadGlobalConfig', () => {
                 value: ['alpha', 'beta'],
               },
             ],
+          },
+        },
+      ],
+      generators: [
+        {
+          name: 'sharedEmail',
+          definition: {
+            type: 'template',
+            template: '{{localPart}}@example.com',
+            generators: {
+              localPart: {
+                name: 'firstName',
+              },
+            },
           },
         },
       ],
@@ -229,6 +254,69 @@ describe('loadGlobalConfig', () => {
       expect(error).toHaveProperty(
         'message',
         'Invalid generatorDefaults[0].generator.parameters[0].value: expected a JSON literal value',
+      );
+    }
+  });
+
+  test('rejects duplicate shared generator names', async () => {
+    const homeDirectory = await createHomeDirectory();
+    await writeGlobalConfig(homeDirectory, {
+      generators: [
+        {
+          name: 'sharedEmail',
+          template: '{{localPart}}@example.com',
+          generators: {
+            localPart: { name: 'firstName' },
+          },
+        },
+        {
+          name: 'sharedEmail',
+          compose: [
+            { literal: 'duplicate' },
+          ],
+        },
+      ],
+    });
+
+    try {
+      await loadGlobalConfig({ homeDirectory });
+      throw new Error('Expected duplicate shared generators to throw a CliConfigError');
+    } catch (error: unknown) {
+      expect(error).toBeInstanceOf(CliConfigError);
+      expect(error).toHaveProperty(
+        'message',
+        "Invalid generators: duplicate workspace generator name 'sharedEmail'",
+      );
+    }
+  });
+
+  test('rejects cyclic shared generator definitions', async () => {
+    const homeDirectory = await createHomeDirectory();
+    await writeGlobalConfig(homeDirectory, {
+      generators: [
+        {
+          name: 'alpha',
+          compose: [
+            { generator: { name: '@workspace.generators.beta' } },
+          ],
+        },
+        {
+          name: 'beta',
+          compose: [
+            { generator: { name: '@workspace.generators.alpha' } },
+          ],
+        },
+      ],
+    });
+
+    try {
+      await loadGlobalConfig({ homeDirectory });
+      throw new Error('Expected cyclic shared generators to throw a CliConfigError');
+    } catch (error: unknown) {
+      expect(error).toBeInstanceOf(CliConfigError);
+      expect(error).toHaveProperty(
+        'message',
+        "Invalid generators: circular workspace generator definition detected at 'alpha'",
       );
     }
   });
@@ -333,6 +421,7 @@ describe('loadEffectiveConfig', () => {
           },
         },
       ],
+      generators: [],
     });
   });
 
@@ -421,6 +510,7 @@ describe('getSettingSources', () => {
     expect(sources.defaults).toBe('built-in');
     expect(sources.context).toBe('built-in');
     expect(sources.generatorDefaults).toBe('built-in');
+    expect(sources.generators).toBe('built-in');
   });
 
   test('returns global for sections provided by global config only', async () => {
@@ -431,6 +521,13 @@ describe('getSettingSources', () => {
       defaults: { count: 5, format: 'json' },
       context: { saveDirectory: 'global-ctx' },
       generatorDefaults: [{ fieldType: 'string', generator: { name: 'pick' } }],
+      generators: [
+        {
+          name: 'sharedEmail',
+          template: '{{localPart}}@example.com',
+          generators: { localPart: { name: 'firstName' } },
+        },
+      ],
     });
 
     const effective = await loadEffectiveConfig({ homeDirectory, currentDirectory: workspaceDirectory });
@@ -439,6 +536,7 @@ describe('getSettingSources', () => {
     expect(sources.defaults).toBe('global');
     expect(sources.context).toBe('global');
     expect(sources.generatorDefaults).toBe('global');
+    expect(sources.generators).toBe('global');
   });
 
   test('returns workspace for sections provided by workspace config, built-in for rest', async () => {
@@ -453,6 +551,7 @@ describe('getSettingSources', () => {
     expect(sources.defaults).toBe('built-in');
     expect(sources.context).toBe('workspace');
     expect(sources.generatorDefaults).toBe('built-in');
+    expect(sources.generators).toBe('built-in');
   });
 
   test('workspace wins over global when both provide the same section', async () => {
@@ -466,6 +565,13 @@ describe('getSettingSources', () => {
     await writeWorkspaceConfig(workspaceDirectory, {
       defaults: { count: 99, format: 'json' },
       generatorDefaults: [{ fieldType: 'string', generator: { name: 'pick' } }],
+      generators: [
+        {
+          name: 'workspaceEmail',
+          template: '{{localPart}}@workspace.example',
+          generators: { localPart: { name: 'firstName' } },
+        },
+      ],
     });
 
     const effective = await loadEffectiveConfig({ homeDirectory, currentDirectory: workspaceDirectory });
@@ -474,6 +580,7 @@ describe('getSettingSources', () => {
     expect(sources.defaults).toBe('workspace');
     expect(sources.context).toBe('global');
     expect(sources.generatorDefaults).toBe('workspace');
+    expect(sources.generators).toBe('workspace');
   });
 
   test('marks sections as built-in when global layer source is built-in (no file found)', async () => {
@@ -489,6 +596,7 @@ describe('getSettingSources', () => {
     expect(sources.defaults).toBe('built-in');
     expect(sources.context).toBe('built-in');
     expect(sources.generatorDefaults).toBe('built-in');
+    expect(sources.generators).toBe('built-in');
   });
 });
 
@@ -609,5 +717,49 @@ describe('configuration section priority: generatorDefaults', () => {
 
     expect(effective.config.generatorDefaults).toHaveLength(0);
     expect(getSettingSources(effective).generatorDefaults).toBe('built-in');
+  });
+});
+
+describe('configuration section priority: generators', () => {
+  test('workspace generators override global generators', async () => {
+    const homeDirectory = await createHomeDirectory();
+    const workspaceDirectory = await createWorkspaceDirectory();
+
+    await writeGlobalConfig(homeDirectory, {
+      generators: [
+        {
+          name: 'globalEmail',
+          template: '{{localPart}}@global.example',
+          generators: { localPart: { name: 'firstName' } },
+        },
+      ],
+    });
+    await writeWorkspaceConfig(workspaceDirectory, {
+      generators: [
+        {
+          name: 'workspaceEmail',
+          compose: [
+            { literal: 'qa-' },
+            { generator: { name: 'word' } },
+          ],
+        },
+      ],
+    });
+
+    const effective = await loadEffectiveConfig({ homeDirectory, currentDirectory: workspaceDirectory });
+
+    expect(effective.config.generators).toHaveLength(1);
+    expect(effective.config.generators[0]?.name).toBe('workspaceEmail');
+    expect(getSettingSources(effective).generators).toBe('workspace');
+  });
+
+  test('built-in generators (empty) apply when no config files exist', async () => {
+    const homeDirectory = await createHomeDirectory();
+    const workspaceDirectory = await createWorkspaceDirectory();
+
+    const effective = await loadEffectiveConfig({ homeDirectory, currentDirectory: workspaceDirectory });
+
+    expect(effective.config.generators).toHaveLength(0);
+    expect(getSettingSources(effective).generators).toBe('built-in');
   });
 });

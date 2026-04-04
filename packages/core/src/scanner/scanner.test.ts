@@ -231,19 +231,35 @@ describe('Scanner', () => {
 
   describe('operator tokenization', () => {
     test('scans single-character operators', () => {
-      const result = scan(': , { } [ ] ( ) = @', 'test.td');
+      const result = scan(': , . { } [ ] ( ) = @', 'test.td');
 
       expect(result.ok).toBe(true);
       if (result.ok) {
-        expect(result.value).toHaveLength(11); // 10 operators + eof
+        expect(result.value).toHaveLength(12); // 11 operators + eof
         expect(result.value[0].kind).toBe('operator');
         expect(tokenWithValueAt(result.value, 0).value).toBe(':');
         expect(result.value[1].kind).toBe('operator');
         expect(tokenWithValueAt(result.value, 1).value).toBe(',');
         expect(result.value[2].kind).toBe('operator');
-        expect(tokenWithValueAt(result.value, 2).value).toBe('{');
-        expect(result.value[9].kind).toBe('operator');
-        expect(tokenWithValueAt(result.value, 9).value).toBe('@');
+        expect(tokenWithValueAt(result.value, 2).value).toBe('.');
+        expect(result.value[3].kind).toBe('operator');
+        expect(tokenWithValueAt(result.value, 3).value).toBe('{');
+        expect(result.value[10].kind).toBe('operator');
+        expect(tokenWithValueAt(result.value, 10).value).toBe('@');
+      }
+    });
+
+    test('scans workspace generator reference punctuation', () => {
+      const result = scan('@workspace.generators.customEmail', 'test.td');
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value).toHaveLength(7);
+        expect(tokenWithValueAt(result.value, 0).value).toBe('@');
+        expect(tokenWithValueAt(result.value, 1).value).toBe('workspace');
+        expect(tokenWithValueAt(result.value, 2).value).toBe('.');
+        expect(tokenWithValueAt(result.value, 3).value).toBe('generators');
+        expect(tokenWithValueAt(result.value, 4).value).toBe('.');
       }
     });
 

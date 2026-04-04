@@ -13,7 +13,16 @@
 import type { RNG } from './rng';
 import { createRNG } from './rng';
 import type { ValidatedSchema, ValidatedField, ValidatedProgram } from '../analyzer/types';
-import type { DefaultSpec, GeneratorParameter } from '../parser/ast';
+import {
+  WORKSPACE_GENERATOR_REFERENCE_PREFIX,
+  getWorkspaceGeneratorName,
+} from '../parser/ast';
+import type {
+  DefaultSpec,
+  GeneratorParameter,
+  GeneratorSpec,
+  WorkspaceGeneratorDefinition,
+} from '../parser/ast';
 import { GENERATOR_REGISTRY } from './generators';
 import { evaluateTemplate, hasTemplateReferences } from './template';
 import { UniquenessTracker } from './uniqueness';
@@ -26,6 +35,7 @@ import type { ContextCollections } from '../context/types';
 
 const MAX_UNIQUENESS_ATTEMPTS = 100;
 const MAX_ENUMERABLE_UNIQUE_CANDIDATES = 10_000;
+const EMPTY_WORKSPACE_GENERATORS = new Map<string, WorkspaceGeneratorDefinition>();
 
 /**
  * Generated record is a plain JavaScript object with field names as keys.
@@ -321,6 +331,7 @@ export function generateRecord(
       // Generate value for this field
       const value = field.isUnique && sessionContext
         ? generateUniqueFieldValue(
+          schema,
           field,
           rng,
           record,
@@ -328,7 +339,7 @@ export function generateRecord(
           sessionContext,
           `${schema.node.name}.${field.node.name}`,
         )
-        : generateFieldValue(field, rng, record, relationshipContext, sessionContext);
+        : generateFieldValue(schema, field, rng, record, relationshipContext, sessionContext);
 
       // Assign to record
       record[fieldName] = value;
@@ -338,7 +349,7 @@ export function generateRecord(
         error instanceof Error ? error.message : String(error);
       throw new Error(
         `Failed to generate value for field '${fieldName}' ` +
-          `using generator '${field.resolvedType}': ${message}`
+          `using generator '${field.resolvedGenerator ?? field.resolvedType}': ${message}`
       );
     }
   }
@@ -356,6 +367,7 @@ export function generateRecord(
  * @throws {Error} If generator type is unknown
  */
 function generateFieldValue(
+  schema: ValidatedSchema,
   field: ValidatedField,
   rng: RNG,
   context: GeneratedRecord,
@@ -364,6 +376,18 @@ function generateFieldValue(
 ): unknown {
   if (field.referencedSchema) {
     return generateRelatedRecord(field, rng, relationshipContext, sessionContext);
+  }
+
+  const generatorSpec = field.effective?.generator ?? field.node.generator;
+  const workspaceGeneratorName = resolveWorkspaceGeneratorName(generatorSpec);
+  if (workspaceGeneratorName !== undefined) {
+    return generateWorkspaceGeneratorValue(
+      schema.workspaceGenerators ?? EMPTY_WORKSPACE_GENERATORS,
+      workspaceGeneratorName,
+      rng,
+      context,
+      sessionContext,
+    );
   }
 
   const generatorType = field.resolvedGenerator ?? field.resolvedType;
@@ -379,7 +403,7 @@ function generateFieldValue(
 
   // Extract parameters and invoke
   const paramsWithContext = extractParameters(
-    field,
+    generatorSpec,
     generatorType,
     context,
     rng,
@@ -389,6 +413,7 @@ function generateFieldValue(
 }
 
 function generateUniqueFieldValue(
+  schema: ValidatedSchema,
   field: ValidatedField,
   rng: RNG,
   context: GeneratedRecord,
@@ -419,7 +444,7 @@ function generateUniqueFieldValue(
   }
 
   for (let attempt = 1; attempt <= MAX_UNIQUENESS_ATTEMPTS; attempt++) {
-    const candidate = generateFieldValue(field, rng, context, relationshipContext, sessionContext);
+    const candidate = generateFieldValue(schema, field, rng, context, relationshipContext, sessionContext);
     const accepted = sessionContext.uniquenessTracker.track(uniquenessScope, candidate);
     if (accepted) {
       return candidate;
@@ -545,13 +570,13 @@ function generateRelatedRecord(
  * @returns Array of positional parameters for generator function
  */
 function extractParameters(
-  field: ValidatedField,
+  generatorSpec: Pick<GeneratorSpec, 'parameters'> | undefined,
   generatorType: string,
   context: GeneratedRecord,
   rng: RNG,
   contextCollections: ContextCollections,
 ): unknown[] {
-  const params = field.effective?.generator?.parameters ?? field.node.generator?.parameters ?? [];
+  const params = generatorSpec?.parameters ?? [];
 
   const resolvedParams = params.map((parameter) => ({
     ...parameter,
@@ -628,6 +653,124 @@ function extractParameters(
     default:
       return resolvedParams.map((parameter) => parameter.value);
   }
+}
+
+function resolveWorkspaceGeneratorName(generator: GeneratorSpec | undefined): string | undefined {
+  if (generator === undefined) {
+    return undefined;
+  }
+
+  if (generator.source === 'workspace') {
+    return generator.name;
+  }
+
+  return getWorkspaceGeneratorName(generator.name);
+}
+
+function generateWorkspaceGeneratorValue(
+  workspaceGenerators: ReadonlyMap<string, WorkspaceGeneratorDefinition>,
+  generatorName: string,
+  rng: RNG,
+  context: GeneratedRecord,
+  sessionContext?: GenerationSessionContext,
+  resolutionStack: readonly string[] = [],
+): unknown {
+  const definition = workspaceGenerators.get(generatorName);
+  if (definition === undefined) {
+    throw new Error(
+      `Workspace generator '${WORKSPACE_GENERATOR_REFERENCE_PREFIX}${generatorName}' is not defined`,
+    );
+  }
+
+  if (resolutionStack.includes(generatorName)) {
+    throw new Error(
+      `Circular workspace generator reference detected: ${[...resolutionStack, generatorName].join(' -> ')}`,
+    );
+  }
+
+  const nextStack = [...resolutionStack, generatorName];
+  if (definition.type === 'template') {
+    const templateContext: Record<string, unknown> = { ...context };
+
+    for (const [slotName, generator] of Object.entries(definition.generators)) {
+      templateContext[slotName] = generateWorkspaceGeneratorPartValue(
+        workspaceGenerators,
+        generator,
+        rng,
+        context,
+        sessionContext,
+        nextStack,
+      );
+    }
+
+    return evaluateTemplate(definition.template, templateContext);
+  }
+
+  return definition.compose
+    .map((part) => {
+      if (part.type === 'literal') {
+        return part.value;
+      }
+
+      return stringifyWorkspaceGeneratorValue(
+        generateWorkspaceGeneratorPartValue(
+          workspaceGenerators,
+          part.generator,
+          rng,
+          context,
+          sessionContext,
+          nextStack,
+        ),
+      );
+    })
+    .join('');
+}
+
+function generateWorkspaceGeneratorPartValue(
+  workspaceGenerators: ReadonlyMap<string, WorkspaceGeneratorDefinition>,
+  generator: GeneratorSpec,
+  rng: RNG,
+  context: GeneratedRecord,
+  sessionContext: GenerationSessionContext | undefined,
+  resolutionStack: readonly string[],
+): unknown {
+  const workspaceGeneratorName = resolveWorkspaceGeneratorName(generator);
+  if (workspaceGeneratorName !== undefined) {
+    return generateWorkspaceGeneratorValue(
+      workspaceGenerators,
+      workspaceGeneratorName,
+      rng,
+      context,
+      sessionContext,
+      resolutionStack,
+    );
+  }
+
+  const generatorFunction = GENERATOR_REGISTRY.get(generator.name);
+  if (generatorFunction === undefined) {
+    throw new Error(`Unknown generator type '${generator.name}' in workspace generator definition`);
+  }
+
+  const params = extractParameters(
+    generator,
+    generator.name,
+    context,
+    rng,
+    sessionContext?.contextCollections ?? {},
+  );
+  return generatorFunction(rng, ...params);
+}
+
+function stringifyWorkspaceGeneratorValue(value: unknown): string {
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+
+  return JSON.stringify(value);
 }
 
 function resolveTemplateValue(

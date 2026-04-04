@@ -36,7 +36,7 @@ function ident(value: string, line: number, column: number): Token {
 }
 
 // Helper: Create operator token
-function op(value: ':' | '{' | '}' | '=' | '(' | ')' | ',' | '[' | ']' | '@', line: number, column: number): Token {
+function op(value: ':' | '{' | '}' | '=' | '(' | ')' | ',' | '.' | '[' | ']' | '@', line: number, column: number): Token {
   return { kind: 'operator', value, location: loc(line, column, 1) };
 }
 
@@ -507,6 +507,67 @@ describe('Parser - Generator Specifications', () => {
       expect(field.generator).toBeDefined();
       expect(field.generator?.name).toBe('uuid');
       expect(field.generator?.parameters).toBeUndefined();
+    }
+  });
+
+  test('parses field with workspace generator reference', () => {
+    const tokens: Token[] = [
+      keyword('schema', 1, 1),
+      ident('User', 1, 8),
+      op('{', 1, 13),
+      ident('email', 1, 15),
+      op(':', 1, 20),
+      ident('string', 1, 22),
+      ident('generator', 1, 29),
+      op('=', 1, 38),
+      op('@', 1, 39),
+      ident('workspace', 1, 40),
+      op('.', 1, 49),
+      ident('generators', 1, 50),
+      op('.', 1, 60),
+      ident('customEmail', 1, 61),
+      op('}', 1, 72),
+      eof(1, 73),
+    ];
+
+    const result = parse(tokens);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const field = (result.value.declarations[0] as SchemaNode).fields[0];
+      expect(field.generator).toBeDefined();
+      expect(field.generator?.source).toBe('workspace');
+      expect(field.generator?.name).toBe('customEmail');
+      expect(field.generator?.reference).toBe('@workspace.generators.customEmail');
+    }
+  });
+
+  test('rejects malformed workspace generator reference syntax', () => {
+    const tokens: Token[] = [
+      keyword('schema', 1, 1),
+      ident('User', 1, 8),
+      op('{', 1, 13),
+      ident('email', 1, 15),
+      op(':', 1, 20),
+      ident('string', 1, 22),
+      ident('generator', 1, 29),
+      op('=', 1, 38),
+      op('@', 1, 39),
+      ident('workspace', 1, 40),
+      ident('generators', 1, 50),
+      op('.', 1, 60),
+      ident('customEmail', 1, 61),
+      op('}', 1, 72),
+      eof(1, 73),
+    ];
+
+    const result = parse(tokens);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(
+        result.errors.some((error) => error.message.includes("Expected '.' after '@workspace'")),
+      ).toBe(true);
     }
   });
 

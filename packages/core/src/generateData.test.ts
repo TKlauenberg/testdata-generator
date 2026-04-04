@@ -100,6 +100,69 @@ describe('generateData()', () => {
         expect(typeof record.price).toBe('number');
       }
     });
+
+    test('generates records from template-backed workspace generators', async () => {
+      const source = `
+        schema User {
+          email: string generator=@workspace.generators.sharedEmail
+        }
+      `;
+
+      const records = await Array.fromAsync(generateData(source, {
+        count: 1,
+        workspaceGenerators: [
+          {
+            name: 'sharedEmail',
+            definition: {
+              type: 'template',
+              template: '{{localPart}}@example.com',
+              generators: {
+                localPart: {
+                  name: 'pick',
+                  parameters: [{ name: 'array', value: ['qa.team'] }],
+                },
+              },
+            },
+          },
+        ],
+      }));
+
+      expect(records).toHaveLength(1);
+      expect(records[0]?.email).toBe('qa.team@example.com');
+    });
+
+    test('generates records from composition-backed workspace generators', async () => {
+      const source = `
+        schema Ticket {
+          code: string generator=@workspace.generators.ticketCode
+        }
+      `;
+
+      const records = await Array.fromAsync(generateData(source, {
+        count: 1,
+        workspaceGenerators: [
+          {
+            name: 'ticketCode',
+            definition: {
+              type: 'composition',
+              compose: [
+                { type: 'literal', value: 'QA-' },
+                {
+                  type: 'generator',
+                  generator: {
+                    name: 'pick',
+                    parameters: [{ name: 'array', value: ['007'] }],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      }));
+
+      expect(records).toHaveLength(1);
+      expect(records[0]?.code).toBe('QA-007');
+    });
   });
 
   describe('Determinism (Seed Parameter)', () => {

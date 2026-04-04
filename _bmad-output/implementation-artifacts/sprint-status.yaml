@@ -127,7 +127,7 @@ development_status:
 
   epic-11: in-progress
   11-1-dsl-import-statement-support: done
-  11-2-shared-generator-definitions: ready-for-dev
+  11-2-shared-generator-definitions: review
   11-3-schema-composition-and-extension: backlog
   11-4-reference-validation-and-type-safety: backlog
   epic-11-retrospective: optional

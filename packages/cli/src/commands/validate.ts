@@ -3,7 +3,7 @@ import * as fs from 'fs/promises';
 import * as path from 'node:path';
 import { validateSchema } from '@testdata-ai/core';
 import type { Diagnostic } from '@testdata-ai/core';
-import { findWorkspaceConfigPath } from '../config';
+import { CliConfigError, loadEffectiveConfig } from '../config';
 import { formatErrors } from '../formatters';
 
 export const validateCommand = new Command('validate')
@@ -13,11 +13,11 @@ export const validateCommand = new Command('validate')
   .action(async (file: string, options: { json?: boolean }) => {
     try {
       const absoluteFile = path.resolve(file);
-      const workspaceConfigPath = await findWorkspaceConfigPath({
+      const loadedConfig = await loadEffectiveConfig({
         currentDirectory: path.dirname(absoluteFile),
       });
-      const workspaceRoot = workspaceConfigPath !== undefined
-        ? path.dirname(workspaceConfigPath)
+      const workspaceRoot = loadedConfig.layers.workspace !== undefined
+        ? path.dirname(loadedConfig.layers.workspace.path)
         : undefined;
 
       // 1. Read file
@@ -25,6 +25,8 @@ export const validateCommand = new Command('validate')
 
       // 2. Validate using the shared core pipeline
       const result = validateSchema(source, absoluteFile, {
+        defaultGenerators: loadedConfig.config.generatorDefaults,
+        workspaceGenerators: loadedConfig.config.generators,
         currentFile: absoluteFile,
         workspaceRoot,
       });
@@ -38,6 +40,11 @@ export const validateCommand = new Command('validate')
         process.exit(1);
       }
     } catch (err) {
+      if (err instanceof CliConfigError) {
+        console.error(`Error: ${err.message}`);
+        process.exit(err.exitCode);
+      }
+
       // Handle file errors (exit code 3)
       handleFileError(err, file);
     }
@@ -84,4 +91,5 @@ function handleFileError(err: unknown, filename: string): never {
     console.error(`Error reading file: ${error.message ?? 'Unknown error'}`);
   }
   process.exit(3);
+  throw new Error('Unreachable');
 }

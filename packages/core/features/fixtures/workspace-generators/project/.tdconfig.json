@@ -1,0 +1,42 @@
+{
+  "generators": [
+    {
+      "name": "sharedEmail",
+      "template": "{{localPart}}@example.com",
+      "generators": {
+        "localPart": {
+          "name": "pick",
+          "parameters": [
+            {
+              "name": "array",
+              "value": [
+                "qa.team"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "ticketCode",
+      "compose": [
+        {
+          "literal": "QA-"
+        },
+        {
+          "generator": {
+            "name": "pick",
+            "parameters": [
+              {
+                "name": "array",
+                "value": [
+                  "007"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

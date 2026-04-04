@@ -1,6 +1,6 @@
 # Story 11.2: Shared Generator Definitions
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -24,30 +24,30 @@ The current codebase already supports upward-discovered workspace config, worksp
 
 ## Tasks / Subtasks
 
-- [ ] Extend the workspace-config model for named shared generators and validate definitions during config loading (AC: 2, 4)
-  - [ ] Add an additive `.tdconfig.json` section for named shared generator definitions, preferably `generators`, rather than repurposing the existing `generatorDefaults` field-type mapping section.
-  - [ ] Define and validate the allowed workspace generator shapes at load time: template-backed definitions and composition-backed definitions that stay within built-in generators for this story.
-  - [ ] Reject duplicate names, invalid payloads, reserved or built-in name collisions unless explicit shadowing is intentionally supported and fully tested, and circular generator definitions before validation or generation begins.
-  - [ ] Keep config ownership in `packages/cli/src/config/`; core should receive typed, already-normalized workspace generator definitions instead of reading `.tdconfig.json` directly.
-  - [ ] Update `docs/configuration.md` and any relevant config examples once the final JSON shape is settled, because this story introduces a new team-facing config surface.
+- [x] Extend the workspace-config model for named shared generators and validate definitions during config loading (AC: 2, 4)
+  - [x] Add an additive `.tdconfig.json` section for named shared generator definitions, preferably `generators`, rather than repurposing the existing `generatorDefaults` field-type mapping section.
+  - [x] Define and validate the allowed workspace generator shapes at load time: template-backed definitions and composition-backed definitions that stay within built-in generators for this story.
+  - [x] Reject duplicate names, invalid payloads, reserved or built-in name collisions unless explicit shadowing is intentionally supported and fully tested, and circular generator definitions before validation or generation begins.
+  - [x] Keep config ownership in `packages/cli/src/config/`; core should receive typed, already-normalized workspace generator definitions instead of reading `.tdconfig.json` directly.
+  - [x] Update `docs/configuration.md` and any relevant config examples once the final JSON shape is settled, because this story introduces a new team-facing config surface.
 
-- [ ] Extend DSL parsing and AST support so fields can reference workspace generators via the existing `generator=` slot (AC: 1, 5)
-  - [ ] Update parser and AST support so a field can express `generator=@workspace.generators.customEmail` or an equivalent syntax that preserves the epic's reference form, without introducing a second generator declaration model.
-  - [ ] Preserve existing `generator=name(...)` grammar for built-ins and add parser errors or suggestions for malformed workspace generator references.
-  - [ ] Ensure diagnostics retain real source locations and clearly distinguish malformed reference syntax from an undefined workspace generator.
+- [x] Extend DSL parsing and AST support so fields can reference workspace generators via the existing `generator=` slot (AC: 1, 5)
+  - [x] Update parser and AST support so a field can express `generator=@workspace.generators.customEmail` or an equivalent syntax that preserves the epic's reference form, without introducing a second generator declaration model.
+  - [x] Preserve existing `generator=name(...)` grammar for built-ins and add parser errors or suggestions for malformed workspace generator references.
+  - [x] Ensure diagnostics retain real source locations and clearly distinguish malformed reference syntax from an undefined workspace generator.
 
-- [ ] Resolve workspace generator references and compositions in the shared core validation and generation pipeline (AC: 1, 2, 3, 4, 5)
-  - [ ] Introduce additive core options and types to accept normalized workspace generator definitions in `validateSchema()`, `generateData()`, analyzer options, and any generation helpers used by CLI and programmatic consumers.
-  - [ ] Validate `@workspace.generators.*` references in analyzer semantics alongside built-in generator recognition, with suggestion-style errors for undefined names.
-  - [ ] Expand or normalize workspace generator references before runtime generation so `generateRecord()` and the built-in registry can keep operating on concrete executable generator plans rather than ad hoc string lookups.
-  - [ ] Preserve the current precedence model: explicit field declaration > schema `@defaults` > workspace/global field-type `generatorDefaults` > built-in fallback. A field that explicitly references a workspace generator is still a field-level declaration, not a config default.
-  - [ ] Keep Story 11.1 file and workspace context threading intact; do not add a second workspace-root or config-discovery mechanism.
+- [x] Resolve workspace generator references and compositions in the shared core validation and generation pipeline (AC: 1, 2, 3, 4, 5)
+  - [x] Introduce additive core options and types to accept normalized workspace generator definitions in `validateSchema()`, `generateData()`, analyzer options, and any generation helpers used by CLI and programmatic consumers.
+  - [x] Validate `@workspace.generators.*` references in analyzer semantics alongside built-in generator recognition, with suggestion-style errors for undefined names.
+  - [x] Expand or normalize workspace generator references before runtime generation so `generateRecord()` and the built-in registry can keep operating on concrete executable generator plans rather than ad hoc string lookups.
+  - [x] Preserve the current precedence model: explicit field declaration > schema `@defaults` > workspace/global field-type `generatorDefaults` > built-in fallback. A field that explicitly references a workspace generator is still a field-level declaration, not a config default.
+  - [x] Keep Story 11.1 file and workspace context threading intact; do not add a second workspace-root or config-discovery mechanism.
 
-- [ ] Add regression coverage that runs in the active harness (AC: 4, 5, 6, 7)
-  - [ ] Extend CLI config tests for valid workspace generator definitions, invalid shapes, duplicate names, cyclic definitions, and nearest-workspace discovery behavior.
-  - [ ] Add parser, analyzer, validate, and generateData unit tests for parsing `@workspace.generators.*`, resolving valid custom generators, rejecting undefined references, and executing template-backed and composition-backed definitions.
-  - [ ] Add Gherkin scenarios using real `.tdconfig.json` fixtures plus `.td` schema files to prove custom workspace generators work end to end in actual schemas.
-  - [ ] Register any new core feature file and step definitions in `packages/core/tests/run-cucumber.ts`; do not rely on dormant features such as `config-priority.feature` unless they are explicitly wired into the active runner.
+- [x] Add regression coverage that runs in the active harness (AC: 4, 5, 6, 7)
+  - [x] Extend CLI config tests for valid workspace generator definitions, invalid shapes, duplicate names, cyclic definitions, and nearest-workspace discovery behavior.
+  - [x] Add parser, analyzer, validate, and generateData unit tests for parsing `@workspace.generators.*`, resolving valid custom generators, rejecting undefined references, and executing template-backed and composition-backed definitions.
+  - [x] Add Gherkin scenarios using real `.tdconfig.json` fixtures plus `.td` schema files to prove custom workspace generators work end to end in actual schemas.
+  - [x] Register any new core feature file and step definitions in `packages/core/tests/run-cucumber.ts`; do not rely on dormant features such as `config-priority.feature` unless they are explicitly wired into the active runner.
 
 ## Dev Notes
 
@@ -215,6 +215,10 @@ GPT-5.4
 - The current parser only accepts identifier-based generator names, and the current analyzer and generator path only understands built-in names plus field-type `generatorDefaults`; named workspace generators are not implemented.
 - `config-priority.feature` currently exists but is not executed by the active core Cucumber runner, so AC-level BDD coverage for this story must be wired explicitly.
 - Existing workspace config discovery and workspace-root threading from Stories 9.2 and 11.1 are the critical reuse paths for this story.
+- Added a dedicated `generators` config section with eager normalization for template-backed and composition-backed workspace generators, including duplicate-name, built-in-collision, undefined-reference, and cycle detection during config loading.
+- Extended scanner, parser, AST, analyzer, validation, and generation paths so `generator=@workspace.generators.<name>` is parsed with source-aware metadata, validated with suggestion-style diagnostics, and executed without making core read `.tdconfig.json` directly.
+- Kept core package boundaries intact after an initial test-helper misstep by removing a direct CLI import from the new core BDD step definitions and replacing it with local fixture normalization.
+- Full verification completed successfully after iterative fixes: workspace build passed, focused changed-file unit tests passed, targeted ESLint on changed TypeScript files passed, `bun test packages/` passed, and `bun run test:bdd` passed.
 
 ### Implementation Plan
 
@@ -225,15 +229,52 @@ GPT-5.4
 
 ### Completion Notes List
 
-- Story context created for `11-2-shared-generator-definitions`.
-- Sprint status advanced from `backlog` to `ready-for-dev`.
-- Key implementation guardrails captured: preserve `generatorDefaults` meaning, reuse workspace discovery and root threading, avoid global registry mutation, and wire BDD coverage into the active runner.
+- Added workspace-scoped shared generator definitions through a new `generators` config section, keeping `generatorDefaults` limited to field-type fallback mappings.
+- Implemented `generator=@workspace.generators.<name>` parsing and analyzer validation with clear malformed-syntax and undefined-reference diagnostics.
+- Threaded normalized workspace generator definitions through `validateSchema()` and `generateData()` so CLI commands and programmatic consumers share the same analyzer and runtime behavior.
+- Implemented template-backed and composition-backed shared generator execution in the core generator runtime without mutating the built-in generator registry.
+- Added regression coverage across CLI config loading, parser, analyzer, validation, generateData, and active Cucumber scenarios using real `.tdconfig.json` plus `.td` fixtures.
+- Verification completed successfully with workspace build, targeted lint, focused changed-file tests, full package unit tests, and the full BDD suite.
+- Sprint status advanced from `ready-for-dev` to `in-progress` during execution and is now ready to move to `review`.
 
 ### File List
 
 - `_bmad-output/implementation-artifacts/11-2-shared-generator-definitions.md`
 - `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- `docs/configuration.md`
+- `packages/cli/src/commands/config.ts`
+- `packages/cli/src/commands/generate.ts`
+- `packages/cli/src/commands/validate.ts`
+- `packages/cli/src/config/configLoader.d.ts`
+- `packages/cli/src/config/configLoader.test.ts`
+- `packages/cli/src/config/configLoader.ts`
+- `packages/cli/src/config/defaults.d.ts`
+- `packages/cli/src/config/defaults.ts`
+- `packages/cli/src/config/index.d.ts`
+- `packages/cli/src/config/types.d.ts`
+- `packages/cli/src/config/types.ts`
+- `packages/core/features/fixtures/workspace-generators/project/.tdconfig.json`
+- `packages/core/features/fixtures/workspace-generators/project/apps/ticket.td`
+- `packages/core/features/fixtures/workspace-generators/project/apps/user.td`
+- `packages/core/features/step_definitions/workspace-generators.steps.ts`
+- `packages/core/features/workspace-generators.feature`
+- `packages/core/src/analyzer/analyzer.test.ts`
+- `packages/core/src/analyzer/analyzer.ts`
+- `packages/core/src/analyzer/types.ts`
+- `packages/core/src/generateData.test.ts`
+- `packages/core/src/generateData.ts`
+- `packages/core/src/generator/generator.ts`
+- `packages/core/src/parser/ast.ts`
+- `packages/core/src/parser/index.ts`
+- `packages/core/src/parser/parser.test.ts`
+- `packages/core/src/parser/parser.ts`
+- `packages/core/src/scanner/scanner.test.ts`
+- `packages/core/src/scanner/tokens.ts`
+- `packages/core/src/validate.test.ts`
+- `packages/core/src/validate.ts`
+- `packages/core/tests/run-cucumber.ts`
 
 ## Change Log
 
 - 2026-04-04: Created story context artifact via create-story workflow and updated sprint status to `ready-for-dev`.
+- 2026-04-04: Implemented shared workspace generator definitions, added parser or analyzer or runtime support for `@workspace.generators.*`, updated docs, added unit and BDD coverage, and completed build, lint, unit, and BDD verification.

@@ -15,12 +15,13 @@ import { resolveProgramImports } from './imports/importResolver';
 import type { Result } from './common/result';
 import type { Diagnostic } from './common/diagnostic';
 import type { ValidatedProgram } from './analyzer/types';
-import type { DefaultSpec } from './parser/ast';
+import type { DefaultSpec, WorkspaceGeneratorSpec } from './parser/ast';
 import * as path from 'node:path';
 
 export interface ValidationOptions {
   readonly availableContextCollections?: readonly string[];
   readonly defaultGenerators?: readonly DefaultSpec[];
+  readonly workspaceGenerators?: readonly WorkspaceGeneratorSpec[];
   readonly currentFile?: string;
   readonly workspaceRoot?: string;
 }
@@ -99,6 +100,7 @@ export function validateSchema(
   const analysisResult = analyze(importResolutionResult.value, {
     availableContextCollections: options.availableContextCollections,
     defaultGenerators: options.defaultGenerators,
+    workspaceGenerators: options.workspaceGenerators,
   });
 
   if (!analysisResult.ok) {

@@ -14,19 +14,21 @@ testdata-ai uses a layered configuration model. Settings at higher-priority laye
 
 ## Configuration Scope Matrix
 
-| Setting                 | Built-in  | Global (`~/.tdconfig.json`) | Workspace (`.tdconfig.json`) | Schema `@defaults`    | Field-level             |
-| ----------------------- | --------- | --------------------------- | ---------------------------- | --------------------- | ----------------------- |
-| `defaults.count`        | ✓         | ✓                           | ✓                            | —                     | —                       |
-| `defaults.format`       | ✓         | ✓                           | ✓                            | —                     | —                       |
-| `context.saveDirectory` | ✓         | ✓                           | ✓                            | —                     | —                       |
-| `generatorDefaults`     | ✓ (empty) | ✓                           | ✓                            | ✓ (`@defaults` block) | ✓ (`generator=…`)       |
-| Field uniqueness        | —         | —                           | —                            | ✓ (`unique=true`)     | ✓ (`unique=true/false`) |
+| Setting                 | Built-in  | Global (`~/.tdconfig.json`) | Workspace (`.tdconfig.json`) | Schema `@defaults`    | Field-level                             |
+| ----------------------- | --------- | --------------------------- | ---------------------------- | --------------------- | --------------------------------------- |
+| `defaults.count`        | ✓         | ✓                           | ✓                            | —                     | —                                       |
+| `defaults.format`       | ✓         | ✓                           | ✓                            | —                     | —                                       |
+| `context.saveDirectory` | ✓         | ✓                           | ✓                            | —                     | —                                       |
+| `generatorDefaults`     | ✓ (empty) | ✓                           | ✓                            | ✓ (`@defaults` block) | ✓ (`generator=…`)                       |
+| `generators`            | ✓ (empty) | ✓                           | ✓                            | —                     | ✓ (`generator=@workspace.generators.*`) |
+| Field uniqueness        | —         | —                           | —                            | ✓ (`unique=true`)     | ✓ (`unique=true/false`)                 |
 
 **Key rules:**
 - `defaults.count` and `defaults.format` are CLI/workspace/global config only — there is no DSL equivalent.
 - `defaults.format` accepts `json`, `csv`, or `sql`. Runtime CLI resolution still applies higher-priority signals in this order: explicit `--format`, then supported `--output` extensions (`.json`, `.csv`, `.sql`), then the effective config default.
 - `context.saveDirectory` is the default directory used when `--save-context` is provided without `--save-context-dir`. The `--save-context-dir` CLI flag is a **runtime override** that does not write to any config file; it affects only the current invocation.
 - `generatorDefaults` is configured at CLI/workspace/global level and overridden by DSL `@defaults`, which is in turn overridden by explicit field declarations.
+- `generators` defines named shared generators that can be referenced from schemas with `generator=@workspace.generators.<name>`.
 - Uniqueness defaults are schema-level DSL only (`@defaults { unique=true }`); they have no CLI config equivalent.
 
 ## CLI vs Schema Semantics Boundary
@@ -38,6 +40,7 @@ The config layers split cleanly into two groups:
 - What output format to use by default (`defaults.format`)
 - Where generated context is stored by default (`context.saveDirectory`)
 - Default generator mappings for field types when no generator is declared (`generatorDefaults`)
+- Named shared generators for team-wide reuse (`generators`)
 
 **Schema-level (`@defaults` block in DSL)** governs data-shape semantics:
 - Per-schema generator defaults for matching field types
@@ -67,6 +70,7 @@ Settings:
   defaults.format       json         [built-in]
   context.saveDirectory ./contexts   [built-in]
   generatorDefaults     (none)       [built-in]
+  generators            (none)       [built-in]
 ```
 
 ### Example 2: Global config provides defaults
@@ -90,6 +94,7 @@ Settings:
   defaults.format       json         [global]
   context.saveDirectory ./contexts   [built-in]
   generatorDefaults     (none)       [built-in]
+  generators            (none)       [built-in]
 ```
 
 ### Example 3: Workspace overrides global
@@ -104,6 +109,7 @@ Settings:
   defaults.format       json         [global]
   context.saveDirectory ./team-ctx   [workspace]
   generatorDefaults     string: pick [workspace]
+  generators            sharedEmail  [workspace]
 ```
 
 ### Example 4: Schema-level defaults override workspace generatorDefaults
@@ -173,3 +179,70 @@ Both global (`~/.tdconfig.json`) and workspace (`.tdconfig.json`) files use the 
 ```
 
 The workspace config (`.tdconfig.json`) is discovered by searching upward from the current working directory through parent directories. It is intended for version-controlled, team-shared defaults.
+
+## Shared Workspace Generators
+
+Use the `generators` section to define named generators that schemas can reference with `generator=@workspace.generators.<name>`.
+
+Two definition shapes are supported:
+
+- Template-backed generators: provide a `template` string and a `generators` object whose keys match the `{{slot}}` placeholders in the template.
+- Composition-backed generators: provide a `compose` array of literal fragments and built-in generator invocations that are concatenated in order.
+
+Template example:
+
+```json
+{
+  "generators": [
+    {
+      "name": "sharedEmail",
+      "template": "{{localPart}}@example.com",
+      "generators": {
+        "localPart": {
+          "name": "firstName"
+        }
+      }
+    }
+  ]
+}
+```
+
+Composition example:
+
+```json
+{
+  "generators": [
+    {
+      "name": "ticketCode",
+      "compose": [
+        { "literal": "QA-" },
+        {
+          "generator": {
+            "name": "randomInt",
+            "parameters": [
+              { "name": "min", "value": 100 },
+              { "name": "max", "value": 999 }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+Schema usage:
+
+```td
+schema User {
+  email: string generator=@workspace.generators.sharedEmail
+}
+```
+
+Validation rules for `generators`:
+
+- Generator names must be unique within the section.
+- Shared generator names must not collide with built-in generator names.
+- Template definitions must declare exactly the slots used by the template.
+- Composition parts must be either `literal` or `generator` entries.
+- Cyclic shared-generator references are rejected during config loading.

@@ -16,10 +16,25 @@ export type {
   FieldConstraints,
   DefaultSpec,
   LiteralValue,
+  WorkspaceGeneratorCompositionPart,
+  WorkspaceGeneratorDefinition,
+  WorkspaceGeneratorSpec,
 } from './ast';
 
 // Type Guards
-export { isSchemaNode, isFieldNode, isProfileNode, isContextNode, isImportNode, isProgramNode } from './ast';
+export {
+  WORKSPACE_GENERATOR_REFERENCE_PREFIX,
+  collectWorkspaceGeneratorReferences,
+  createWorkspaceGeneratorReference,
+  getWorkspaceGeneratorName,
+  isContextNode,
+  isFieldNode,
+  isImportNode,
+  isProgramNode,
+  isSchemaNode,
+  isProfileNode,
+  isWorkspaceGeneratorReference,
+} from './ast';
 
 // Parser
 export { Parser, parse } from './parser';

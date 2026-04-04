@@ -5,7 +5,7 @@
  * containing validated schemas with enriched metadata and a complete symbol table.
  */
 
-import type { Program, SchemaNode, FieldNode, GeneratorSpec } from '../parser/ast';
+import type { Program, SchemaNode, FieldNode, GeneratorSpec, WorkspaceGeneratorDefinition } from '../parser/ast';
 import type { SymbolTable } from './symbolTable';
 
 export type GeneratorResolutionSource = 'field' | 'schema' | 'config' | 'built-in';
@@ -56,6 +56,9 @@ export interface ValidatedProgram {
 export interface ValidatedSchema {
   /** Reference to original AST node */
   readonly node: SchemaNode;
+
+  /** Workspace-scoped shared generator definitions available to this schema */
+  readonly workspaceGenerators?: ReadonlyMap<string, WorkspaceGeneratorDefinition>;
 
   /** Resolved schema-level defaults after precedence resolution */
   readonly resolvedDefaults?: ResolvedSchemaDefaults;

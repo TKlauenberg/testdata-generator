@@ -11,8 +11,10 @@
 import { validateSchema } from './validate';
 import { generate, type GenerateOptions } from './generator';
 import type { Diagnostic } from './common/diagnostic';
+import type { WorkspaceGeneratorSpec } from './parser';
 
 export interface GenerateDataOptions extends GenerateOptions {
+  readonly workspaceGenerators?: readonly WorkspaceGeneratorSpec[];
   readonly currentFile?: string;
   readonly workspaceRoot?: string;
 }
@@ -136,6 +138,7 @@ export async function* generateData(
   const validationResult = validateSchema(source, options.currentFile ?? 'inline-schema.td', {
     availableContextCollections: Object.keys(options.context ?? {}),
     defaultGenerators: options.defaultGenerators,
+    workspaceGenerators: options.workspaceGenerators,
     currentFile: options.currentFile,
     workspaceRoot: options.workspaceRoot,
   });

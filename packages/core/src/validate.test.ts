@@ -43,6 +43,48 @@ describe('validateSchema()', () => {
       }
     });
 
+    test('should resolve explicit workspace generators ahead of configured defaults', () => {
+      const source = `
+        schema User {
+          email: string generator=@workspace.generators.sharedEmail
+        }
+      `;
+
+      const result = validateSchema(source, 'test.td', {
+        defaultGenerators: [
+          {
+            fieldType: 'string',
+            generator: {
+              name: 'pick',
+              parameters: [{ name: 'array', value: ['fallback@example.com'] }],
+            },
+          },
+        ],
+        workspaceGenerators: [
+          {
+            name: 'sharedEmail',
+            definition: {
+              type: 'template',
+              template: '{{localPart}}@example.com',
+              generators: {
+                localPart: {
+                  name: 'pick',
+                  parameters: [{ name: 'array', value: ['qa.team'] }],
+                },
+              },
+            },
+          },
+        ],
+      });
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        const userSchema = result.value.schemas.get('User');
+        expect(userSchema?.fields[0]?.resolvedGenerator).toBe('@workspace.generators.sharedEmail');
+        expect(userSchema?.fields[0]?.effective?.generatorSource).toBe('field');
+      }
+    });
+
     test('should apply schema defaults to fields without explicit generators', () => {
       const source = `
         schema User {
@@ -248,7 +290,7 @@ describe('validateSchema()', () => {
       expect(result.ok).toBe(false);
       if (!result.ok) {
         expect(result.errors.length).toBeGreaterThan(0);
-        expect(result.errors[0].code).toMatch(/scanner\./);
+        expect(result.errors[0].code).toMatch(/(scanner\.|PARSE_ERROR)/);
       }
     });
 
@@ -405,6 +447,39 @@ describe('validateSchema()', () => {
       if (!result.ok) {
         expect(result.errors.length).toBeGreaterThan(0);
         expect(result.errors[0].code).toMatch(/analyzer\.unrecognizedGenerator/);
+      }
+    });
+
+    test('should return error for undefined workspace generator reference', () => {
+      const source = `schema User { email: string generator=@workspace.generators.sharedEmai }`;
+      const result = validateSchema(source, 'test.td', {
+        workspaceGenerators: [
+          {
+            name: 'sharedEmail',
+            definition: {
+              type: 'composition',
+              compose: [
+                { type: 'literal', value: 'qa-' },
+                {
+                  type: 'generator',
+                  generator: {
+                    name: 'pick',
+                    parameters: [{ name: 'array', value: ['007'] }],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        const workspaceError = result.errors.find(
+          (error) => error.code === 'analyzer.undefinedWorkspaceGenerator',
+        );
+        expect(workspaceError).toBeDefined();
+        expect(workspaceError?.suggestion).toContain('@workspace.generators.sharedEmail');
       }
     });
 

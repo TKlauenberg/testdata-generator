@@ -1,7 +1,7 @@
-import type { DefaultSpec } from '@testdata-ai/core';
+import type { DefaultSpec, WorkspaceGeneratorSpec } from '@testdata-ai/core';
 
 export type CliConfigSource = 'built-in' | 'global' | 'workspace';
-export type CliConfigSection = 'defaults' | 'context' | 'generatorDefaults';
+export type CliConfigSection = 'defaults' | 'context' | 'generatorDefaults' | 'generators';
 
 export type CliOutputFormat = 'json' | 'csv' | 'sql';
 
@@ -18,6 +18,7 @@ export interface CliGlobalConfig {
   readonly defaults: CliConfigDefaults;
   readonly context: CliContextDefaults;
   readonly generatorDefaults: readonly DefaultSpec[];
+  readonly generators: readonly WorkspaceGeneratorSpec[];
 }
 
 export interface RawCliConfigDefaults {
@@ -33,6 +34,7 @@ export interface RawCliGlobalConfig {
   readonly defaults?: RawCliConfigDefaults;
   readonly context?: RawCliContextDefaults;
   readonly generatorDefaults?: unknown;
+  readonly generators?: unknown;
 }
 
 export interface CliConfigLayer<TSource extends CliConfigSource = CliConfigSource> {
@@ -59,4 +61,5 @@ export interface EffectiveSettingSources {
   readonly defaults: CliConfigSource;
   readonly context: CliConfigSource;
   readonly generatorDefaults: CliConfigSource;
+  readonly generators: CliConfigSource;
 }

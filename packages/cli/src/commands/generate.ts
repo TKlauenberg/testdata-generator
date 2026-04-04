@@ -15,7 +15,6 @@ import * as path from 'path';
 import {
   BUILT_IN_CLI_CONFIG,
   CliConfigError,
-  findWorkspaceConfigPath,
   loadEffectiveConfig,
   validateOutputFormat,
 } from '../config';
@@ -67,9 +66,13 @@ export const generateCommand = new Command('generate')
       const sourceDirectory = path.dirname(absoluteFile);
       const workingDirectory = process.cwd();
       let cliConfig = BUILT_IN_CLI_CONFIG;
+      let workspaceRoot: string | undefined;
       try {
         const loadedConfig = await loadEffectiveConfig({ currentDirectory: sourceDirectory });
         cliConfig = loadedConfig.config;
+        workspaceRoot = loadedConfig.layers.workspace !== undefined
+          ? path.dirname(loadedConfig.layers.workspace.path)
+          : undefined;
       } catch (error: unknown) {
         if (error instanceof CliConfigError) {
           console.error(`Error: ${error.message}`);
@@ -78,11 +81,6 @@ export const generateCommand = new Command('generate')
 
         throw error;
       }
-
-      const workspaceConfigPath = await findWorkspaceConfigPath({ currentDirectory: sourceDirectory });
-      const workspaceRoot = workspaceConfigPath !== undefined
-        ? path.dirname(workspaceConfigPath)
-        : undefined;
 
       // Parse options
       const count = parsePositiveIntegerOption(
@@ -113,7 +111,7 @@ export const generateCommand = new Command('generate')
       const saveContextDirectory = options.saveContextDir ?? cliConfig.context.saveDirectory;
 
       // Step 1: Read file
-      let source: string;
+      let source = '';
       try {
         source = await fs.readFile(absoluteFile, 'utf-8');
       } catch (err: unknown) {
@@ -129,6 +127,7 @@ export const generateCommand = new Command('generate')
           console.error(`Error reading file: ${String(err)}`);
         }
         process.exit(3);
+        throw new Error('Unreachable');
       }
 
       // Step 2: Validate and generate
@@ -148,6 +147,7 @@ export const generateCommand = new Command('generate')
         for await (const record of generateData(source, {
           ...genOptions,
           defaultGenerators: cliConfig.generatorDefaults,
+          workspaceGenerators: cliConfig.generators,
           currentFile: absoluteFile,
           workspaceRoot,
         })) {
@@ -200,13 +200,13 @@ export const generateCommand = new Command('generate')
               sourcePattern,
             });
           } catch (err: unknown) {
-            if (isNodeError(err)) {
-              console.error(`Error saving context file: ${err.message}`);
-            } else if (err instanceof Error) {
-              console.error(`Error saving context file: ${err.message}`);
-            } else {
-              console.error(`Error saving context file: ${String(err)}`);
-            }
+            const message = typeof err === 'object' && err !== null && 'message' in err
+              ? (() => {
+                  const candidate = (err as { message?: unknown }).message;
+                  return typeof candidate === 'string' ? candidate : 'Unknown error';
+                })()
+              : String(err);
+            console.error(`Error saving context file: ${message}`);
             process.exit(3);
           }
         }

@@ -4,7 +4,15 @@
 
 import { describe, test, expect } from 'bun:test';
 import { analyze } from './analyzer';
-import type { Program, SchemaDefaults, SchemaNode, FieldNode, GeneratorParameter } from '../parser/ast';
+import {
+  createWorkspaceGeneratorReference,
+  type Program,
+  type SchemaDefaults,
+  type SchemaNode,
+  type FieldNode,
+  type GeneratorParameter,
+  type WorkspaceGeneratorSpec,
+} from '../parser/ast';
 import type { SourceLocation } from '../common/diagnostic';
 
 // Helper to create test source location
@@ -25,13 +33,33 @@ function createField(
     name,
     type,
     generator: generatorName
-      ? {
-          name: generatorName,
-          parameters: generatorParameters,
-        }
+      ? generatorName.startsWith('@workspace.generators.')
+        ? createWorkspaceGeneratorReference(generatorName.replace('@workspace.generators.', ''))
+        : {
+            name: generatorName,
+            parameters: generatorParameters,
+          }
       : undefined,
     location: location ?? createLocation(),
   };
+}
+
+function createWorkspaceGenerators(): WorkspaceGeneratorSpec[] {
+  return [
+    {
+      name: 'sharedEmail',
+      definition: {
+        type: 'template',
+        template: '{{localPart}}@example.com',
+        generators: {
+          localPart: {
+            name: 'pick',
+            parameters: [{ name: 'array', value: ['qa.team'] }],
+          },
+        },
+      },
+    },
+  ];
 }
 
 // Helper to create test schema
@@ -182,6 +210,43 @@ describe('analyze()', () => {
       const result = analyze(program);
 
       expect(result.ok).toBe(true);
+    });
+
+    test('accepts defined workspace generator references', () => {
+      const program = createProgram([
+        createSchema('User', [createField('email', 'string', '@workspace.generators.sharedEmail')]),
+      ]);
+
+      const result = analyze(program, {
+        workspaceGenerators: createWorkspaceGenerators(),
+      });
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        const userSchema = result.value.schemas.get('User');
+        expect(userSchema?.fields[0]?.resolvedGenerator).toBe('@workspace.generators.sharedEmail');
+        expect(userSchema?.workspaceGenerators?.has('sharedEmail')).toBe(true);
+      }
+    });
+
+    test('reports undefined workspace generator references with a suggestion', () => {
+      const program = createProgram([
+        createSchema('User', [createField('email', 'string', '@workspace.generators.sharedEmai')]),
+      ]);
+
+      const result = analyze(program, {
+        workspaceGenerators: createWorkspaceGenerators(),
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        const generatorError = result.errors.find(
+          (error) => error.code === 'analyzer.undefinedWorkspaceGenerator',
+        );
+        expect(generatorError).toBeDefined();
+        expect(generatorError?.message).toContain('@workspace.generators.sharedEmai');
+        expect(generatorError?.suggestion).toContain('@workspace.generators.sharedEmail');
+      }
     });
   });
 

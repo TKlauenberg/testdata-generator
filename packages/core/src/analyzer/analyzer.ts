@@ -11,7 +11,21 @@
 
 import type { Result } from '../common/result';
 import type { Diagnostic } from '../common/diagnostic';
-import type { DefaultSpec, FieldNode, GeneratorSpec, LiteralValue, Program, SchemaNode } from '../parser/ast';
+import {
+  WORKSPACE_GENERATOR_REFERENCE_PREFIX,
+  getWorkspaceGeneratorName,
+} from '../parser/ast';
+import type {
+  DefaultSpec,
+  FieldNode,
+  GeneratorSpec,
+  LiteralValue,
+  Program,
+  SchemaNode,
+  WorkspaceGeneratorDefinition,
+  WorkspaceGeneratorSpec,
+} from '../parser/ast';
+import { GENERATOR_REGISTRY } from '../generator/generators';
 import { SymbolTable } from './symbolTable';
 import type {
   EffectiveFieldMetadata,
@@ -31,32 +45,7 @@ import {
 // Supported primitive types in the DSL
 const SUPPORTED_TYPES = new Set(['string', 'number', 'boolean', 'uuid', 'date', 'timestamp']);
 
-// Recognized generator names
-const RECOGNIZED_GENERATORS = new Set([
-  // Identity generators
-  'uuid',
-  'sequential',
-  // Personal data generators
-  'firstName',
-  'lastName',
-  'fullName',
-  'email',
-  // Numeric generators
-  'randomInt',
-  'randomFloat',
-  // Text generators
-  'randomString',
-  'word',
-  'sentence',
-  'paragraph',
-  // Temporal generators
-  'date',
-  'timestamp',
-  'dateRange',
-  // Selection generators
-  'pick',
-  'weightedPick',
-]);
+const RECOGNIZED_GENERATORS = new Set(GENERATOR_REGISTRY.keys());
 
 type TemplateReference = {
   readonly raw: string;
@@ -80,6 +69,26 @@ type EffectiveSchemaContext = {
 export interface AnalyzeOptions {
   readonly availableContextCollections?: readonly string[];
   readonly defaultGenerators?: readonly DefaultSpec[];
+  readonly workspaceGenerators?: readonly WorkspaceGeneratorSpec[];
+}
+
+function getWorkspaceReference(generator: GeneratorSpec): { readonly name: string; readonly reference: string } | undefined {
+  if (generator.source === 'workspace') {
+    return {
+      name: generator.name,
+      reference: generator.reference ?? `${WORKSPACE_GENERATOR_REFERENCE_PREFIX}${generator.name}`,
+    };
+  }
+
+  const inferredName = getWorkspaceGeneratorName(generator.name);
+  if (inferredName === undefined) {
+    return undefined;
+  }
+
+  return {
+    name: inferredName,
+    reference: generator.name,
+  };
 }
 
 function parseSchemaReference(type: string): string | undefined {
@@ -109,6 +118,9 @@ export function analyze(
   const errors: Diagnostic[] = [];
   const availableContextCollections = new Set(options.availableContextCollections ?? []);
   const configuredGeneratorDefaults = options.defaultGenerators ?? [];
+  const workspaceGeneratorDefinitions = new Map<string, WorkspaceGeneratorDefinition>(
+    (options.workspaceGenerators ?? []).map((generator) => [generator.name, generator.definition]),
+  );
 
   // Step 1: Build symbol table
   const symbolTableResult = buildSymbolTable(ast);
@@ -141,7 +153,7 @@ export function analyze(
     }
 
     // Validate generator names
-    const genResult = validateGenerators(schema, effectiveSchema.fields);
+    const genResult = validateGenerators(schema, effectiveSchema.fields, workspaceGeneratorDefinitions);
     if (!genResult.ok) {
       errors.push(...genResult.errors);
     }
@@ -205,7 +217,7 @@ export function analyze(
       node: field.field,
       effective: field.effective,
       resolvedType: field.field.type,
-      resolvedGenerator: field.effective.generator?.name,
+      resolvedGenerator: field.effective.generator?.reference ?? field.effective.generator?.name,
       isUnique: field.effective.unique,
       templateReferences: field.templateReferences.map((ref) => ref.raw),
       referencedSchema: field.referencedSchema,
@@ -213,6 +225,8 @@ export function analyze(
 
     validatedSchemas.set(schema.name, {
       node: schema,
+      workspaceGenerators:
+        workspaceGeneratorDefinitions.size > 0 ? workspaceGeneratorDefinitions : undefined,
       resolvedDefaults: effectiveSchema.resolvedDefaults,
       fields: validatedFields,
       dependencies,
@@ -339,12 +353,38 @@ function validateFieldTypes(
 function validateGenerators(
   schema: SchemaNode,
   effectiveFields: readonly EffectiveFieldContext[],
+  workspaceGenerators: ReadonlyMap<string, WorkspaceGeneratorDefinition>,
 ): Result<void, Diagnostic[]> {
   const errors: Diagnostic[] = [];
+  const workspaceGeneratorNames = Array.from(workspaceGenerators.keys());
 
   for (const effectiveField of effectiveFields) {
     const generator = effectiveField.effective.generator;
-    if (generator && !RECOGNIZED_GENERATORS.has(generator.name)) {
+    if (!generator) {
+      continue;
+    }
+
+    const workspaceReference = getWorkspaceReference(generator);
+    if (workspaceReference !== undefined) {
+      if (!workspaceGenerators.has(workspaceReference.name)) {
+        const suggestions = findSimilar(workspaceReference.name, workspaceGeneratorNames);
+
+        errors.push({
+          code: 'analyzer.undefinedWorkspaceGenerator',
+          message: `Workspace generator '${workspaceReference.reference}' is not defined`,
+          severity: 'error',
+          location: effectiveField.field.location,
+          suggestion:
+            suggestions.length > 0
+              ? `Did you mean '${WORKSPACE_GENERATOR_REFERENCE_PREFIX}${suggestions[0]}'?`
+              : undefined,
+        });
+      }
+
+      continue;
+    }
+
+    if (!RECOGNIZED_GENERATORS.has(generator.name)) {
       const suggestions = findSimilar(generator.name, Array.from(RECOGNIZED_GENERATORS));
 
       errors.push({
@@ -757,6 +797,8 @@ function resolveEffectiveField(
 function cloneGeneratorSpec(generator: GeneratorSpec): GeneratorSpec {
   return {
     name: generator.name,
+    source: generator.source,
+    reference: generator.reference,
     parameters: generator.parameters?.map((parameter) => ({
       name: parameter.name,
       value: cloneLiteralValue(parameter.value),

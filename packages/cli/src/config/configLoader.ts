@@ -1,6 +1,19 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import type { DefaultSpec, LiteralValue } from '@testdata-ai/core';
+import {
+  GENERATOR_REGISTRY,
+  WORKSPACE_GENERATOR_REFERENCE_PREFIX,
+  collectWorkspaceGeneratorReferences,
+  createWorkspaceGeneratorReference,
+  getWorkspaceGeneratorName,
+} from '@testdata-ai/core';
+import type {
+  DefaultSpec,
+  LiteralValue,
+  WorkspaceGeneratorCompositionPart,
+  WorkspaceGeneratorDefinition,
+  WorkspaceGeneratorSpec,
+} from '@testdata-ai/core';
 import { cloneBuiltInCliConfig, GLOBAL_CONFIG_FILE_NAME, resolveGlobalConfigPath } from './defaults';
 import type {
   CliConfigLayer,
@@ -17,7 +30,7 @@ import type {
 } from './types';
 
 const SUPPORTED_OUTPUT_FORMATS: readonly CliOutputFormat[] = ['json', 'csv', 'sql'];
-const CONFIG_SECTIONS: readonly CliConfigSection[] = ['defaults', 'context', 'generatorDefaults'];
+const CONFIG_SECTIONS: readonly CliConfigSection[] = ['defaults', 'context', 'generatorDefaults', 'generators'];
 
 export class CliConfigError extends Error {
   readonly exitCode: number;
@@ -33,6 +46,7 @@ export function getSettingSources(effective: LoadedEffectiveCliConfig): Effectiv
   let defaultsSource: CliConfigSource = 'built-in';
   let contextSource: CliConfigSource = 'built-in';
   let generatorDefaultsSource: CliConfigSource = 'built-in';
+  let generatorsSource: CliConfigSource = 'built-in';
 
   if (effective.layers.global.source === 'global') {
     if (effective.layers.global.providedSections.includes('defaults'))
@@ -41,6 +55,8 @@ export function getSettingSources(effective: LoadedEffectiveCliConfig): Effectiv
       contextSource = 'global';
     if (effective.layers.global.providedSections.includes('generatorDefaults'))
       generatorDefaultsSource = 'global';
+    if (effective.layers.global.providedSections.includes('generators'))
+      generatorsSource = 'global';
   }
 
   if (effective.layers.workspace !== undefined) {
@@ -50,9 +66,16 @@ export function getSettingSources(effective: LoadedEffectiveCliConfig): Effectiv
       contextSource = 'workspace';
     if (effective.layers.workspace.providedSections.includes('generatorDefaults'))
       generatorDefaultsSource = 'workspace';
+    if (effective.layers.workspace.providedSections.includes('generators'))
+      generatorsSource = 'workspace';
   }
 
-  return { defaults: defaultsSource, context: contextSource, generatorDefaults: generatorDefaultsSource };
+  return {
+    defaults: defaultsSource,
+    context: contextSource,
+    generatorDefaults: generatorDefaultsSource,
+    generators: generatorsSource,
+  };
 }
 
 export async function loadGlobalConfig(
@@ -248,11 +271,19 @@ function normalizeCliConfig(
       return readGeneratorDefaults(rawConfig.generatorDefaults, 'generatorDefaults');
     })();
 
+  const generators = rawConfig.generators === undefined
+    ? builtInConfig.generators
+    : (() => {
+      providedSections.push('generators');
+      return readWorkspaceGenerators(rawConfig.generators, 'generators');
+    })();
+
   return {
     config: {
       defaults,
       context,
       generatorDefaults,
+      generators,
     },
     providedSections,
   };
@@ -342,6 +373,13 @@ function applyLayer(baseConfig: CliGlobalConfig, layer: Pick<CliConfigLayer, 'co
     };
   }
 
+  if (layer.providedSections.includes('generators')) {
+    nextConfig = {
+      ...nextConfig,
+      generators: [...layer.config.generators],
+    };
+  }
+
   return nextConfig;
 }
 
@@ -418,6 +456,20 @@ function readGeneratorDefaults(value: unknown, propertyName: string): readonly D
   return value.map((entry, index) => normalizeDefaultSpec(entry, `${propertyName}[${index}]`));
 }
 
+function readWorkspaceGenerators(value: unknown, propertyName: string): readonly WorkspaceGeneratorSpec[] {
+  if (value === undefined) {
+    return [];
+  }
+
+  if (!Array.isArray(value)) {
+    throw new CliConfigError(`Invalid ${propertyName}: expected an array`, 1);
+  }
+
+  const generators = value.map((entry, index) => normalizeWorkspaceGeneratorSpec(entry, `${propertyName}[${index}]`));
+  validateWorkspaceGeneratorCatalog(generators, propertyName);
+  return generators;
+}
+
 function normalizeDefaultSpec(value: unknown, propertyName: string): DefaultSpec {
   if (!isRecord(value)) {
     throw new CliConfigError(`Invalid ${propertyName}: expected an object`, 1);
@@ -451,6 +503,18 @@ function normalizeGeneratorSpec(
     throw new CliConfigError(`Invalid ${propertyName}.name: expected a non-empty string`, 1);
   }
 
+  const workspaceGeneratorName = getWorkspaceGeneratorName(name);
+  if (workspaceGeneratorName !== undefined) {
+    if (parametersValue !== undefined) {
+      throw new CliConfigError(
+        `Invalid ${propertyName}.parameters: workspace generator references cannot declare parameters`,
+        1,
+      );
+    }
+
+    return createWorkspaceGeneratorReference(workspaceGeneratorName);
+  }
+
   if (parametersValue === undefined) {
     return { name };
   }
@@ -463,6 +527,242 @@ function normalizeGeneratorSpec(
     name,
     parameters: parametersValue.map((parameter, index) => normalizeGeneratorParameter(parameter, `${propertyName}.parameters[${index}]`)),
   };
+}
+
+function normalizeWorkspaceGeneratorSpec(
+  value: unknown,
+  propertyName: string,
+): WorkspaceGeneratorSpec {
+  if (!isRecord(value)) {
+    throw new CliConfigError(`Invalid ${propertyName}: expected an object`, 1);
+  }
+
+  const name = readNonEmptyString(value.name, `${propertyName}.name`, '');
+  if (name.length === 0) {
+    throw new CliConfigError(`Invalid ${propertyName}.name: expected a non-empty string`, 1);
+  }
+
+  if (getWorkspaceGeneratorName(`${WORKSPACE_GENERATOR_REFERENCE_PREFIX}${name}`) === undefined) {
+    throw new CliConfigError(
+      `Invalid ${propertyName}.name: expected an identifier-style name for @workspace.generators.<name>`,
+      1,
+    );
+  }
+
+  const hasTemplate = value.template !== undefined;
+  const hasCompose = value.compose !== undefined;
+  if (hasTemplate === hasCompose) {
+    throw new CliConfigError(
+      `Invalid ${propertyName}: expected exactly one of 'template' or 'compose'`,
+      1,
+    );
+  }
+
+  if (hasTemplate) {
+    const template = readNonEmptyString(value.template, `${propertyName}.template`, '');
+    const generatorsRecord = readNestedRecord(value.generators, `${propertyName}.generators`);
+    const generators = Object.fromEntries(
+      Object.entries(generatorsRecord).map(([slotName, generatorValue]) => [
+        slotName,
+        normalizeGeneratorSpec(generatorValue, `${propertyName}.generators.${slotName}`),
+      ]),
+    );
+
+    if (Object.keys(generators).length === 0) {
+      throw new CliConfigError(`Invalid ${propertyName}.generators: expected at least one generator slot`, 1);
+    }
+
+    return {
+      name,
+      definition: {
+        type: 'template',
+        template,
+        generators,
+      },
+    };
+  }
+
+  if (!Array.isArray(value.compose)) {
+    throw new CliConfigError(`Invalid ${propertyName}.compose: expected an array`, 1);
+  }
+
+  const compose = value.compose.map((part, index) =>
+    normalizeWorkspaceGeneratorCompositionPart(part, `${propertyName}.compose[${index}]`),
+  );
+  if (compose.length === 0) {
+    throw new CliConfigError(`Invalid ${propertyName}.compose: expected at least one composition part`, 1);
+  }
+
+  return {
+    name,
+    definition: {
+      type: 'composition',
+      compose,
+    },
+  };
+}
+
+function normalizeWorkspaceGeneratorCompositionPart(
+  value: unknown,
+  propertyName: string,
+): WorkspaceGeneratorCompositionPart {
+  if (!isRecord(value)) {
+    throw new CliConfigError(`Invalid ${propertyName}: expected an object`, 1);
+  }
+
+  const hasLiteral = value.literal !== undefined;
+  const hasGenerator = value.generator !== undefined;
+  if (hasLiteral === hasGenerator) {
+    throw new CliConfigError(
+      `Invalid ${propertyName}: expected exactly one of 'literal' or 'generator'`,
+      1,
+    );
+  }
+
+  if (hasLiteral) {
+    return {
+      type: 'literal',
+      value: readNonEmptyString(value.literal, `${propertyName}.literal`, ''),
+    };
+  }
+
+  return {
+    type: 'generator',
+    generator: normalizeGeneratorSpec(value.generator, `${propertyName}.generator`),
+  };
+}
+
+function validateWorkspaceGeneratorCatalog(
+  generators: readonly WorkspaceGeneratorSpec[],
+  propertyName: string,
+): void {
+  const definitions = new Map<string, WorkspaceGeneratorDefinition>();
+
+  for (const generator of generators) {
+    if (definitions.has(generator.name)) {
+      throw new CliConfigError(
+        `Invalid ${propertyName}: duplicate workspace generator name '${generator.name}'`,
+        1,
+      );
+    }
+
+    if (GENERATOR_REGISTRY.has(generator.name)) {
+      throw new CliConfigError(
+        `Invalid ${propertyName}: workspace generator '${generator.name}' collides with built-in generator name`,
+        1,
+      );
+    }
+
+    definitions.set(generator.name, generator.definition);
+  }
+
+  for (const generator of generators) {
+    validateWorkspaceGeneratorDefinitionShape(generator, propertyName);
+
+    const references = collectWorkspaceGeneratorReferences(generator.definition);
+    for (const reference of references) {
+      if (!definitions.has(reference)) {
+        throw new CliConfigError(
+          `Invalid ${propertyName}: workspace generator '${generator.name}' references undefined generator '${WORKSPACE_GENERATOR_REFERENCE_PREFIX}${reference}'`,
+          1,
+        );
+      }
+    }
+  }
+
+  const visited = new Set<string>();
+  const visiting = new Set<string>();
+
+  const visit = (generatorName: string): void => {
+    if (visited.has(generatorName)) {
+      return;
+    }
+
+    if (visiting.has(generatorName)) {
+      throw new CliConfigError(
+        `Invalid ${propertyName}: circular workspace generator definition detected at '${generatorName}'`,
+        1,
+      );
+    }
+
+    visiting.add(generatorName);
+    const definition = definitions.get(generatorName);
+    if (definition !== undefined) {
+      for (const reference of collectWorkspaceGeneratorReferences(definition)) {
+        visit(reference);
+      }
+    }
+    visiting.delete(generatorName);
+    visited.add(generatorName);
+  };
+
+  for (const generator of generators) {
+    visit(generator.name);
+  }
+}
+
+function validateWorkspaceGeneratorDefinitionShape(
+  generator: WorkspaceGeneratorSpec,
+  propertyName: string,
+): void {
+  if (generator.definition.type === 'template') {
+    const placeholders = Array.from(
+      generator.definition.template.matchAll(/\{\{\s*([A-Za-z_][A-Za-z0-9_]*)\s*\}\}/g),
+      (match) => match[1],
+    );
+    const slotNames = Object.keys(generator.definition.generators);
+
+    if (placeholders.length === 0) {
+      throw new CliConfigError(
+        `Invalid ${propertyName}: workspace generator '${generator.name}' template must reference at least one slot`,
+        1,
+      );
+    }
+
+    for (const placeholder of placeholders) {
+      if (!slotNames.includes(placeholder)) {
+        throw new CliConfigError(
+          `Invalid ${propertyName}: workspace generator '${generator.name}' template references missing slot '${placeholder}'`,
+          1,
+        );
+      }
+    }
+
+    for (const slotName of slotNames) {
+      if (!placeholders.includes(slotName)) {
+        throw new CliConfigError(
+          `Invalid ${propertyName}: workspace generator '${generator.name}' defines unused slot '${slotName}'`,
+          1,
+        );
+      }
+
+      validateDefinitionGenerator(
+        generator.definition.generators[slotName],
+        `${propertyName}.${generator.name}.generators.${slotName}`,
+      );
+    }
+
+    return;
+  }
+
+  for (const [index, part] of generator.definition.compose.entries()) {
+    if (part.type === 'generator') {
+      validateDefinitionGenerator(part.generator, `${propertyName}.${generator.name}.compose[${index}].generator`);
+    }
+  }
+}
+
+function validateDefinitionGenerator(generator: DefaultSpec['generator'], propertyName: string): void {
+  if (generator.source === 'workspace') {
+    return;
+  }
+
+  if (!GENERATOR_REGISTRY.has(generator.name)) {
+    throw new CliConfigError(
+      `Invalid ${propertyName}.name: unknown built-in generator '${generator.name}'`,
+      1,
+    );
+  }
 }
 
 function normalizeGeneratorParameter(

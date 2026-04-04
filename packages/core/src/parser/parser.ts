@@ -9,6 +9,7 @@
  */
 
 import type { Token, TokenKind } from '../scanner/tokens';
+import { createWorkspaceGeneratorReference } from './ast';
 import type {
   Program,
   Declaration,
@@ -1190,7 +1191,8 @@ export class Parser {
   /**
    * Parses a generator specification.
    *
-   * Grammar: GeneratorSpec ::= 'generator' '=' Identifier ('(' ParameterList ')')?
+  * Grammar: GeneratorSpec ::= 'generator' '=' Identifier ('(' ParameterList ')')?
+  *                          | 'generator' '=' '@workspace.generators.' Identifier
    */
   private _parseGeneratorSpec(): Result<GeneratorSpec, Diagnostic[]> {
     // Match 'generator' keyword (treated as identifier in tokens)
@@ -1206,12 +1208,17 @@ export class Parser {
       return { ok: false, errors: this._errors };
     }
 
+    if (this._check('operator', '@')) {
+      return this._parseWorkspaceGeneratorReference();
+    }
+
     // Match generator name
     const nameResult = this._expect('identifier');
     if (!nameResult.ok) {
       this._addError(`Expected generator name after 'generator='`, this._currentToken().location, [
         'Example: generator=uuid',
         'Example: generator=randomInt(min=1, max=100)',
+        'Example: generator=@workspace.generators.customEmail',
       ]);
       return { ok: false, errors: this._errors };
     }
@@ -1251,6 +1258,68 @@ export class Parser {
         name: generatorName,
         parameters,
       },
+    };
+  }
+
+  private _parseWorkspaceGeneratorReference(): Result<GeneratorSpec, Diagnostic[]> {
+    const atResult = this._expect('operator', '@');
+    if (!atResult.ok) {
+      return atResult;
+    }
+
+    const workspaceResult = this._expect('identifier');
+    if (!workspaceResult.ok || workspaceResult.value.kind !== 'identifier' || workspaceResult.value.value !== 'workspace') {
+      this._addError(
+        "Expected '@workspace.generators.<name>' after 'generator='",
+        this._currentToken().location,
+        ['Workspace generator syntax: generator=@workspace.generators.customEmail'],
+      );
+      return { ok: false, errors: this._errors };
+    }
+
+    const firstDotResult = this._expect('operator', '.');
+    if (!firstDotResult.ok) {
+      this._addError(
+        "Expected '.' after '@workspace' in generator reference",
+        this._currentToken().location,
+        ['Workspace generator syntax: generator=@workspace.generators.customEmail'],
+      );
+      return { ok: false, errors: this._errors };
+    }
+
+    const generatorsResult = this._expect('identifier');
+    if (!generatorsResult.ok || generatorsResult.value.kind !== 'identifier' || generatorsResult.value.value !== 'generators') {
+      this._addError(
+        "Expected 'generators' after '@workspace.' in generator reference",
+        this._currentToken().location,
+        ['Workspace generator syntax: generator=@workspace.generators.customEmail'],
+      );
+      return { ok: false, errors: this._errors };
+    }
+
+    const secondDotResult = this._expect('operator', '.');
+    if (!secondDotResult.ok) {
+      this._addError(
+        "Expected '.' after '@workspace.generators' in generator reference",
+        this._currentToken().location,
+        ['Workspace generator syntax: generator=@workspace.generators.customEmail'],
+      );
+      return { ok: false, errors: this._errors };
+    }
+
+    const nameResult = this._expect('identifier');
+    if (!nameResult.ok || nameResult.value.kind !== 'identifier') {
+      this._addError(
+        'Expected workspace generator name after @workspace.generators.',
+        this._currentToken().location,
+        ['Workspace generator syntax: generator=@workspace.generators.customEmail'],
+      );
+      return { ok: false, errors: this._errors };
+    }
+
+    return {
+      ok: true,
+      value: createWorkspaceGeneratorReference(nameResult.value.value),
     };
   }
 

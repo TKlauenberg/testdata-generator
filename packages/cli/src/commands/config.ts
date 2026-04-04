@@ -33,6 +33,12 @@ function generatorDefaultsDisplay(effective: LoadedEffectiveCliConfig): string {
   return specs.map((s) => `${s.fieldType}: ${generatorDisplay(s.generator)}`).join(', ');
 }
 
+function sharedGeneratorsDisplay(effective: LoadedEffectiveCliConfig): string {
+  const generators = effective.config.generators;
+  if (generators.length === 0) return '(none)';
+  return generators.map((generator) => generator.name).join(', ');
+}
+
 async function runConfigShow(): Promise<void> {
   const effective = await loadEffectiveConfig();
   const sources = getSettingSources(effective);
@@ -79,6 +85,10 @@ async function runConfigShow(): Promise<void> {
   // eslint-disable-next-line no-console -- User-facing config display output
   console.log(
     `  generatorDefaults     ${generatorDefaultsDisplay(effective).padEnd(12)} ${sourceLabel(sources.generatorDefaults)}`,
+  );
+  // eslint-disable-next-line no-console -- User-facing config display output
+  console.log(
+    `  generators            ${sharedGeneratorsDisplay(effective).padEnd(12)} ${sourceLabel(sources.generators)}`,
   );
 }
 
