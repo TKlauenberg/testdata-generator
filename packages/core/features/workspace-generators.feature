@@ -19,4 +19,4 @@ Feature: Workspace shared generators from real config fixtures
     Then workspace generator validation should succeed
     And schema "Ticket" field "code" should resolve generator "@workspace.generators.ticketCode"
     When records are generated from the workspace generator fixture
-    Then generated record field "code" should equal "QA-007"
+    Then generated record field "code" should equal "QA-7"

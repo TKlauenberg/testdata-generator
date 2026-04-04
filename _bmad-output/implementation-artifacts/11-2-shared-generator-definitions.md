@@ -1,6 +1,6 @@
 # Story 11.2: Shared Generator Definitions
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -48,6 +48,12 @@ The current codebase already supports upward-discovered workspace config, worksp
   - [x] Add parser, analyzer, validate, and generateData unit tests for parsing `@workspace.generators.*`, resolving valid custom generators, rejecting undefined references, and executing template-backed and composition-backed definitions.
   - [x] Add Gherkin scenarios using real `.tdconfig.json` fixtures plus `.td` schema files to prove custom workspace generators work end to end in actual schemas.
   - [x] Register any new core feature file and step definitions in `packages/core/tests/run-cucumber.ts`; do not rely on dormant features such as `config-priority.feature` unless they are explicitly wired into the active runner.
+
+  ### Review Findings
+
+  - [x] [Review][Patch] BDD path bypasses the actual config-loading and workspace-discovery flow [packages/core/features/step_definitions/workspace-generators.steps.ts:78]
+  - [x] [Review][Patch] Composition coverage never exercises multiple built-in generators in a shared generator definition [packages/core/src/generateData.test.ts:134]
+  - [x] [Review][Patch] Missing regression coverage for built-in generator-name collisions in workspace generators [packages/cli/src/config/configLoader.ts:649]
 
 ## Dev Notes
 

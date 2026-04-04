@@ -21,17 +21,32 @@
       "name": "ticketCode",
       "compose": [
         {
-          "literal": "QA-"
-        },
-        {
           "generator": {
             "name": "pick",
             "parameters": [
               {
                 "name": "array",
                 "value": [
-                  "007"
+                  "QA"
                 ]
+              }
+            ]
+          }
+        },
+        {
+          "literal": "-"
+        },
+        {
+          "generator": {
+            "name": "randomInt",
+            "parameters": [
+              {
+                "name": "min",
+                "value": 7
+              },
+              {
+                "name": "max",
+                "value": 7
               }
             ]
           }

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test';
 import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
+import { generateData, validateSchema } from '@testdata-ai/core';
 import {
   CliConfigError,
   findWorkspaceConfigPath,
@@ -290,6 +291,32 @@ describe('loadGlobalConfig', () => {
     }
   });
 
+  test('rejects shared generator names that collide with built-in generators', async () => {
+    const homeDirectory = await createHomeDirectory();
+    await writeGlobalConfig(homeDirectory, {
+      generators: [
+        {
+          name: 'pick',
+          template: '{{value}}',
+          generators: {
+            value: { name: 'firstName' },
+          },
+        },
+      ],
+    });
+
+    try {
+      await loadGlobalConfig({ homeDirectory });
+      throw new Error('Expected built-in generator name collisions to throw a CliConfigError');
+    } catch (error: unknown) {
+      expect(error).toBeInstanceOf(CliConfigError);
+      expect(error).toHaveProperty(
+        'message',
+        "Invalid generators: workspace generator 'pick' collides with built-in generator name",
+      );
+    }
+  });
+
   test('rejects cyclic shared generator definitions', async () => {
     const homeDirectory = await createHomeDirectory();
     await writeGlobalConfig(homeDirectory, {
@@ -363,6 +390,47 @@ describe('loadEffectiveConfig', () => {
       count: 7,
       format: 'json',
     });
+  });
+
+  test('loads discovered workspace generators from fixture config for validation and generation', async () => {
+    const homeDirectory = await createHomeDirectory();
+    const fixtureProjectDirectory = path.resolve(
+      import.meta.dir,
+      '../../../core/features/fixtures/workspace-generators/project',
+    );
+    const schemaPath = path.join(fixtureProjectDirectory, 'apps', 'user.td');
+    const source = await fs.readFile(schemaPath, 'utf-8');
+
+    const loaded = await loadEffectiveConfig({
+      homeDirectory,
+      currentDirectory: path.dirname(schemaPath),
+    });
+
+    expect(loaded.layers.workspace?.path).toBe(
+      path.join(fixtureProjectDirectory, GLOBAL_CONFIG_FILE_NAME),
+    );
+
+    const workspaceRoot = loaded.layers.workspace !== undefined
+      ? path.dirname(loaded.layers.workspace.path)
+      : undefined;
+
+    const validationResult = validateSchema(source, schemaPath, {
+      workspaceGenerators: loaded.config.generators,
+      currentFile: schemaPath,
+      workspaceRoot,
+    });
+
+    expect(validationResult.ok).toBe(true);
+
+    const records = await Array.fromAsync(generateData(source, {
+      count: 1,
+      workspaceGenerators: loaded.config.generators,
+      currentFile: schemaPath,
+      workspaceRoot,
+    }));
+
+    expect(records).toHaveLength(1);
+    expect(records[0]?.email).toBe('qa.team@example.com');
   });
 
   test('composes workspace over global over built-in defaults', async () => {

@@ -146,12 +146,22 @@ describe('generateData()', () => {
             definition: {
               type: 'composition',
               compose: [
-                { type: 'literal', value: 'QA-' },
                 {
                   type: 'generator',
                   generator: {
                     name: 'pick',
-                    parameters: [{ name: 'array', value: ['007'] }],
+                    parameters: [{ name: 'array', value: ['QA'] }],
+                  },
+                },
+                { type: 'literal', value: '-' },
+                {
+                  type: 'generator',
+                  generator: {
+                    name: 'randomInt',
+                    parameters: [
+                      { name: 'min', value: 7 },
+                      { name: 'max', value: 7 },
+                    ],
                   },
                 },
               ],
@@ -161,7 +171,7 @@ describe('generateData()', () => {
       }));
 
       expect(records).toHaveLength(1);
-      expect(records[0]?.code).toBe('QA-007');
+      expect(records[0]?.code).toBe('QA-7');
     });
   });
 
