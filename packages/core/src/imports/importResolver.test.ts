@@ -53,6 +53,40 @@ describe('resolveProgramImports()', () => {
     }
   });
 
+  test('suggests a workspace-relative file when a relative import points to the wrong directory', async () => {
+    const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-import-moved-file-'));
+    const appsDir = path.join(workspace, 'apps');
+    const commonDir = path.join(workspace, 'common');
+    const mainFile = path.join(appsDir, 'main.td');
+    const profileFile = path.join(commonDir, 'profile.td');
+
+    await fs.mkdir(appsDir, { recursive: true });
+    await fs.mkdir(commonDir, { recursive: true });
+    await fs.writeFile(profileFile, 'schema Profile { id: uuid }\n', 'utf-8');
+
+    try {
+      const source = [
+        '@import "./profile.td"',
+        '',
+        'schema User {',
+        '  account: Profile',
+        '}',
+      ].join('\n');
+
+      const result = resolveProgramImports(parseProgram(source, mainFile), {
+        currentFile: mainFile,
+        workspaceRoot: workspace,
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.errors[0]?.suggestion).toContain('../common/profile.td');
+      }
+    } finally {
+      await fs.rm(workspace, { recursive: true, force: true });
+    }
+  });
+
   test('fails clearly for workspace imports when no workspace root is available', () => {
     const currentFile = path.join('/tmp', 'apps', 'main.td');
     const source = [
@@ -137,6 +171,35 @@ describe('resolveProgramImports()', () => {
       if (!result.ok) {
         expect(result.errors[0]?.code).toBe('analyzer.unresolvedImport');
         expect(result.errors[0]?.suggestion).toContain('@workspace/common/profile.td');
+      }
+    } finally {
+      await fs.rm(workspace, { recursive: true, force: true });
+    }
+  });
+
+  test('never suggests importing the current file itself', async () => {
+    const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-self-import-suggestion-'));
+    const mainFile = path.join(workspace, 'main.td');
+
+    await fs.writeFile(mainFile, 'schema Main { id: uuid }\n', 'utf-8');
+
+    try {
+      const source = [
+        '@import "./man.td"',
+        '',
+        'schema User {',
+        '  id: uuid',
+        '}',
+      ].join('\n');
+
+      const result = resolveProgramImports(parseProgram(source, mainFile), {
+        currentFile: mainFile,
+        workspaceRoot: workspace,
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.errors[0]?.suggestion).toBeUndefined();
       }
     } finally {
       await fs.rm(workspace, { recursive: true, force: true });

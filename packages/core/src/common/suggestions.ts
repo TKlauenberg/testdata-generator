@@ -1,17 +1,51 @@
 import * as path from 'node:path';
 
 /**
- * Finds similar strings using Levenshtein distance.
- * Returns up to 3 most similar candidates with distance <= 3.
+ * Finds similar strings using edit distance with path-aware ranking.
  */
 export function findSimilar(target: string, candidates: readonly string[]): string[] {
+  const normalizedTarget = normalizeSimilarityInput(target);
+  const targetBasename = path.posix.basename(normalizedTarget);
+  const targetSegmentCount = countSegments(normalizedTarget);
+
   return candidates
-    .map((candidate) => ({
+    .map((candidate) => {
+      const normalizedCandidate = normalizeSimilarityInput(candidate);
+      const candidateBasename = path.posix.basename(normalizedCandidate);
+
+      return {
       name: candidate,
-      distance: levenshteinDistance(target.toLowerCase(), candidate.toLowerCase()),
-    }))
-    .filter((item) => item.distance <= 3)
-    .sort((a, b) => a.distance - b.distance)
+      distance: levenshteinDistance(normalizedTarget, normalizedCandidate),
+      basenameDistance: levenshteinDistance(targetBasename, candidateBasename),
+      sharedSuffixSegments: countSharedSuffixSegments(normalizedTarget, normalizedCandidate),
+      segmentCountDelta: Math.abs(targetSegmentCount - countSegments(normalizedCandidate)),
+      isPathLike: normalizedTarget.includes('/') || normalizedCandidate.includes('/'),
+    };
+    })
+    .filter((item) => (
+      item.distance <= 3
+      || item.basenameDistance <= 2
+      || (item.isPathLike && item.basenameDistance === 0 && item.sharedSuffixSegments > 0)
+    ))
+    .sort((left, right) => {
+      if (left.basenameDistance !== right.basenameDistance) {
+        return left.basenameDistance - right.basenameDistance;
+      }
+
+      if (left.sharedSuffixSegments !== right.sharedSuffixSegments) {
+        return right.sharedSuffixSegments - left.sharedSuffixSegments;
+      }
+
+      if (left.distance !== right.distance) {
+        return left.distance - right.distance;
+      }
+
+      if (left.segmentCountDelta !== right.segmentCountDelta) {
+        return left.segmentCountDelta - right.segmentCountDelta;
+      }
+
+      return left.name.localeCompare(right.name);
+    })
     .slice(0, 3)
     .map((item) => item.name);
 }
@@ -26,6 +60,32 @@ export function toImportPath(fromDirectory: string, toFile: string): string {
   }
 
   return `./${relativePath}`;
+}
+
+function normalizeSimilarityInput(value: string): string {
+  return value.toLowerCase().replaceAll('\\', '/');
+}
+
+function countSegments(value: string): number {
+  return value.split('/').filter((segment) => segment.length > 0).length;
+}
+
+function countSharedSuffixSegments(left: string, right: string): number {
+  const leftSegments = left.split('/').filter((segment) => segment.length > 0);
+  const rightSegments = right.split('/').filter((segment) => segment.length > 0);
+  let count = 0;
+
+  while (count < leftSegments.length && count < rightSegments.length) {
+    const leftSegment = leftSegments[leftSegments.length - 1 - count];
+    const rightSegment = rightSegments[rightSegments.length - 1 - count];
+    if (leftSegment !== rightSegment) {
+      break;
+    }
+
+    count += 1;
+  }
+
+  return count;
 }
 
 /**

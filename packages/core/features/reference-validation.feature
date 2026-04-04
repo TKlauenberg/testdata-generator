@@ -8,12 +8,16 @@ Feature: Reference validation diagnostics from real fixture files
     And reference validation fixture "main.td" is loaded as the current schema file
     When the reference validation fixture is validated
     Then reference validation should fail with diagnostic code "analyzer.unresolvedImport"
+    And the reference validation diagnostic "analyzer.unresolvedImport" message should contain "could not be found"
+    And the reference validation diagnostic "analyzer.unresolvedImport" should reference the current fixture file
     And the reference validation suggestion should contain "./common/profile.td"
 
   Scenario: Broken inherited schema references suggest a close schema name
     Given reference validation fixture "reference-validation/inheritance/missing-base.td" is loaded as the current schema file
     When the reference validation fixture is validated
     Then reference validation should fail with diagnostic code "analyzer.undefinedSchema"
+    And the reference validation diagnostic "analyzer.undefinedSchema" message should contain "is not defined"
+    And the reference validation diagnostic "analyzer.undefinedSchema" should reference the current fixture file
     And the reference validation suggestion should contain "BaseUser"
 
   Scenario: Broken context references suggest a close collection name
@@ -23,12 +27,16 @@ Feature: Reference validation diagnostics from real fixture files
       | orders |
     When the reference validation fixture is validated
     Then reference validation should fail with diagnostic code "analyzer.undefinedContextCollection"
+    And the reference validation diagnostic "analyzer.undefinedContextCollection" message should contain "is not available"
+    And the reference validation diagnostic "analyzer.undefinedContextCollection" should reference the current fixture file
     And the reference validation suggestion should contain "users"
 
   Scenario: Broken template references suggest a close field name
     Given reference validation fixture "reference-validation/templates/missing-field.td" is loaded as the current schema file
     When the reference validation fixture is validated
     Then reference validation should fail with diagnostic code "analyzer.undefinedTemplateField"
+    And the reference validation diagnostic "analyzer.undefinedTemplateField" message should contain "Undefined field"
+    And the reference validation diagnostic "analyzer.undefinedTemplateField" should reference the current fixture file
     And the reference validation suggestion should contain "firstName"
 
   Scenario: Broken workspace generator references suggest a close generator name
@@ -36,4 +44,6 @@ Feature: Reference validation diagnostics from real fixture files
     And reference validation fixture "apps/user-with-typo.td" is loaded as the current schema file
     When the reference validation fixture is validated
     Then reference validation should fail with diagnostic code "analyzer.undefinedWorkspaceGenerator"
+    And the reference validation diagnostic "analyzer.undefinedWorkspaceGenerator" message should contain "is not defined"
+    And the reference validation diagnostic "analyzer.undefinedWorkspaceGenerator" should reference the current fixture file
     And the reference validation suggestion should contain "@workspace.generators.sharedEmail"

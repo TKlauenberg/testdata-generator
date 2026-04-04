@@ -171,11 +171,18 @@ async function hasWorkspaceGeneratorConfig(workspaceRoot: string): Promise<boole
   }
 }
 
-Then('reference validation should fail with diagnostic code {string}', (diagnosticCode: string) => {
+function findDiagnosticByCode(diagnosticCode: string): Diagnostic {
+  const diagnostic = state.diagnostics.find((item) => item.code === diagnosticCode);
   assert.ok(
-    state.diagnostics.some((diagnostic) => diagnostic.code === diagnosticCode),
-    `Expected diagnostics to contain code '${diagnosticCode}', received: ${state.diagnostics.map((diagnostic) => diagnostic.code).join(', ')}`,
+    diagnostic !== undefined,
+    `Expected diagnostics to contain code '${diagnosticCode}', received: ${state.diagnostics.map((item) => item.code).join(', ')}`,
   );
+
+  return diagnostic;
+}
+
+Then('reference validation should fail with diagnostic code {string}', (diagnosticCode: string) => {
+  findDiagnosticByCode(diagnosticCode);
 });
 
 Then('the reference validation suggestion should contain {string}', (substring: string) => {
@@ -183,4 +190,21 @@ Then('the reference validation suggestion should contain {string}', (substring: 
     state.diagnostics.some((diagnostic) => diagnostic.suggestion?.includes(substring) === true),
     `Expected at least one diagnostic suggestion to contain '${substring}', received: ${state.diagnostics.map((diagnostic) => diagnostic.suggestion ?? '<none>').join('; ')}`,
   );
+});
+
+Then('the reference validation diagnostic {string} message should contain {string}', (diagnosticCode: string, substring: string) => {
+  const diagnostic = findDiagnosticByCode(diagnosticCode);
+  assert.ok(
+    diagnostic.message.includes(substring),
+    `Expected diagnostic '${diagnosticCode}' message to contain '${substring}', received: '${diagnostic.message}'`,
+  );
+});
+
+Then('the reference validation diagnostic {string} should reference the current fixture file', (diagnosticCode: string) => {
+  const diagnostic = findDiagnosticByCode(diagnosticCode);
+  assert.ok(state.currentFile !== undefined, 'A fixture file must be loaded before asserting diagnostic location');
+  assert.ok(diagnostic.location !== undefined, `Expected diagnostic '${diagnosticCode}' to include a location`);
+  assert.equal(diagnostic.location.file, state.currentFile);
+  assert.ok(diagnostic.location.line >= 1, `Expected diagnostic '${diagnosticCode}' line to be >= 1`);
+  assert.ok(diagnostic.location.column >= 1, `Expected diagnostic '${diagnosticCode}' column to be >= 1`);
 });

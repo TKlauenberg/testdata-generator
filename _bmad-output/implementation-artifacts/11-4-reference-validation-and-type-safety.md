@@ -1,6 +1,6 @@
 # Story 11.4: Reference Validation and Type Safety
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -48,6 +48,13 @@ The current codebase already performs several reference checks in the core pipel
   - [x] Do not introduce a new reference DSL, runtime fallback resolver, or post-generation validation pass.
   - [x] Do not change CLI command behavior unless a failing acceptance test proves the public entry points are not surfacing analyzer/import diagnostics correctly.
   - [x] Update docs only if current user-facing docs or examples already describe reference-validation behavior and need correction or clarification.
+
+### Review Findings
+
+- [x] [Review][Patch] Missing-import suggestions synchronously crawl the importer directory and workspace on every unresolved import [packages/core/src/imports/importResolver.ts:182]
+- [x] [Review][Patch] Import suggestion ranking can return unrelated or self-import paths based on traversal order instead of relevance [packages/core/src/imports/importResolver.ts:206]
+- [x] [Review][Patch] Workspace import suggestions still miss detectable wrong-path cases beyond small typos because matching stops at edit distance 3 [packages/core/src/common/suggestions.ts:13]
+- [x] [Review][Patch] Curated BDD coverage does not assert diagnostic location or message quality for the new broken-reference scenarios [packages/core/features/step_definitions/reference-validation.steps.ts:174]
 
 ## Dev Notes
 
