@@ -1,6 +1,6 @@
 # Story 12.1: Generation Metadata Tracking
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -61,6 +61,11 @@ The current codebase already has three partial metadata seams: `JsonAdapter` wri
   - [x] Update `docs/configuration.md` only if metadata behavior becomes configurable in this story.
   - [x] Update `docs/foundation-patterns.md` if the project begins documenting metadata lineage or pattern identity rules as user-facing behavior.
   - [x] Do not add history logging, `--no-history`, `td history`, or platform-export flags in Story 12.1.
+
+### Review Findings
+
+- [x] [Review][Patch] Generated JSON metadata envelopes no longer load as JSON context [packages/core/src/context/loaders/jsonLoader.ts:44]
+- [x] [Review][Patch] `--save-context` drops the new seed, patternHash, and lineage metadata fields [packages/cli/src/commands/generate.ts:316]
 
 ## Dev Notes
 

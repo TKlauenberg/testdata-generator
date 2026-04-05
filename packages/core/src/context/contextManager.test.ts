@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { mkdir, readFile, rm } from 'node:fs/promises';
 import * as path from 'node:path';
+import type { GenerationMetadataLineageEntry } from '../common';
 import { isContextData, loadContext, saveAsContext } from './contextManager';
 
 const TEST_DIR = path.join(import.meta.dir, '../../__test-output__/context-manager');
@@ -73,6 +74,35 @@ describe('loadContext', () => {
     expect(context.metadata.sourcePattern).toBe('schemas/users.td');
     expect(context.metadata.version).toBe('0.1.0');
     expect(context.metadata.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+  });
+
+  test('persists extended generation metadata when saving contexts', async () => {
+    const lineage: readonly GenerationMetadataLineageEntry[] = [
+      {
+        type: 'root-pattern',
+        identifier: 'schemas/users.td',
+        hash: 'abc123',
+      },
+    ];
+
+    await saveAsContext([{ id: 'u-1' }], 'metadata-rich', ['smoke'], {
+      directory: TEST_DIR,
+      timestamp: '2026-04-05T10:15:00.000Z',
+      sourcePattern: 'schemas/users.td',
+      version: '0.1.0',
+      seed: 42,
+      patternHash: 'pattern-123',
+      lineage,
+    });
+
+    const context = await loadContext(path.join(TEST_DIR, 'metadata-rich.json'));
+
+    expect(context.metadata.timestamp).toBe('2026-04-05T10:15:00.000Z');
+    expect(context.metadata.sourcePattern).toBe('schemas/users.td');
+    expect(context.metadata.version).toBe('0.1.0');
+    expect(context.metadata.seed).toBe(42);
+    expect(context.metadata.patternHash).toBe('pattern-123');
+    expect(context.metadata.lineage).toEqual(lineage);
   });
 
   test('loads CSV context through the orchestrating entry point', async () => {

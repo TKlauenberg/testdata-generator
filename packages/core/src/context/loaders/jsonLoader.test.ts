@@ -1,6 +1,7 @@
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
 import { mkdir, rm } from 'node:fs/promises';
 import * as path from 'node:path';
+import { createGenerationMetadata } from '../../common';
 import { loadJsonContext } from './jsonLoader';
 import type { ContextData } from '../types';
 
@@ -90,6 +91,41 @@ describe('loadJsonContext', () => {
     expect(context.metadata.timestamp).toBe('2026-03-08T10:00:00.000Z');
     expect(context.metadata.sourcePattern).toBe('schemas/users.td');
     expect(context.metadata.version).toBe('0.1.0');
+  });
+
+  test('loads generated JSON envelopes and preserves generation metadata', async () => {
+    const metadata = createGenerationMetadata({
+      timestamp: '2026-04-05T10:00:00.000Z',
+      sourcePattern: 'schemas/users.td',
+      count: 2,
+      format: 'json',
+      seed: 42,
+      version: '0.1.0',
+      lineageInputs: [
+        { type: 'root-pattern', identifier: 'schemas/users.td', content: 'schema User { id: number }' },
+      ],
+    });
+    const filePath = await writeJsonFixture('generated-envelope.json', {
+      metadata,
+      data: [
+        { id: 'u-1', email: 'qa.one@example.com' },
+        { id: 'u-2', email: 'qa.two@example.com' },
+      ],
+    });
+
+    const context = await loadJsonContext(filePath);
+
+    expect(context.records).toEqual([
+      { id: 'u-1', email: 'qa.one@example.com' },
+      { id: 'u-2', email: 'qa.two@example.com' },
+    ]);
+    expect(context.metadata.tags).toEqual([]);
+    expect(context.metadata.timestamp).toBe(metadata.timestamp);
+    expect(context.metadata.sourcePattern).toBe(metadata.sourcePattern);
+    expect(context.metadata.version).toBe(metadata.version);
+    expect(context.metadata.seed).toBe(metadata.seed);
+    expect(context.metadata.patternHash).toBe(metadata.patternHash);
+    expect(context.metadata.lineage).toEqual(metadata.lineage);
   });
 
   test('keeps legacy single-object payloads with metadata and data fields loadable', async () => {

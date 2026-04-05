@@ -33,6 +33,13 @@ async function readSavedContext(relativePath: string): Promise<{
   readonly metadata: {
     readonly sourcePattern?: string;
     readonly count: number;
+    readonly seed?: number;
+    readonly patternHash?: string;
+    readonly lineage?: readonly {
+      readonly type: string;
+      readonly identifier: string;
+      readonly hash: string;
+    }[];
   };
   readonly data: readonly unknown[];
 }> {
@@ -130,6 +137,32 @@ Then('the saved context file {string} should record source pattern {string}', as
     throw new Error(
       `Expected source pattern '${sourcePattern}', received '${savedContext.metadata.sourcePattern ?? '<missing>'}'`,
     );
+  }
+});
+
+Then('the saved context file {string} should record seed {int}', async (relativePath: string, seed: number) => {
+  const savedContext = await readSavedContext(relativePath);
+
+  if (savedContext.metadata.seed !== seed) {
+    throw new Error(
+      `Expected seed ${seed}, received ${savedContext.metadata.seed ?? '<missing>'}`,
+    );
+  }
+});
+
+Then('the saved context file {string} should include a pattern hash', async (relativePath: string) => {
+  const savedContext = await readSavedContext(relativePath);
+
+  if (!savedContext.metadata.patternHash) {
+    throw new Error(`Expected pattern hash to be present in ${relativePath}`);
+  }
+});
+
+Then('the saved context file {string} should include lineage metadata', async (relativePath: string) => {
+  const savedContext = await readSavedContext(relativePath);
+
+  if (!savedContext.metadata.lineage || savedContext.metadata.lineage.length === 0) {
+    throw new Error(`Expected lineage metadata to be present in ${relativePath}`);
   }
 });
 

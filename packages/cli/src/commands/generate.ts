@@ -311,11 +311,15 @@ export const generateCommand = new Command('generate')
         if (options.saveContext) {
           try {
             const contextDirectory = path.resolve(workingDirectory, saveContextDirectory);
-            const sourcePattern = path.relative(workingDirectory, absoluteFile);
 
             await saveAsContext(records, options.saveContext, [], {
               directory: contextDirectory,
-              sourcePattern,
+              timestamp: metadata.timestamp,
+              sourcePattern: metadata.sourcePattern,
+              version: metadata.version,
+              seed: metadata.seed,
+              patternHash: metadata.patternHash,
+              lineage: metadata.lineage,
             });
           } catch (err: unknown) {
             const message = typeof err === 'object' && err !== null && 'message' in err

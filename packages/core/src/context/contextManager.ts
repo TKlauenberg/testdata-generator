@@ -1,6 +1,7 @@
 import * as path from 'node:path';
 import { mkdir } from 'node:fs/promises';
 import { isGenerationMetadata } from '../common';
+import type { GenerationMetadataLineageEntry } from '../common';
 import { version } from '../version';
 import { loadCsvContext } from './loaders/csvLoader';
 import { loadJsonContext } from './loaders/jsonLoader';
@@ -88,7 +89,12 @@ function normalizeContextName(name: string): string {
 
 export interface SaveContextOptions {
   readonly directory?: string;
+  readonly timestamp?: string;
   readonly sourcePattern?: string;
+  readonly version?: string;
+  readonly seed?: number;
+  readonly patternHash?: string;
+  readonly lineage?: readonly GenerationMetadataLineageEntry[];
 }
 
 export function normalizeContextTags(tags: readonly string[] = []): readonly string[] {
@@ -139,11 +145,14 @@ export async function saveAsContext(
   const normalizedTags = normalizeContextTags(tags);
   const envelope: SavedContextEnvelope = {
     metadata: {
-      timestamp: new Date().toISOString(),
+      timestamp: options.timestamp ?? new Date().toISOString(),
       sourcePattern: options.sourcePattern,
       count: records.length,
-      version,
+      version: options.version ?? version,
       tags: normalizedTags,
+      seed: options.seed,
+      patternHash: options.patternHash,
+      lineage: options.lineage,
     },
     data: records as readonly ContextRecord[],
   };

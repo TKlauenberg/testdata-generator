@@ -1,5 +1,6 @@
+import { isGenerationMetadata } from '../../common';
 import { err, ok } from '../../common/result';
-import type { GenerationMetadataLineageEntry } from '../../common';
+import type { GenerationMetadata, GenerationMetadataLineageEntry } from '../../common';
 import type { Result } from '../../common/result';
 import type {
   ContextData,
@@ -46,6 +47,24 @@ function isSavedContextEnvelopeCandidate(value: unknown): value is SavedContextE
     && 'metadata' in value
     && 'data' in value
     && (Array.isArray(value.data) || isSavedContextMetadataCandidate(value.metadata));
+}
+
+function isGeneratedOutputEnvelopeCandidate(value: unknown): value is {
+  readonly metadata: GenerationMetadata;
+  readonly data: readonly ContextRecord[];
+} {
+  if (!isObjectRecord(value) || !('metadata' in value) || !('data' in value)) {
+    return false;
+  }
+
+  const candidate = value as {
+    readonly metadata?: unknown;
+    readonly data?: unknown;
+  };
+
+  return isGenerationMetadata(candidate.metadata)
+    && Array.isArray(candidate.data)
+    && candidate.data.every((item) => isObjectRecord(item));
 }
 
 function validateSavedContextMetadata(
@@ -155,7 +174,15 @@ function normalizeContextPayload(
 ): Result<{
   readonly records: readonly ContextRecord[];
   readonly savedMetadata?: SavedContextMetadata;
+  readonly generatedMetadata?: GenerationMetadata;
 }, string> {
+  if (isGeneratedOutputEnvelopeCandidate(parsedJson)) {
+    return ok({
+      records: parsedJson.data,
+      generatedMetadata: parsedJson.metadata,
+    });
+  }
+
   if (isSavedContextEnvelopeCandidate(parsedJson)) {
     return normalizeSavedContextEnvelope(parsedJson, filePath);
   }
@@ -209,7 +236,7 @@ export async function loadJsonContext(filePath: string): Promise<ContextData> {
     throw new Error(recordsResult.errors);
   }
 
-  const { records, savedMetadata } = recordsResult.value;
+  const { records, savedMetadata, generatedMetadata } = recordsResult.value;
 
   return {
     records,
@@ -219,12 +246,12 @@ export async function loadJsonContext(filePath: string): Promise<ContextData> {
       loadedAt: new Date().toISOString(),
       recordCount: records.length,
       tags: savedMetadata?.tags ?? [],
-      timestamp: savedMetadata?.timestamp,
-      sourcePattern: savedMetadata?.sourcePattern,
-      version: savedMetadata?.version,
-      seed: savedMetadata?.seed,
-      patternHash: savedMetadata?.patternHash,
-      lineage: savedMetadata?.lineage,
+      timestamp: savedMetadata?.timestamp ?? generatedMetadata?.timestamp,
+      sourcePattern: savedMetadata?.sourcePattern ?? generatedMetadata?.sourcePattern,
+      version: savedMetadata?.version ?? generatedMetadata?.version,
+      seed: savedMetadata?.seed ?? generatedMetadata?.seed,
+      patternHash: savedMetadata?.patternHash ?? generatedMetadata?.patternHash,
+      lineage: savedMetadata?.lineage ?? generatedMetadata?.lineage,
     },
   };
 }

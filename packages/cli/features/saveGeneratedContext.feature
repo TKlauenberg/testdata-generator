@@ -11,11 +11,14 @@ Feature: Save generated data as reusable context through the CLI
         email: string generator=pick(array=["qa.one@example.com", "qa.two@example.com"])
       }
       """
-    When the tester runs "td generate seed-users.td --count 2 --save-context generated-users"
+    When the tester runs "td generate seed-users.td --count 2 --seed 42 --save-context generated-users"
     Then the CLI exit code should be 0
     And the saved context file "contexts/generated-users.json" should exist
     And the saved context file "contexts/generated-users.json" should contain 2 records
     And the saved context file "contexts/generated-users.json" should record source pattern "seed-users.td"
+    And the saved context file "contexts/generated-users.json" should record seed 42
+    And the saved context file "contexts/generated-users.json" should include a pattern hash
+    And the saved context file "contexts/generated-users.json" should include lineage metadata
 
   Scenario: Automatically load global defaults for omitted generate options
     Given a temporary CLI workspace
