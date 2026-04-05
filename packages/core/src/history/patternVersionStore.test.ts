@@ -6,6 +6,7 @@ import { createGenerationMetadata } from '../common';
 import {
   createPatternVersionSnapshot,
   PatternVersionStoreParseError,
+  PatternVersionStoreValidationError,
   persistPatternVersionSnapshot,
   readPatternVersionSnapshot,
 } from './patternVersionStore';
@@ -104,12 +105,20 @@ describe('pattern version store', () => {
     await persistPatternVersionSnapshot(storeDirectory, snapshot);
 
     await expect(readPatternVersionSnapshot(storeDirectory, snapshot.patternHash)).resolves.toEqual(snapshot);
-    await expect(readPatternVersionSnapshot(storeDirectory, 'missing-pattern-hash')).resolves.toBeNull();
+    await expect(readPatternVersionSnapshot(storeDirectory, '0'.repeat(64))).resolves.toBeNull();
+  });
+
+  test('rejects invalid pattern hashes before resolving snapshot paths', async () => {
+    const storeDirectory = await createStoreDirectory();
+
+    await expect(readPatternVersionSnapshot(storeDirectory, '../escape')).rejects.toBeInstanceOf(
+      PatternVersionStoreValidationError,
+    );
   });
 
   test('reports malformed snapshot files with a controlled parse error', async () => {
     const storeDirectory = await createStoreDirectory();
-    const patternHash = 'deadbeef';
+    const patternHash = 'd'.repeat(64);
     await fs.writeFile(path.join(storeDirectory, `${patternHash}.json`), '{"patternHash":', 'utf-8');
 
     try {
@@ -118,5 +127,28 @@ describe('pattern version store', () => {
     } catch (error: unknown) {
       expect(error).toBeInstanceOf(PatternVersionStoreParseError);
     }
+  });
+
+  test('rejects snapshot files whose contents do not match the requested hash', async () => {
+    const storeDirectory = await createStoreDirectory();
+    const { snapshot } = createSnapshot();
+
+    if (snapshot === undefined) {
+      throw new Error('Expected snapshot to exist for mismatch test');
+    }
+
+    const requestedHash = snapshot.patternHash;
+    await fs.writeFile(
+      path.join(storeDirectory, `${requestedHash}.json`),
+      `${JSON.stringify({
+        ...snapshot,
+        patternHash: 'f'.repeat(64),
+      }, null, 2)}\n`,
+      'utf-8',
+    );
+
+    await expect(readPatternVersionSnapshot(storeDirectory, requestedHash)).rejects.toBeInstanceOf(
+      PatternVersionStoreParseError,
+    );
   });
 });

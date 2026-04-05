@@ -29,6 +29,7 @@ export {
   isPatternVersionSnapshot,
   PATTERN_VERSION_STORE_DIRECTORY_NAME,
   PatternVersionStoreParseError,
+  PatternVersionStoreValidationError,
   persistPatternVersionSnapshot,
   readPatternVersionSnapshot,
 } from './patternVersionStore';

@@ -108,6 +108,18 @@ describe('td diff', () => {
     expect(diff.stderr).toContain('Unknown pattern hash');
   });
 
+  test('rejects invalid hash arguments before reading from the snapshot store', async () => {
+    const workspaceDirectory = await createWorkspaceDirectory('testdata-ai-diff-invalid-hash-');
+    await writeFixture(workspaceDirectory, 'valid-simple.td');
+
+    await runCli(['generate', 'valid-simple.td', '--count', '1'], workspaceDirectory);
+
+    const diff = await runCli(['diff', '../escape', 'f'.repeat(64)], workspaceDirectory);
+
+    expect(diff.exitCode).toBe(1);
+    expect(diff.stderr).toContain('Invalid pattern hash');
+  });
+
   test('resolves snapshots from the configured workspace-relative history directory', async () => {
     const workspaceDirectory = await createWorkspaceDirectory('testdata-ai-diff-workspace-root-');
     const nestedDirectory = path.join(workspaceDirectory, 'apps', 'qa');

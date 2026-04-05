@@ -3,6 +3,7 @@ import {
   comparePatternVersions,
   type PatternVersionModifiedEntry,
   PatternVersionStoreParseError,
+  PatternVersionStoreValidationError,
   readPatternVersionSnapshot,
 } from '@testdata-ai/core';
 import * as path from 'node:path';
@@ -86,7 +87,7 @@ export const diffCommand = new Command('diff')
         return;
       }
 
-      if (error instanceof PatternVersionStoreParseError) {
+      if (error instanceof PatternVersionStoreParseError || error instanceof PatternVersionStoreValidationError) {
         console.error(`Error: ${error.message}`);
         process.exit(1);
         return;

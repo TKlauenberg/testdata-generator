@@ -1,6 +1,6 @@
 # Story 12.3: Pattern Version Tracking
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -52,6 +52,11 @@ Keep the scope tight and honest. This story is about deterministic pattern-versi
   - [x] Add core unit tests for hash lookup, snapshot persistence and deduplication, identical-hash comparisons, modified root-pattern content, imported-pattern changes, and workspace-generator definition changes.
   - [x] Add CLI unit tests for `td diff` success paths, missing-hash errors, identical-hash output, and workspace-relative history or snapshot resolution.
   - [x] Extend `packages/cli/features/historyCommand.feature` and `packages/cli/features/step_definitions/history.steps.ts` in place, or wire any new feature file into `packages/cli/tests/run-cucumber.ts`; do not add an unwired feature.
+
+### Review Findings
+
+- [x] [Review][Patch] Validate `patternHash` before resolving snapshot paths [packages/core/src/history/patternVersionStore.ts:77]
+- [x] [Review][Patch] Verify loaded snapshot identity matches the requested hash [packages/core/src/history/patternVersionStore.ts:175]
 
 ## Dev Notes
 

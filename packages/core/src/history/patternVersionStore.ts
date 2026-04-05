@@ -35,6 +35,16 @@ export class PatternVersionStoreParseError extends Error {
   }
 }
 
+export class PatternVersionStoreValidationError extends Error {
+  readonly patternHash: string;
+
+  constructor(patternHash: string, message: string) {
+    super(message);
+    this.name = 'PatternVersionStoreValidationError';
+    this.patternHash = patternHash;
+  }
+}
+
 function hasErrorCode(error: unknown, expectedCode: string): boolean {
   return typeof error === 'object'
     && error !== null
@@ -44,6 +54,21 @@ function hasErrorCode(error: unknown, expectedCode: string): boolean {
 
 function toLineageKey(type: GenerationMetadataLineageType, identifier: string): string {
   return `${type}\u0000${identifier}`;
+}
+
+function isPatternHash(value: unknown): value is string {
+  return typeof value === 'string' && /^[a-f0-9]{64}$/i.test(value);
+}
+
+function normalizePatternHash(patternHash: string): string {
+  if (!isPatternHash(patternHash)) {
+    throw new PatternVersionStoreValidationError(
+      patternHash,
+      `Invalid pattern hash '${patternHash}'. Expected a 64-character SHA-256 hex string.`,
+    );
+  }
+
+  return patternHash.toLowerCase();
 }
 
 function isLineageType(value: unknown): value is GenerationMetadataLineageType {
@@ -68,14 +93,13 @@ export function isPatternVersionSnapshot(value: unknown): value is PatternVersio
   }
 
   const candidate = value as Partial<PatternVersionSnapshot>;
-  return typeof candidate.patternHash === 'string'
-    && candidate.patternHash.length > 0
+  return isPatternHash(candidate.patternHash)
     && Array.isArray(candidate.lineage)
     && candidate.lineage.every(isPatternVersionSnapshotEntry);
 }
 
 function resolvePatternVersionSnapshotPath(storeDirectory: string, patternHash: string): string {
-  return path.join(storeDirectory, `${patternHash}.json`);
+  return path.join(storeDirectory, `${normalizePatternHash(patternHash)}.json`);
 }
 
 export function createPatternVersionSnapshot(
@@ -148,7 +172,8 @@ export async function readPatternVersionSnapshot(
   storeDirectory: string,
   patternHash: string,
 ): Promise<PatternVersionSnapshot | null> {
-  const snapshotPath = resolvePatternVersionSnapshotPath(storeDirectory, patternHash);
+  const normalizedPatternHash = normalizePatternHash(patternHash);
+  const snapshotPath = resolvePatternVersionSnapshotPath(storeDirectory, normalizedPatternHash);
 
   let content: string;
   try {
@@ -174,6 +199,13 @@ export async function readPatternVersionSnapshot(
 
   if (!isPatternVersionSnapshot(parsed)) {
     throw new PatternVersionStoreParseError(patternHash, `Invalid pattern version snapshot '${patternHash}'`);
+  }
+
+  if (parsed.patternHash.toLowerCase() !== normalizedPatternHash) {
+    throw new PatternVersionStoreParseError(
+      patternHash,
+      `Pattern version snapshot '${patternHash}' does not match the requested hash.`,
+    );
   }
 
   return parsed;
