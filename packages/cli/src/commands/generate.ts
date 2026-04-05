@@ -11,9 +11,11 @@ import {
   appendGenerationHistoryEntry,
   createGenerationHistoryEntry,
   createGenerationMetadata,
+  createPatternVersionSnapshot,
   CsvAdapter,
   generate,
   JsonAdapter,
+  persistPatternVersionSnapshot,
   saveAsContext,
   SqlAdapter,
   validateSchema,
@@ -38,7 +40,11 @@ import {
 } from '../config';
 import type { CliOutputFormat } from '../config';
 import { formatErrors } from '../formatters';
-import { normalizeAuditPath, resolveHistoryLogPath } from '../historySupport';
+import {
+  normalizeAuditPath,
+  resolveHistoryLogPath,
+  resolvePatternVersionStorePath,
+} from '../historySupport';
 
 /**
  * Progress display threshold - show progress for datasets larger than this.
@@ -72,6 +78,11 @@ interface BuildGenerationMetadataOptions {
   readonly validatedProgram: ValidatedProgram;
   readonly workingDirectory: string;
   readonly workspaceGenerators: readonly WorkspaceGeneratorSpec[];
+}
+
+interface BuildGenerationMetadataResult {
+  readonly metadata: AdapterMetadata;
+  readonly lineageInputs: readonly GenerationMetadataLineageInput[];
 }
 
 interface BuildKnownGenerationMetadataOptions {
@@ -127,7 +138,7 @@ function toLineageIdentifier(workingDirectory: string, filePath: string): string
   return toPosixPath(relativePath.length > 0 ? relativePath : path.basename(filePath));
 }
 
-async function buildGenerationMetadata(options: BuildGenerationMetadataOptions): Promise<AdapterMetadata> {
+async function buildGenerationMetadata(options: BuildGenerationMetadataOptions): Promise<BuildGenerationMetadataResult> {
   const lineageInputs: GenerationMetadataLineageInput[] = [
     {
       type: 'root-pattern',
@@ -159,13 +170,16 @@ async function buildGenerationMetadata(options: BuildGenerationMetadataOptions):
     });
   }
 
-  return createGenerationMetadata({
-    sourcePattern: toLineageIdentifier(options.workingDirectory, options.absoluteFile),
-    count: options.count,
-    format: options.format,
-    seed: options.seed,
+  return {
+    metadata: createGenerationMetadata({
+      sourcePattern: toLineageIdentifier(options.workingDirectory, options.absoluteFile),
+      count: options.count,
+      format: options.format,
+      seed: options.seed,
+      lineageInputs,
+    }),
     lineageInputs,
-  });
+  };
 }
 
 function buildKnownGenerationMetadata(options: BuildKnownGenerationMetadataOptions): AdapterMetadata {
@@ -250,6 +264,28 @@ async function tryAppendFailureHistoryRecord(options: AppendHistoryOptions): Pro
   }
 }
 
+async function persistPatternVersion(options: {
+  readonly enabled: boolean;
+  readonly storeDirectory: string;
+  readonly metadata: AdapterMetadata;
+  readonly lineageInputs: readonly GenerationMetadataLineageInput[];
+}): Promise<void> {
+  if (!options.enabled) {
+    return;
+  }
+
+  const snapshot = createPatternVersionSnapshot({
+    metadata: options.metadata,
+    lineageInputs: options.lineageInputs,
+  });
+
+  if (snapshot === undefined) {
+    return;
+  }
+
+  await persistPatternVersionSnapshot(options.storeDirectory, snapshot);
+}
+
 /**
  * Generate command for creating test data from DSL schemas.
  *
@@ -312,6 +348,11 @@ export const generateCommand = new Command('generate')
       });
       const historyEnabled = options.history !== false;
       const historyPath = resolveHistoryLogPath({
+        currentWorkingDirectory: workingDirectory,
+        historyLogDirectory: cliConfig.history.logDirectory,
+        workspaceRoot,
+      });
+      const patternVersionStorePath = resolvePatternVersionStorePath({
         currentWorkingDirectory: workingDirectory,
         historyLogDirectory: cliConfig.history.logDirectory,
         workspaceRoot,
@@ -403,7 +444,7 @@ export const generateCommand = new Command('generate')
           throw new ValidationError(validationResult.errors);
         }
 
-        const metadata = await buildGenerationMetadata({
+        const { metadata, lineageInputs } = await buildGenerationMetadata({
           absoluteFile,
           count,
           format,
@@ -472,6 +513,17 @@ export const generateCommand = new Command('generate')
           } catch (err: unknown) {
             throw new GenerateCommandFailure(`Error saving context file: ${normalizeErrorMessage(err)}`, 3);
           }
+        }
+
+        try {
+          await persistPatternVersion({
+            enabled: historyEnabled,
+            storeDirectory: patternVersionStorePath,
+            metadata,
+            lineageInputs,
+          });
+        } catch (error: unknown) {
+          throw new GenerateCommandFailure(`Error writing pattern version snapshot: ${normalizeErrorMessage(error)}`, 3);
         }
 
         try {

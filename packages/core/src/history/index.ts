@@ -4,6 +4,16 @@ export type {
   GenerationHistoryStatus,
   QueryGenerationHistoryOptions,
 } from './generationHistory';
+export type {
+  PatternVersionDiff,
+  PatternVersionDiffExcerpt,
+  PatternVersionModifiedEntry,
+} from './patternDiff';
+export type {
+  CreatePatternVersionSnapshotOptions,
+  PatternVersionSnapshot,
+  PatternVersionSnapshotEntry,
+} from './patternVersionStore';
 export {
   appendGenerationHistoryEntry,
   createGenerationHistoryEntry,
@@ -13,3 +23,12 @@ export {
   queryGenerationHistory,
   readGenerationHistory,
 } from './generationHistory';
+export { comparePatternVersions } from './patternDiff';
+export {
+  createPatternVersionSnapshot,
+  isPatternVersionSnapshot,
+  PATTERN_VERSION_STORE_DIRECTORY_NAME,
+  PatternVersionStoreParseError,
+  persistPatternVersionSnapshot,
+  readPatternVersionSnapshot,
+} from './patternVersionStore';

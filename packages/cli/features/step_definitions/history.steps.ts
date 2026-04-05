@@ -1,5 +1,5 @@
 import { After, Given, Then, When } from '@cucumber/cucumber';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import * as path from 'node:path';
 
@@ -28,6 +28,26 @@ function tokenizeCommand(command: string): string[] {
   return tokens.map((token) => token.replace(/^['"]|['"]$/g, ''));
 }
 
+async function writeWorkspaceFile(relativePath: string, contents: string): Promise<void> {
+  const workspaceDir = requireWorkspaceDir();
+  const targetPath = path.join(workspaceDir, relativePath);
+  await mkdir(path.dirname(targetPath), { recursive: true });
+  await writeFile(targetPath, `${contents.trimEnd()}\n`, 'utf-8');
+}
+
+async function readHistoryPatternHashes(): Promise<string[]> {
+  const historyPath = path.join(requireWorkspaceDir(), '.td-history.jsonl');
+  const content = await readFile(historyPath, 'utf-8');
+
+  return content
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .map((line) => JSON.parse(line) as { metadata?: { patternHash?: string } })
+    .map((entry) => entry.metadata?.patternHash)
+    .filter((value): value is string => typeof value === 'string');
+}
+
 Given('the history test CLI workspace is ready', async () => {
   state.workspaceDir ??= await mkdtemp(path.join(tmpdir(), 'testdata-ai-cli-history-bdd-'));
 
@@ -43,6 +63,10 @@ Given('the history test fixture {string} exists in the workspace', async (fixtur
   await writeFile(path.join(workspaceDir, fixtureName), fixtureContents, 'utf-8');
 });
 
+Given('the history test file {string} contains:', async (relativePath: string, docString: string) => {
+  await writeWorkspaceFile(relativePath, docString);
+});
+
 When('the history test runner executes {string}', async (command: string) => {
   const args = tokenizeCommand(command);
   if (args[0] !== 'td') {
@@ -50,6 +74,56 @@ When('the history test runner executes {string}', async (command: string) => {
   }
 
   const proc = Bun.spawn(['bun', CLI_PATH, ...args.slice(1)], {
+    cwd: requireWorkspaceDir(),
+    env: process.env,
+    stdout: 'pipe',
+    stderr: 'pipe',
+  });
+
+  state.stdout = await new Response(proc.stdout).text();
+  state.stderr = await new Response(proc.stderr).text();
+  state.exitCode = await proc.exited;
+});
+
+When('the history test file {string} is updated to:', async (relativePath: string, docString: string) => {
+  await writeWorkspaceFile(relativePath, docString);
+});
+
+When('the history test runner diffs the latest two history hashes', async () => {
+  const hashes = await readHistoryPatternHashes();
+
+  if (hashes.length < 2) {
+    throw new Error(`Expected at least two history hashes, received ${hashes.length}`);
+  }
+
+  const oldHash = hashes[hashes.length - 2];
+  const newHash = hashes[hashes.length - 1];
+
+  if (oldHash === undefined || newHash === undefined) {
+    throw new Error(`Expected the latest history entries to include pattern hashes, received: ${JSON.stringify(hashes)}`);
+  }
+
+  const proc = Bun.spawn(['bun', CLI_PATH, 'diff', oldHash, newHash], {
+    cwd: requireWorkspaceDir(),
+    env: process.env,
+    stdout: 'pipe',
+    stderr: 'pipe',
+  });
+
+  state.stdout = await new Response(proc.stdout).text();
+  state.stderr = await new Response(proc.stderr).text();
+  state.exitCode = await proc.exited;
+});
+
+When('the history test runner diffs the latest history hash against an unknown hash', async () => {
+  const hashes = await readHistoryPatternHashes();
+  const latestHash = hashes[hashes.length - 1];
+
+  if (latestHash === undefined) {
+    throw new Error('Expected at least one history hash before diffing against an unknown hash');
+  }
+
+  const proc = Bun.spawn(['bun', CLI_PATH, 'diff', 'f'.repeat(64), latestHash], {
     cwd: requireWorkspaceDir(),
     env: process.env,
     stdout: 'pipe',
@@ -84,6 +158,24 @@ Then('the history command output should list the newest entry first', () => {
 Then('the history command exit code should be {int}', (expectedExitCode: number) => {
   if (state.exitCode !== expectedExitCode) {
     throw new Error(`Expected exit code ${expectedExitCode}, received ${state.exitCode}`);
+  }
+});
+
+Then('the diff command output should contain {string}', (expected: string) => {
+  if (!(state.stdout ?? '').includes(expected)) {
+    throw new Error(`Expected diff stdout to contain '${expected}', received: ${state.stdout ?? ''}`);
+  }
+});
+
+Then('the diff command stderr should contain {string}', (expected: string) => {
+  if (!(state.stderr ?? '').includes(expected)) {
+    throw new Error(`Expected diff stderr to contain '${expected}', received: ${state.stderr ?? ''}`);
+  }
+});
+
+Then('the diff command exit code should be {int}', (expectedExitCode: number) => {
+  if (state.exitCode !== expectedExitCode) {
+    throw new Error(`Expected diff exit code ${expectedExitCode}, received ${state.exitCode}`);
   }
 });
 

@@ -35,6 +35,88 @@ describe('generation metadata', () => {
     expect(metadataA.lineage).toEqual(metadataB.lineage);
   });
 
+  test('changes the pattern hash when the root pattern content changes', () => {
+    const original = createGenerationMetadata({
+      timestamp: '2026-04-05T10:00:00.000Z',
+      sourcePattern: 'schemas/users.td',
+      count: 2,
+      format: 'json',
+      version: '0.1.0',
+      lineageInputs: [
+        { type: 'root-pattern', identifier: 'schemas/users.td', content: 'schema User { id: number }' },
+      ],
+    });
+
+    const updated = createGenerationMetadata({
+      timestamp: '2026-04-05T10:00:00.000Z',
+      sourcePattern: 'schemas/users.td',
+      count: 2,
+      format: 'json',
+      version: '0.1.0',
+      lineageInputs: [
+        { type: 'root-pattern', identifier: 'schemas/users.td', content: 'schema User { id: number email: string }' },
+      ],
+    });
+
+    expect(original.patternHash).not.toBe(updated.patternHash);
+  });
+
+  test('changes the pattern hash when imported pattern content changes', () => {
+    const original = createGenerationMetadata({
+      timestamp: '2026-04-05T10:00:00.000Z',
+      sourcePattern: 'schemas/users.td',
+      count: 2,
+      format: 'json',
+      version: '0.1.0',
+      lineageInputs: [
+        { type: 'root-pattern', identifier: 'schemas/users.td', content: '@import "./shared.td"\nschema User { profile: SharedProfile }' },
+        { type: 'imported-pattern', identifier: 'schemas/shared.td', content: 'schema SharedProfile { id: uuid }' },
+      ],
+    });
+
+    const updated = createGenerationMetadata({
+      timestamp: '2026-04-05T10:00:00.000Z',
+      sourcePattern: 'schemas/users.td',
+      count: 2,
+      format: 'json',
+      version: '0.1.0',
+      lineageInputs: [
+        { type: 'root-pattern', identifier: 'schemas/users.td', content: '@import "./shared.td"\nschema User { profile: SharedProfile }' },
+        { type: 'imported-pattern', identifier: 'schemas/shared.td', content: 'schema SharedProfile { id: uuid email: string }' },
+      ],
+    });
+
+    expect(original.patternHash).not.toBe(updated.patternHash);
+  });
+
+  test('changes the pattern hash when workspace generator definitions change', () => {
+    const original = createGenerationMetadata({
+      timestamp: '2026-04-05T10:00:00.000Z',
+      sourcePattern: 'schemas/users.td',
+      count: 2,
+      format: 'json',
+      version: '0.1.0',
+      lineageInputs: [
+        { type: 'root-pattern', identifier: 'schemas/users.td', content: 'schema User { email: string generator=@workspace.generators.sharedEmail }' },
+        { type: 'workspace-generator', identifier: 'sharedEmail', content: '{"type":"template","template":"{{localPart}}@example.com"}' },
+      ],
+    });
+
+    const updated = createGenerationMetadata({
+      timestamp: '2026-04-05T10:00:00.000Z',
+      sourcePattern: 'schemas/users.td',
+      count: 2,
+      format: 'json',
+      version: '0.1.0',
+      lineageInputs: [
+        { type: 'root-pattern', identifier: 'schemas/users.td', content: 'schema User { email: string generator=@workspace.generators.sharedEmail }' },
+        { type: 'workspace-generator', identifier: 'sharedEmail', content: '{"type":"template","template":"{{localPart}}@qa.example.com"}' },
+      ],
+    });
+
+    expect(original.patternHash).not.toBe(updated.patternHash);
+  });
+
   test('encodes and decodes metadata comments losslessly', () => {
     const metadata = createGenerationMetadata({
       timestamp: '2026-04-05T10:00:00.000Z',

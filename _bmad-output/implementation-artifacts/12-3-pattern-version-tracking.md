@@ -1,6 +1,6 @@
 # Story 12.3: Pattern Version Tracking
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -27,31 +27,31 @@ Keep the scope tight and honest. This story is about deterministic pattern-versi
 
 ## Tasks / Subtasks
 
-- [ ] Preserve immutable pattern versions alongside history instead of depending on current filesystem state (AC: 1, 2, 3, 4, 5)
-  - [ ] Define one canonical snapshot contract in core keyed by `metadata.patternHash` and containing enough stored content to reconstruct or diff the root pattern, imported patterns, and workspace-generator inputs already captured by Story 12.1 lineage.
-  - [ ] Use content-addressed or deduplicated persistence so repeated generations with the same `patternHash` do not rewrite identical snapshots.
-  - [ ] Keep `.td-history.jsonl` append-only; if snapshots are stored separately, make lookup deterministic from `patternHash` without depending on run-specific fields.
+- [x] Preserve immutable pattern versions alongside history instead of depending on current filesystem state (AC: 1, 2, 3, 4, 5)
+  - [x] Define one canonical snapshot contract in core keyed by `metadata.patternHash` and containing enough stored content to reconstruct or diff the root pattern, imported patterns, and workspace-generator inputs already captured by Story 12.1 lineage.
+  - [x] Use content-addressed or deduplicated persistence so repeated generations with the same `patternHash` do not rewrite identical snapshots.
+  - [x] Keep `.td-history.jsonl` append-only; if snapshots are stored separately, make lookup deterministic from `patternHash` without depending on run-specific fields.
 
-- [ ] Integrate version snapshot persistence into the existing generation and history flow (AC: 1, 2, 3, 5, 7)
-  - [ ] Reuse `createGenerationMetadata()` and the existing lineage normalization in `packages/core/src/common/generationMetadata.ts`; do not introduce a second hash algorithm or recompute hashes from already-hashed history rows.
-  - [ ] Persist snapshot data after metadata is finalized so later `td diff` works even if source files were edited, moved, or deleted after generation.
-  - [ ] Ensure repeated generations of the same pattern stay on the same `patternHash`, while changes to root pattern content, imported pattern content, or workspace-generator definitions produce a new hash and a new stored version.
+- [x] Integrate version snapshot persistence into the existing generation and history flow (AC: 1, 2, 3, 5, 7)
+  - [x] Reuse `createGenerationMetadata()` and the existing lineage normalization in `packages/core/src/common/generationMetadata.ts`; do not introduce a second hash algorithm or recompute hashes from already-hashed history rows.
+  - [x] Persist snapshot data after metadata is finalized so later `td diff` works even if source files were edited, moved, or deleted after generation.
+  - [x] Ensure repeated generations of the same pattern stay on the same `patternHash`, while changes to root pattern content, imported pattern content, or workspace-generator definitions produce a new hash and a new stored version.
 
-- [ ] Implement deterministic version lookup and `td diff <old-hash> <new-hash>` (AC: 3, 4, 5, 6)
-  - [ ] Add core helpers to resolve stored versions by hash and compare two versions deterministically.
-  - [ ] Render a human-readable diff that at minimum identifies added, removed, and modified lineage components with their identifiers and old/new hashes; if stored content is available, include concise diff excerpts from the preserved snapshot rather than reading live files.
-  - [ ] Add a dedicated CLI command, register it in `packages/cli/bin/td.ts`, and return a clear non-zero error when either hash is unknown or required snapshot data is missing.
-  - [ ] Handle identical hashes as a first-class no-op path with a clear `no changes` message.
+- [x] Implement deterministic version lookup and `td diff <old-hash> <new-hash>` (AC: 3, 4, 5, 6)
+  - [x] Add core helpers to resolve stored versions by hash and compare two versions deterministically.
+  - [x] Render a human-readable diff that at minimum identifies added, removed, and modified lineage components with their identifiers and old/new hashes; if stored content is available, include concise diff excerpts from the preserved snapshot rather than reading live files.
+  - [x] Add a dedicated CLI command, register it in `packages/cli/bin/td.ts`, and return a clear non-zero error when either hash is unknown or required snapshot data is missing.
+  - [x] Handle identical hashes as a first-class no-op path with a clear `no changes` message.
 
-- [ ] Detect potentially breaking changes honestly and conservatively (AC: 4, 6)
-  - [ ] Flag removed lineage components and modified root or imported pattern sources as potentially breaking by default; do not label changes as non-breaking unless backed by deterministic comparison logic.
-  - [ ] If a deeper DSL-aware comparison is implemented, build it on the existing core parsing and validation pipeline rather than ad-hoc string heuristics.
-  - [ ] Avoid scope creep into remote history backends, generalized version control features, or future platform export workflows.
+- [x] Detect potentially breaking changes honestly and conservatively (AC: 4, 6)
+  - [x] Flag removed lineage components and modified root or imported pattern sources as potentially breaking by default; do not label changes as non-breaking unless backed by deterministic comparison logic.
+  - [x] If a deeper DSL-aware comparison is implemented, build it on the existing core parsing and validation pipeline rather than ad-hoc string heuristics.
+  - [x] Avoid scope creep into remote history backends, generalized version control features, or future platform export workflows.
 
-- [ ] Add focused regression coverage without creating dormant acceptance assets (AC: 7, 8)
-  - [ ] Add core unit tests for hash lookup, snapshot persistence and deduplication, identical-hash comparisons, modified root-pattern content, imported-pattern changes, and workspace-generator definition changes.
-  - [ ] Add CLI unit tests for `td diff` success paths, missing-hash errors, identical-hash output, and workspace-relative history or snapshot resolution.
-  - [ ] Extend `packages/cli/features/historyCommand.feature` and `packages/cli/features/step_definitions/history.steps.ts` in place, or wire any new feature file into `packages/cli/tests/run-cucumber.ts`; do not add an unwired feature.
+- [x] Add focused regression coverage without creating dormant acceptance assets (AC: 7, 8)
+  - [x] Add core unit tests for hash lookup, snapshot persistence and deduplication, identical-hash comparisons, modified root-pattern content, imported-pattern changes, and workspace-generator definition changes.
+  - [x] Add CLI unit tests for `td diff` success paths, missing-hash errors, identical-hash output, and workspace-relative history or snapshot resolution.
+  - [x] Extend `packages/cli/features/historyCommand.feature` and `packages/cli/features/step_definitions/history.steps.ts` in place, or wire any new feature file into `packages/cli/tests/run-cucumber.ts`; do not add an unwired feature.
 
 ## Dev Notes
 
@@ -224,18 +224,36 @@ GPT-5.4
 - Current implementation state confirmed: deterministic `patternHash` already exists in generation metadata, append-only generation history already persists the hash, `td history` already queries recent runs, and there is currently no immutable pattern-version snapshot store and no `td diff` command.
 - Current CLI BDD runner confirmed to execute `generateCommand.feature`, `historyCommand.feature`, and `saveGeneratedContext.feature`; any new acceptance coverage must extend one of those active assets or be wired into the runner explicitly.
 - Upstream Bun and Commander documentation reviewed for current file-I/O and subcommand behavior. No dependency upgrade is required for this story.
+- Implemented a new immutable snapshot store in core keyed by `patternHash`, wired generation to persist preserved lineage content, and kept `.td-history.jsonl` append-only.
+- Added deterministic core diff helpers and a dedicated `td diff <old-hash> <new-hash>` CLI command with identical-hash no-op handling, missing-hash failures, stable output ordering, and concise excerpt lines from preserved content.
+- Validation executed successfully with focused Bun tests for the new core and CLI unit coverage plus `bun run --cwd packages/cli test:bdd` with 18 scenarios and 130 steps passing.
 
 ### Completion Notes List
 
-- Created a ready-for-dev story artifact for Story 12.3 with concrete guardrails around immutable snapshot storage, deterministic diff lookup, and conservative breaking-change detection.
-- Captured the key implementation risk that Story 12.2 intentionally left unresolved: a hash alone cannot support historical pattern diffs after files change.
-- Constrained the implementation toward reuse of existing metadata and history contracts instead of a second hashing or audit system.
+- Added `PatternVersionSnapshot` storage and `comparePatternVersions()` in core, with deduplicated persisted snapshots that preserve root pattern, imported pattern, and workspace-generator content by canonical `patternHash`.
+- Wired `packages/cli/src/commands/generate.ts` to persist snapshots beside the configured history directory and added `td diff` to resolve stored versions without rereading the current filesystem.
+- Added regression coverage for root-pattern, imported-pattern, and workspace-generator hash changes; snapshot persistence and malformed snapshot handling; CLI diff success, identical-hash, missing-hash, and workspace-relative resolution; and active Cucumber scenarios for root and imported pattern modifications.
 
 ### File List
 
 - `_bmad-output/implementation-artifacts/12-3-pattern-version-tracking.md`
 - `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- `docs/api.md`
+- `packages/core/src/common/generationMetadata.test.ts`
+- `packages/core/src/history/index.ts`
+- `packages/core/src/history/patternDiff.test.ts`
+- `packages/core/src/history/patternDiff.ts`
+- `packages/core/src/history/patternVersionStore.test.ts`
+- `packages/core/src/history/patternVersionStore.ts`
+- `packages/cli/bin/td.ts`
+- `packages/cli/features/historyCommand.feature`
+- `packages/cli/features/step_definitions/history.steps.ts`
+- `packages/cli/src/commands/diff.test.ts`
+- `packages/cli/src/commands/diff.ts`
+- `packages/cli/src/commands/generate.ts`
+- `packages/cli/src/historySupport.ts`
 
 ### Change Log
 
 - 2026-04-05: Created story context artifact via create-story workflow and updated sprint status to `ready-for-dev`.
+- 2026-04-05: Implemented immutable pattern-version snapshots, added `td diff`, extended unit and CLI BDD coverage, and updated sprint status to `review`.

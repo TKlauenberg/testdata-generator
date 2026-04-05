@@ -6,9 +6,13 @@ The canonical programmatic surface is the package root:
 import {
   generateData,
   appendGenerationHistoryEntry,
+  comparePatternVersions,
   createGenerationHistoryEntry,
   queryGenerationHistory,
   readGenerationHistory,
+  createPatternVersionSnapshot,
+  persistPatternVersionSnapshot,
+  readPatternVersionSnapshot,
   ValidationError,
   JsonAdapter,
   CsvAdapter,
@@ -184,6 +188,52 @@ const latestRuns = await queryGenerationHistory('.td-history.jsonl', { last: 10 
 ```
 
 History entries reuse the canonical `GenerationMetadata` contract under `entry.metadata` and add outcome fields such as `status`, `errorMessage`, `durationMs`, `recordsPerSecond`, optional `outputPath`, and optional `savedContextName`.
+
+## Pattern Version API
+
+The core package also exposes immutable pattern-version helpers keyed by the canonical `patternHash`. These helpers are intended for local audit tooling such as comparing historical pattern versions without rereading the current filesystem.
+
+```typescript
+import {
+  comparePatternVersions,
+  createGenerationMetadata,
+  createPatternVersionSnapshot,
+  persistPatternVersionSnapshot,
+  readPatternVersionSnapshot,
+} from '@testdata-ai/core';
+
+const lineageInputs = [
+  {
+    type: 'root-pattern' as const,
+    identifier: 'schemas/users.td',
+    content: 'schema User { id: number }',
+  },
+];
+
+const metadata = createGenerationMetadata({
+  sourcePattern: 'schemas/users.td',
+  count: 10,
+  format: 'json',
+  lineageInputs,
+});
+
+const snapshot = createPatternVersionSnapshot({
+  metadata,
+  lineageInputs,
+});
+
+if (snapshot) {
+  await persistPatternVersionSnapshot('.td-pattern-versions', snapshot);
+  const stored = await readPatternVersionSnapshot('.td-pattern-versions', snapshot.patternHash);
+
+  if (stored) {
+    const diff = comparePatternVersions(stored, stored);
+    console.log(diff.identical);
+  }
+}
+```
+
+Pattern-version snapshots preserve the lineage components that contribute to `patternHash`, including root pattern source, imported pattern source, and workspace-generator definitions. `comparePatternVersions()` returns deterministic added, removed, and modified lineage components, plus a conservative `potentiallyBreaking` classification for removed lineage or modified root and imported patterns.
 
 ### CSV
 
