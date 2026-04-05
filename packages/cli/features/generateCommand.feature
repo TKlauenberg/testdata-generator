@@ -56,6 +56,23 @@ Feature: Generate Command
     And the generated context file "contexts/csv-users.json" should contain 2 records
     And the generate command exit code should be 0
 
+  @generate @history
+  Scenario: Create and accumulate generation history by default
+    Given QA Tester has a valid DSL schema fixture "valid-simple.td"
+    When QA Tester runs "td generate valid-simple.td --count 1"
+    And QA Tester runs "td generate valid-simple.td --count 2"
+    Then the history log file ".td-history.jsonl" should exist
+    And the history log file ".td-history.jsonl" should contain 2 entries
+    And the history log file ".td-history.jsonl" should contain a "success" entry
+    And the generate command exit code should be 0
+
+  @generate @history
+  Scenario: Disable generation history with --no-history
+    Given QA Tester has a valid DSL schema fixture "valid-simple.td"
+    When QA Tester runs "td generate valid-simple.td --count 2 --no-history"
+    Then the history log file ".td-history.jsonl" should not exist
+    And the generate command exit code should be 0
+
   @generate @validation
   Scenario: Reject SQL table names for non-SQL formats
     Given QA Tester has a valid DSL schema fixture "valid-simple.td"

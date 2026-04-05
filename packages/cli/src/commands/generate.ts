@@ -8,6 +8,8 @@
 
 import { Command } from 'commander';
 import {
+  appendGenerationHistoryEntry,
+  createGenerationHistoryEntry,
   createGenerationMetadata,
   CsvAdapter,
   generate,
@@ -36,17 +38,29 @@ import {
 } from '../config';
 import type { CliOutputFormat } from '../config';
 import { formatErrors } from '../formatters';
+import { normalizeAuditPath, resolveHistoryLogPath } from '../historySupport';
 
 /**
  * Progress display threshold - show progress for datasets larger than this.
  */
 const PROGRESS_THRESHOLD = 100;
+const ANSI_ESCAPE_PATTERN = new RegExp(String.raw`\u001B\[[0-9;]*m`, 'g');
 
 /**
  * Type guard to check if an error is a Node.js errno exception.
  */
 function isNodeError(err: unknown): err is NodeJS.ErrnoException {
   return err instanceof Error && 'code' in err;
+}
+
+class GenerateCommandFailure extends Error {
+  readonly exitCode: number;
+
+  constructor(message: string, exitCode: number) {
+    super(message);
+    this.name = 'GenerateCommandFailure';
+    this.exitCode = exitCode;
+  }
 }
 
 interface BuildGenerationMetadataOptions {
@@ -58,6 +72,26 @@ interface BuildGenerationMetadataOptions {
   readonly validatedProgram: ValidatedProgram;
   readonly workingDirectory: string;
   readonly workspaceGenerators: readonly WorkspaceGeneratorSpec[];
+}
+
+interface BuildKnownGenerationMetadataOptions {
+  readonly absoluteFile: string;
+  readonly count: number;
+  readonly format: CliOutputFormat;
+  readonly seed?: number;
+  readonly workingDirectory: string;
+}
+
+interface AppendHistoryOptions {
+  readonly enabled: boolean;
+  readonly historyPath: string;
+  readonly metadata: AdapterMetadata;
+  readonly status: 'success' | 'failure';
+  readonly durationMs: number;
+  readonly recordCount: number;
+  readonly errorMessage?: string;
+  readonly outputPath?: string;
+  readonly savedContextName?: string;
 }
 
 function toPosixPath(value: string): string {
@@ -134,6 +168,72 @@ async function buildGenerationMetadata(options: BuildGenerationMetadataOptions):
   });
 }
 
+function buildKnownGenerationMetadata(options: BuildKnownGenerationMetadataOptions): AdapterMetadata {
+  return createGenerationMetadata({
+    sourcePattern: toLineageIdentifier(options.workingDirectory, options.absoluteFile),
+    count: options.count,
+    format: options.format,
+    seed: options.seed,
+  });
+}
+
+function stripAnsi(value: string): string {
+  return value.replace(ANSI_ESCAPE_PATTERN, '');
+}
+
+function normalizeErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return stripAnsi(error.message).split(/\r?\n/)[0] ?? error.message;
+  }
+
+  return stripAnsi(String(error)).split(/\r?\n/)[0] ?? String(error);
+}
+
+function summarizeValidationError(error: ValidationError): string {
+  const messages = error.diagnostics.map((diagnostic) => diagnostic.message.trim()).filter((message) => message.length > 0);
+
+  if (messages.length === 0) {
+    return 'Validation failed';
+  }
+
+  return `Validation failed: ${messages.join(' | ')}`;
+}
+
+function calculateRecordsPerSecond(recordCount: number, durationMs: number): number {
+  if (recordCount <= 0 || durationMs <= 0) {
+    return 0;
+  }
+
+  return recordCount / (durationMs / 1000);
+}
+
+async function appendHistoryRecord(options: AppendHistoryOptions): Promise<void> {
+  if (!options.enabled) {
+    return;
+  }
+
+  await appendGenerationHistoryEntry(
+    options.historyPath,
+    createGenerationHistoryEntry({
+      metadata: options.metadata,
+      status: options.status,
+      errorMessage: options.errorMessage,
+      durationMs: options.durationMs,
+      recordsPerSecond: calculateRecordsPerSecond(options.recordCount, options.durationMs),
+      outputPath: options.outputPath,
+      savedContextName: options.savedContextName,
+    }),
+  );
+}
+
+async function tryAppendFailureHistoryRecord(options: AppendHistoryOptions): Promise<void> {
+  try {
+    await appendHistoryRecord(options);
+  } catch (error: unknown) {
+    process.stderr.write(`History logging failed: ${normalizeErrorMessage(error)}\n`);
+  }
+}
+
 /**
  * Generate command for creating test data from DSL schemas.
  *
@@ -157,6 +257,7 @@ export const generateCommand = new Command('generate')
   .option('-s, --seed <number>', 'Random seed for reproducibility')
   .option('--table-name <name>', 'SQL table name (sql output only)')
   .option('--save-context <name>', 'Save generated records as reusable context')
+  .option('--no-history', 'Disable generation history logging for this invocation')
   .option(
     '--save-context-dir <directory>',
     `Directory for saved context files (default: workspace config, global config, or built-in ${BUILT_IN_CLI_CONFIG.context.saveDirectory})`,
@@ -193,6 +294,15 @@ export const generateCommand = new Command('generate')
         outputPath: options.output,
         configFormat: cliConfig.defaults.format,
       });
+      const historyEnabled = options.history !== false;
+      const historyPath = resolveHistoryLogPath({
+        currentWorkingDirectory: workingDirectory,
+        historyLogDirectory: cliConfig.history.logDirectory,
+        workspaceRoot,
+      });
+      const historyOutputPath = options.output === undefined
+        ? undefined
+        : normalizeAuditPath(workingDirectory, options.output);
       const seed = options.seed ? parseIntegerOption(options.seed, '--seed') : undefined;
 
       if (options.tableName !== undefined && format !== 'sql') {
@@ -231,6 +341,14 @@ export const generateCommand = new Command('generate')
         throw new Error('Unreachable');
       }
 
+      let historyMetadata = buildKnownGenerationMetadata({
+        absoluteFile,
+        count,
+        format,
+        seed,
+        workingDirectory,
+      });
+
       // Step 2: Validate and generate
       const startTime = performance.now();
       const records: Array<Record<string, unknown>> = [];
@@ -262,6 +380,7 @@ export const generateCommand = new Command('generate')
           workingDirectory,
           workspaceGenerators: cliConfig.generators,
         });
+        historyMetadata = metadata;
 
         // Show progress for large datasets
         let recordCount = 0;
@@ -284,7 +403,8 @@ export const generateCommand = new Command('generate')
         }
 
         const endTime = performance.now();
-        const duration = ((endTime - startTime) / 1000).toFixed(1);
+        const durationMs = endTime - startTime;
+        const duration = (durationMs / 1000).toFixed(1);
 
         // Step 3: Format output
         try {
@@ -300,12 +420,7 @@ export const generateCommand = new Command('generate')
             process.stdout.write(stdoutOutput);
           }
         } catch (err: unknown) {
-          if (isNodeError(err)) {
-            console.error(`Error writing output file: ${err.message}`);
-            process.exit(3);
-          }
-
-          throw err;
+          throw new GenerateCommandFailure(`Error writing output file: ${normalizeErrorMessage(err)}`, 3);
         }
 
         if (options.saveContext) {
@@ -322,31 +437,80 @@ export const generateCommand = new Command('generate')
               lineage: metadata.lineage,
             });
           } catch (err: unknown) {
-            const message = typeof err === 'object' && err !== null && 'message' in err
-              ? (() => {
-                  const candidate = (err as { message?: unknown }).message;
-                  return typeof candidate === 'string' ? candidate : 'Unknown error';
-                })()
-              : String(err);
-            console.error(`Error saving context file: ${message}`);
-            process.exit(3);
+            throw new GenerateCommandFailure(`Error saving context file: ${normalizeErrorMessage(err)}`, 3);
           }
         }
 
+        try {
+          await appendHistoryRecord({
+            enabled: historyEnabled,
+            historyPath,
+            metadata,
+            status: 'success',
+            durationMs,
+            recordCount: records.length,
+            outputPath: historyOutputPath,
+            savedContextName: options.saveContext,
+          });
+        } catch (error: unknown) {
+          throw new GenerateCommandFailure(`Error writing history file: ${normalizeErrorMessage(error)}`, 3);
+        }
+
         // Step 5: Display summary
-        console.error(`Generated ${count} records in ${duration}s`);
+        console.error(`Generated ${records.length} records in ${duration}s`);
 
         process.exit(0);
       } catch (err: unknown) {
+        const durationMs = performance.now() - startTime;
+
         if (err instanceof ValidationError) {
+          await tryAppendFailureHistoryRecord({
+            enabled: historyEnabled,
+            historyPath,
+            metadata: historyMetadata,
+            status: 'failure',
+            durationMs,
+            recordCount: records.length,
+            errorMessage: summarizeValidationError(err),
+            outputPath: historyOutputPath,
+            savedContextName: options.saveContext,
+          });
+
           // Validation error - display diagnostics
           console.error('Validation failed:\n');
           displayDiagnostics(err.diagnostics, source);
           process.exit(1);
+        } else if (err instanceof GenerateCommandFailure) {
+          await tryAppendFailureHistoryRecord({
+            enabled: historyEnabled,
+            historyPath,
+            metadata: historyMetadata,
+            status: 'failure',
+            durationMs,
+            recordCount: records.length,
+            errorMessage: err.message,
+            outputPath: historyOutputPath,
+            savedContextName: options.saveContext,
+          });
+
+          console.error(err.message);
+          process.exit(err.exitCode);
         } else {
+          const message = normalizeErrorMessage(err);
+          await tryAppendFailureHistoryRecord({
+            enabled: historyEnabled,
+            historyPath,
+            metadata: historyMetadata,
+            status: 'failure',
+            durationMs,
+            recordCount: records.length,
+            errorMessage: message,
+            outputPath: historyOutputPath,
+            savedContextName: options.saveContext,
+          });
+
           // Generation error (should be rare)
-          const error = err as Error;
-          console.error(`Error during generation: ${error.message}`);
+          console.error(`Error during generation: ${message}`);
           process.exit(2);
         }
       }
@@ -383,6 +547,7 @@ function displayDiagnostics(diagnostics: Diagnostic[], source: string): void {
 interface CommandOptions {
   count?: string;
   format?: string;
+  history?: boolean;
   output?: string;
   seed?: string;
   tableName?: string;

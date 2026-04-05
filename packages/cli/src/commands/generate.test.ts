@@ -78,6 +78,45 @@ function decodeMetadataCommentLine(line: string): ReturnType<typeof decodeGenera
   throw new Error(`Expected a metadata comment line, received: ${line}`);
 }
 
+interface HistoryEntry {
+  readonly metadata: {
+    readonly timestamp: string;
+    readonly sourcePattern?: string;
+    readonly count?: number;
+    readonly format: string;
+    readonly seed?: number;
+    readonly version: string;
+    readonly patternHash?: string;
+    readonly lineage?: readonly unknown[];
+  };
+  readonly status: 'success' | 'failure';
+  readonly errorMessage?: string;
+  readonly durationMs: number;
+  readonly recordsPerSecond: number;
+  readonly outputPath?: string;
+  readonly savedContextName?: string;
+}
+
+function parseHistoryEntries(input: string): HistoryEntry[] {
+  return input
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .map((line) => parseJson<HistoryEntry>(line));
+}
+
+async function readHistoryEntries(filePath: string): Promise<HistoryEntry[]> {
+  return parseHistoryEntries(await fs.readFile(filePath, 'utf-8'));
+}
+
+async function copyFixtureToWorkspace(fixtureName: string, workspaceDirectory: string): Promise<void> {
+  await fs.writeFile(
+    path.join(workspaceDirectory, fixtureName),
+    await fs.readFile(fixture(fixtureName), 'utf-8'),
+    'utf-8',
+  );
+}
+
 async function createGlobalConfigHome(config: unknown): Promise<string> {
   const homeDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-cli-home-'));
   await fs.writeFile(
@@ -940,6 +979,127 @@ describe('Generate Command - Output Handling', () => {
     } finally {
       await fs.rm(homeDirectory, { recursive: true, force: true });
     }
+  });
+});
+
+describe('Generate Command - History Logging', () => {
+  const outputDir = path.join(import.meta.dir, '../../test-output-history');
+
+  beforeEach(async () => {
+    await fs.mkdir(outputDir, { recursive: true });
+  });
+
+  afterEach(async () => {
+    await fs.rm(outputDir, { recursive: true, force: true });
+  });
+
+  test('creates a default append-only history entry after successful generation', async () => {
+    const proc = spawn([
+      'bun',
+      CLI_PATH,
+      'generate',
+      fixture('valid-simple.td'),
+      '--count',
+      '2',
+    ], {
+      cwd: outputDir,
+    });
+
+    const exitCode = await proc.exited;
+    const entries = await readHistoryEntries(path.join(outputDir, '.td-history.jsonl'));
+
+    expect(exitCode).toBe(0);
+    expect(entries).toHaveLength(1);
+    expect(entries[0]?.status).toBe('success');
+    expect(entries[0]?.metadata.count).toBe(2);
+    expect(entries[0]?.metadata.format).toBe('json');
+    expect(entries[0]?.errorMessage).toBeUndefined();
+    expect(entries[0]?.durationMs).toBeGreaterThanOrEqual(0);
+    expect(entries[0]?.recordsPerSecond).toBeGreaterThanOrEqual(0);
+  });
+
+  test('does not create history when --no-history is provided', async () => {
+    const proc = spawn([
+      'bun',
+      CLI_PATH,
+      'generate',
+      fixture('valid-simple.td'),
+      '--count',
+      '2',
+      '--no-history',
+    ], {
+      cwd: outputDir,
+    });
+
+    const exitCode = await proc.exited;
+    const historyExists = await fs
+      .access(path.join(outputDir, '.td-history.jsonl'))
+      .then(() => true)
+      .catch(() => false);
+
+    expect(exitCode).toBe(0);
+    expect(historyExists).toBe(false);
+  });
+
+  test('resolves the configured history directory relative to the discovered workspace root', async () => {
+    const homeDirectory = await createGlobalConfigHome({});
+    const workspaceDirectory = await createWorkspaceConfigDirectory({
+      history: {
+        logDirectory: 'audit/history',
+      },
+    });
+    const nestedDirectory = path.join(workspaceDirectory, 'apps', 'qa');
+
+    await fs.mkdir(nestedDirectory, { recursive: true });
+    await copyFixtureToWorkspace('valid-simple.td', nestedDirectory);
+
+    try {
+      const proc = spawn([
+        'bun',
+        CLI_PATH,
+        'generate',
+        'valid-simple.td',
+        '--count',
+        '1',
+      ], {
+        cwd: nestedDirectory,
+        env: {
+          ...process.env,
+          HOME: homeDirectory,
+        },
+      });
+
+      const exitCode = await proc.exited;
+      const entries = await readHistoryEntries(path.join(workspaceDirectory, 'audit/history/.td-history.jsonl'));
+
+      expect(exitCode).toBe(0);
+      expect(entries).toHaveLength(1);
+      expect(entries[0]?.status).toBe('success');
+    } finally {
+      await fs.rm(homeDirectory, { recursive: true, force: true });
+      await fs.rm(workspaceDirectory, { recursive: true, force: true });
+    }
+  });
+
+  test('logs concise failure history for validation errors without fabricated lineage', async () => {
+    const proc = spawn([
+      'bun',
+      CLI_PATH,
+      'generate',
+      fixture('invalid-semantic.td'),
+    ], {
+      cwd: outputDir,
+    });
+
+    const exitCode = await proc.exited;
+    const entries = await readHistoryEntries(path.join(outputDir, '.td-history.jsonl'));
+
+    expect(exitCode).toBe(1);
+    expect(entries).toHaveLength(1);
+    expect(entries[0]?.status).toBe('failure');
+    expect(entries[0]?.errorMessage).toContain('Validation failed:');
+    expect(entries[0]?.metadata.patternHash).toBeUndefined();
+    expect(entries[0]?.metadata.lineage).toBeUndefined();
   });
 });
 

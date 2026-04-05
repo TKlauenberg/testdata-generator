@@ -21,6 +21,7 @@ import type {
   CliConfigSection,
   CliConfigSource,
   CliGlobalConfig,
+  CliHistoryDefaults,
   CliOutputFormat,
   EffectiveSettingSources,
   LoadedEffectiveCliConfig,
@@ -30,7 +31,7 @@ import type {
 } from './types';
 
 const SUPPORTED_OUTPUT_FORMATS: readonly CliOutputFormat[] = ['json', 'csv', 'sql'];
-const CONFIG_SECTIONS: readonly CliConfigSection[] = ['defaults', 'context', 'generatorDefaults', 'generators'];
+const CONFIG_SECTIONS: readonly CliConfigSection[] = ['defaults', 'context', 'history', 'generatorDefaults', 'generators'];
 
 export class CliConfigError extends Error {
   readonly exitCode: number;
@@ -45,6 +46,7 @@ export class CliConfigError extends Error {
 export function getSettingSources(effective: LoadedEffectiveCliConfig): EffectiveSettingSources {
   let defaultsSource: CliConfigSource = 'built-in';
   let contextSource: CliConfigSource = 'built-in';
+  let historySource: CliConfigSource = 'built-in';
   let generatorDefaultsSource: CliConfigSource = 'built-in';
   let generatorsSource: CliConfigSource = 'built-in';
 
@@ -53,6 +55,8 @@ export function getSettingSources(effective: LoadedEffectiveCliConfig): Effectiv
       defaultsSource = 'global';
     if (effective.layers.global.providedSections.includes('context'))
       contextSource = 'global';
+    if (effective.layers.global.providedSections.includes('history'))
+      historySource = 'global';
     if (effective.layers.global.providedSections.includes('generatorDefaults'))
       generatorDefaultsSource = 'global';
     if (effective.layers.global.providedSections.includes('generators'))
@@ -64,6 +68,8 @@ export function getSettingSources(effective: LoadedEffectiveCliConfig): Effectiv
       defaultsSource = 'workspace';
     if (effective.layers.workspace.providedSections.includes('context'))
       contextSource = 'workspace';
+    if (effective.layers.workspace.providedSections.includes('history'))
+      historySource = 'workspace';
     if (effective.layers.workspace.providedSections.includes('generatorDefaults'))
       generatorDefaultsSource = 'workspace';
     if (effective.layers.workspace.providedSections.includes('generators'))
@@ -73,6 +79,7 @@ export function getSettingSources(effective: LoadedEffectiveCliConfig): Effectiv
   return {
     defaults: defaultsSource,
     context: contextSource,
+    history: historySource,
     generatorDefaults: generatorDefaultsSource,
     generators: generatorsSource,
   };
@@ -264,6 +271,20 @@ function normalizeCliConfig(
       };
     })();
 
+  const history: CliHistoryDefaults = rawConfig.history === undefined
+    ? builtInConfig.history
+    : (() => {
+      providedSections.push('history');
+      const rawHistory = readNestedRecord(rawConfig.history, `${configPath} history`);
+      return {
+        logDirectory: readNonEmptyString(
+          rawHistory.logDirectory,
+          'history.logDirectory',
+          builtInConfig.history.logDirectory,
+        ),
+      };
+    })();
+
   const generatorDefaults = rawConfig.generatorDefaults === undefined
     ? builtInConfig.generatorDefaults
     : (() => {
@@ -282,6 +303,7 @@ function normalizeCliConfig(
     config: {
       defaults,
       context,
+      history,
       generatorDefaults,
       generators,
     },
@@ -362,6 +384,15 @@ function applyLayer(baseConfig: CliGlobalConfig, layer: Pick<CliConfigLayer, 'co
       ...nextConfig,
       context: {
         ...layer.config.context,
+      },
+    };
+  }
+
+  if (layer.providedSections.includes('history')) {
+    nextConfig = {
+      ...nextConfig,
+      history: {
+        ...layer.config.history,
       },
     };
   }

@@ -91,7 +91,7 @@ describe('td config show — output structure', () => {
 
     expect(exitCode).toBe(0);
     const occurrences = (stdout.match(/\[built-in\]/g) ?? []).length;
-    expect(occurrences).toBeGreaterThanOrEqual(3);
+    expect(occurrences).toBeGreaterThanOrEqual(4);
   });
 
   test('shows [global] when global config provides the defaults section', async () => {
@@ -115,6 +115,20 @@ describe('td config show — output structure', () => {
     const { stdout, exitCode } = await runConfigShow(homeDir, wsDir);
 
     expect(exitCode).toBe(0);
+    expect(stdout).toContain('[workspace]');
+  });
+
+  test('shows the history log directory and its source', async () => {
+    const homeDir = await createHomeDirectory();
+    const wsDir = await createWorkspaceDirectory();
+
+    await writeConfig(wsDir, { history: { logDirectory: 'audit/logs' } });
+
+    const { stdout, exitCode } = await runConfigShow(homeDir, wsDir);
+
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain('history.logDirectory');
+    expect(stdout).toContain('audit/logs');
     expect(stdout).toContain('[workspace]');
   });
 

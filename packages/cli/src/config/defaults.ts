@@ -12,6 +12,9 @@ export const BUILT_IN_CLI_CONFIG: CliGlobalConfig = {
   context: {
     saveDirectory: './contexts',
   },
+  history: {
+    logDirectory: '.',
+  },
   generatorDefaults: [],
   generators: [],
 };
@@ -23,6 +26,9 @@ export function cloneBuiltInCliConfig(): CliGlobalConfig {
     },
     context: {
       ...BUILT_IN_CLI_CONFIG.context,
+    },
+    history: {
+      ...BUILT_IN_CLI_CONFIG.history,
     },
     generatorDefaults: [...BUILT_IN_CLI_CONFIG.generatorDefaults],
     generators: [...BUILT_IN_CLI_CONFIG.generators],

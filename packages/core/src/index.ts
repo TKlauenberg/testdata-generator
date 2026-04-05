@@ -27,3 +27,6 @@ export * from './adapters';
 
 // Context (data loading and saving)
 export * from './context';
+
+// History (append-only generation audit log)
+export * from './history';

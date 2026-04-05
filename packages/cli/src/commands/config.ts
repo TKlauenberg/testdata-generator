@@ -84,6 +84,10 @@ async function runConfigShow(): Promise<void> {
   );
   // eslint-disable-next-line no-console -- User-facing config display output
   console.log(
+    `  history.logDirectory ${effective.config.history.logDirectory.padEnd(12)} ${sourceLabel(sources.history)}`,
+  );
+  // eslint-disable-next-line no-console -- User-facing config display output
+  console.log(
     `  generatorDefaults     ${generatorDefaultsDisplay(effective).padEnd(12)} ${sourceLabel(sources.generatorDefaults)}`,
   );
   // eslint-disable-next-line no-console -- User-facing config display output

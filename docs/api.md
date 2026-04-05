@@ -5,6 +5,10 @@ The canonical programmatic surface is the package root:
 ```typescript
 import {
   generateData,
+  appendGenerationHistoryEntry,
+  createGenerationHistoryEntry,
+  queryGenerationHistory,
+  readGenerationHistory,
   ValidationError,
   JsonAdapter,
   CsvAdapter,
@@ -145,6 +149,41 @@ await adapter.write(generateData(source, { count: 100, seed: 42 }));
 ```
 
 Array JSON output remains `{"metadata": ..., "data": [...]}`. JSONL output continues to emit the metadata record first as `{"_metadata": ...}`.
+
+## Generation History API
+
+The core package now exposes the append-only generation history helpers used by the CLI.
+
+```typescript
+import {
+  appendGenerationHistoryEntry,
+  createGenerationHistoryEntry,
+  createGenerationMetadata,
+  queryGenerationHistory,
+} from '@testdata-ai/core';
+
+const metadata = createGenerationMetadata({
+  sourcePattern: 'schemas/users.td',
+  count: 25,
+  format: 'json',
+  seed: 42,
+});
+
+await appendGenerationHistoryEntry(
+  '.td-history.jsonl',
+  createGenerationHistoryEntry({
+    metadata,
+    status: 'success',
+    durationMs: 123.45,
+    recordsPerSecond: 202.51,
+    outputPath: 'artifacts/users.json',
+  }),
+);
+
+const latestRuns = await queryGenerationHistory('.td-history.jsonl', { last: 10 });
+```
+
+History entries reuse the canonical `GenerationMetadata` contract under `entry.metadata` and add outcome fields such as `status`, `errorMessage`, `durationMs`, `recordsPerSecond`, optional `outputPath`, and optional `savedContextName`.
 
 ### CSV
 

@@ -70,6 +70,19 @@ async function readSavedContext(relativePath: string): Promise<{
   };
 }
 
+async function readHistoryEntries(relativePath: string): Promise<Array<{
+  readonly status: string;
+}>> {
+  const filePath = path.join(requireWorkspaceDir(), relativePath);
+  const content = await readFile(filePath, 'utf-8');
+
+  return content
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .map((line) => JSON.parse(line) as { readonly status: string });
+}
+
 Given('the testdata-ai CLI is installed', async () => {
   state.workspaceDir ??= await mkdtemp(path.join(tmpdir(), 'testdata-ai-cli-generate-bdd-'));
 
@@ -220,6 +233,38 @@ Then('the generated context file {string} should contain {int} records', async (
 
   if (savedContext.data.length !== count) {
     throw new Error(`Expected saved context data length ${count}, received ${savedContext.data.length}`);
+  }
+});
+
+Then('the history log file {string} should exist', async (relativePath: string) => {
+  const file = Bun.file(path.join(requireWorkspaceDir(), relativePath));
+
+  if (!(await file.exists())) {
+    throw new Error(`Expected history log file to exist: ${relativePath}`);
+  }
+});
+
+Then('the history log file {string} should not exist', async (relativePath: string) => {
+  const file = Bun.file(path.join(requireWorkspaceDir(), relativePath));
+
+  if (await file.exists()) {
+    throw new Error(`Expected history log file not to exist: ${relativePath}`);
+  }
+});
+
+Then('the history log file {string} should contain {int} entries', async (relativePath: string, count: number) => {
+  const entries = await readHistoryEntries(relativePath);
+
+  if (entries.length !== count) {
+    throw new Error(`Expected ${count} history entries, received ${entries.length}`);
+  }
+});
+
+Then('the history log file {string} should contain a {string} entry', async (relativePath: string, status: string) => {
+  const entries = await readHistoryEntries(relativePath);
+
+  if (!entries.some((entry) => entry.status === status)) {
+    throw new Error(`Expected a history entry with status '${status}', received: ${JSON.stringify(entries)}`);
   }
 });
 

@@ -19,6 +19,7 @@ testdata-ai uses a layered configuration model. Settings at higher-priority laye
 | `defaults.count`        | ✓         | ✓                           | ✓                            | —                     | —                                       |
 | `defaults.format`       | ✓         | ✓                           | ✓                            | —                     | —                                       |
 | `context.saveDirectory` | ✓         | ✓                           | ✓                            | —                     | —                                       |
+| `history.logDirectory`  | ✓         | ✓                           | ✓                            | —                     | —                                       |
 | `generatorDefaults`     | ✓ (empty) | ✓                           | ✓                            | ✓ (`@defaults` block) | ✓ (`generator=…`)                       |
 | `generators`            | ✓ (empty) | ✓                           | ✓                            | —                     | ✓ (`generator=@workspace.generators.*`) |
 | Field uniqueness        | —         | —                           | —                            | ✓ (`unique=true`)     | ✓ (`unique=true/false`)                 |
@@ -27,6 +28,8 @@ testdata-ai uses a layered configuration model. Settings at higher-priority laye
 - `defaults.count` and `defaults.format` are CLI/workspace/global config only — there is no DSL equivalent.
 - `defaults.format` accepts `json`, `csv`, or `sql`. Runtime CLI resolution still applies higher-priority signals in this order: explicit `--format`, then supported `--output` extensions (`.json`, `.csv`, `.sql`), then the effective config default.
 - `context.saveDirectory` is the default directory used when `--save-context` is provided without `--save-context-dir`. The `--save-context-dir` CLI flag is a **runtime override** that does not write to any config file; it affects only the current invocation.
+- `history.logDirectory` controls where the append-only `.td-history.jsonl` audit log is written. The filename is fixed. When a workspace config is discovered, relative paths resolve from that workspace root; otherwise they resolve from the current working directory.
+- `--no-history` is a runtime override that disables history logging for the current `td generate` invocation without changing config files.
 - `generatorDefaults` is configured at CLI/workspace/global level and overridden by DSL `@defaults`, which is in turn overridden by explicit field declarations.
 - `generators` defines named shared generators that can be referenced from schemas with `generator=@workspace.generators.<name>`.
 - Uniqueness defaults are schema-level DSL only (`@defaults { unique=true }`); they have no CLI config equivalent.
@@ -39,6 +42,7 @@ The config layers split cleanly into two groups:
 - How many records to generate by default (`defaults.count`)
 - What output format to use by default (`defaults.format`)
 - Where generated context is stored by default (`context.saveDirectory`)
+- Where generation history is stored by default (`history.logDirectory`)
 - Default generator mappings for field types when no generator is declared (`generatorDefaults`)
 - Named shared generators for team-wide reuse (`generators`)
 
@@ -69,6 +73,7 @@ Settings:
   defaults.count        10           [built-in]
   defaults.format       json         [built-in]
   context.saveDirectory ./contexts   [built-in]
+  history.logDirectory  .            [built-in]
   generatorDefaults     (none)       [built-in]
   generators            (none)       [built-in]
 ```
@@ -93,6 +98,7 @@ Settings:
   defaults.count        25           [global]
   defaults.format       json         [global]
   context.saveDirectory ./contexts   [built-in]
+  history.logDirectory  .            [built-in]
   generatorDefaults     (none)       [built-in]
   generators            (none)       [built-in]
 ```
@@ -108,6 +114,7 @@ Settings:
   defaults.count        25           [global]
   defaults.format       json         [global]
   context.saveDirectory ./team-ctx   [workspace]
+  history.logDirectory  audit/logs   [workspace]
   generatorDefaults     string: pick [workspace]
   generators            sharedEmail  [workspace]
 ```
@@ -130,6 +137,24 @@ The context layer saves generated records for later reuse via `--save-context` a
 | `--use-context <name>`  | CLI runtime flag               | Load a named context for use in current run                       |
 
 `--save-context-dir` is a runtime CLI concern — it does not modify any config file and affects only the current invocation. It is not related to schema/DSL semantics.
+
+## Generation History Settings
+
+The history layer writes one JSON object per generation run to an append-only `.td-history.jsonl` file.
+
+| Setting                | Scope                          | Description                                                                 |
+| ---------------------- | ------------------------------ | --------------------------------------------------------------------------- |
+| `history.logDirectory` | Config file (global/workspace) | Directory containing `.td-history.jsonl`                                    |
+| `--no-history`         | CLI runtime flag               | Disables history creation for the current `td generate` invocation only     |
+| `td history --last N`  | CLI runtime command            | Reads the log and shows the most recent `N` entries in newest-first display |
+
+Built-in behavior:
+
+- The filename is always `.td-history.jsonl`.
+- With a discovered workspace config, relative `history.logDirectory` values resolve from the workspace root.
+- Without a discovered workspace config, relative `history.logDirectory` values resolve from the current working directory.
+- Successful runs append after output writing and optional context saving complete.
+- Failed runs append concise failure entries when history is enabled.
 
 ## Section-Level Override Semantics
 
@@ -160,6 +185,9 @@ Both global (`~/.tdconfig.json`) and workspace (`.tdconfig.json`) files use the 
   },
   "context": {
     "saveDirectory": "./team-contexts"
+  },
+  "history": {
+    "logDirectory": "./audit/logs"
   },
   "generatorDefaults": [
     {

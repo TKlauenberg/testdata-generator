@@ -15,6 +15,7 @@ export type {
   CliConfigSource,
   CliContextDefaults,
   CliGlobalConfig,
+  CliHistoryDefaults,
   CliOutputFormat,
   EffectiveSettingSources,
   LoadedEffectiveCliConfig,
@@ -22,5 +23,6 @@ export type {
   LoadedCliWorkspaceConfig,
   RawCliConfigDefaults,
   RawCliContextDefaults,
+  RawCliHistoryDefaults,
   RawCliGlobalConfig,
 } from './types';

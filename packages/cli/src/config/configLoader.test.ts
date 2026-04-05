@@ -146,6 +146,9 @@ describe('loadGlobalConfig', () => {
       context: {
         saveDirectory: 'shared-contexts',
       },
+      history: {
+        logDirectory: '.',
+      },
       generatorDefaults: [
         {
           fieldType: 'string',
@@ -480,6 +483,9 @@ describe('loadEffectiveConfig', () => {
       },
       context: {
         saveDirectory: 'workspace-contexts',
+      },
+      history: {
+        logDirectory: '.',
       },
       generatorDefaults: [
         {
