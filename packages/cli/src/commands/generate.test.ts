@@ -1041,6 +1041,49 @@ describe('Generate Command - History Logging', () => {
     expect(historyExists).toBe(false);
   });
 
+  test('logs failure history for invalid table-name usage before generation starts', async () => {
+    const proc = spawn([
+      'bun',
+      CLI_PATH,
+      'generate',
+      fixture('valid-simple.td'),
+      '--format',
+      'json',
+      '--table-name',
+      'qa_users',
+    ], {
+      cwd: outputDir,
+    });
+
+    const exitCode = await proc.exited;
+    const entries = await readHistoryEntries(path.join(outputDir, '.td-history.jsonl'));
+
+    expect(exitCode).toBe(1);
+    expect(entries).toHaveLength(1);
+    expect(entries[0]?.status).toBe('failure');
+    expect(entries[0]?.errorMessage).toContain('--table-name can only be used when the effective output format is sql');
+  });
+
+  test('logs failure history when the input file cannot be read', async () => {
+    const proc = spawn([
+      'bun',
+      CLI_PATH,
+      'generate',
+      'missing-schema.td',
+    ], {
+      cwd: outputDir,
+    });
+
+    const exitCode = await proc.exited;
+    const entries = await readHistoryEntries(path.join(outputDir, '.td-history.jsonl'));
+
+    expect(exitCode).toBe(3);
+    expect(entries).toHaveLength(1);
+    expect(entries[0]?.status).toBe('failure');
+    expect(entries[0]?.errorMessage).toContain("File 'missing-schema.td' not found");
+    expect(entries[0]?.metadata.patternHash).toBeUndefined();
+  });
+
   test('resolves the configured history directory relative to the discovered workspace root', async () => {
     const homeDirectory = await createGlobalConfigHome({});
     const workspaceDirectory = await createWorkspaceConfigDirectory({
@@ -1100,6 +1143,56 @@ describe('Generate Command - History Logging', () => {
     expect(entries[0]?.errorMessage).toContain('Validation failed:');
     expect(entries[0]?.metadata.patternHash).toBeUndefined();
     expect(entries[0]?.metadata.lineage).toBeUndefined();
+  });
+
+  test('logs failure history when writing the output file fails', async () => {
+    const blockedOutputPath = path.join(outputDir, 'blocked-output');
+    await fs.mkdir(blockedOutputPath, { recursive: true });
+
+    const proc = spawn([
+      'bun',
+      CLI_PATH,
+      'generate',
+      fixture('valid-simple.td'),
+      '--output',
+      blockedOutputPath,
+    ], {
+      cwd: outputDir,
+    });
+
+    const exitCode = await proc.exited;
+    const entries = await readHistoryEntries(path.join(outputDir, '.td-history.jsonl'));
+
+    expect(exitCode).toBe(3);
+    expect(entries).toHaveLength(1);
+    expect(entries[0]?.status).toBe('failure');
+    expect(entries[0]?.errorMessage).toContain('Error writing output file:');
+  });
+
+  test('logs failure history when saving context fails', async () => {
+    const blockedContextPath = path.join(outputDir, 'blocked-context');
+    await fs.writeFile(blockedContextPath, 'occupied', 'utf-8');
+
+    const proc = spawn([
+      'bun',
+      CLI_PATH,
+      'generate',
+      fixture('valid-simple.td'),
+      '--save-context',
+      'users',
+      '--save-context-dir',
+      blockedContextPath,
+    ], {
+      cwd: outputDir,
+    });
+
+    const exitCode = await proc.exited;
+    const entries = await readHistoryEntries(path.join(outputDir, '.td-history.jsonl'));
+
+    expect(exitCode).toBe(3);
+    expect(entries).toHaveLength(1);
+    expect(entries[0]?.status).toBe('failure');
+    expect(entries[0]?.errorMessage).toContain('Error saving context file:');
   });
 });
 

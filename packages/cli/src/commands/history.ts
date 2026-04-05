@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { queryGenerationHistory } from '@testdata-ai/core';
+import { GenerationHistoryParseError, queryGenerationHistory } from '@testdata-ai/core';
 import * as path from 'node:path';
 import { CliConfigError, loadEffectiveConfig } from '../config';
 import { resolveHistoryLogPath } from '../historySupport';
@@ -76,6 +76,13 @@ export const historyCommand = new Command('history')
       if (error instanceof CliConfigError) {
         console.error(`Error: ${error.message}`);
         process.exit(error.exitCode);
+        return;
+      }
+
+      if (error instanceof GenerationHistoryParseError) {
+        console.error(`Error: ${error.message}`);
+        process.exit(1);
+        return;
       }
 
       throw error;

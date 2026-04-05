@@ -199,6 +199,22 @@ function summarizeValidationError(error: ValidationError): string {
   return `Validation failed: ${messages.join(' | ')}`;
 }
 
+function buildSourceReadErrorMessage(file: string, error: unknown): string {
+  if (isNodeError(error)) {
+    if (error.code === 'ENOENT') {
+      return `File '${file}' not found`;
+    }
+
+    if (error.code === 'EACCES') {
+      return `Permission denied reading '${file}'`;
+    }
+
+    return `Error reading file: ${error.message}`;
+  }
+
+  return `Error reading file: ${String(error)}`;
+}
+
 function calculateRecordsPerSecond(recordCount: number, durationMs: number): number {
   if (recordCount <= 0 || durationMs <= 0) {
     return 0;
@@ -304,9 +320,31 @@ export const generateCommand = new Command('generate')
         ? undefined
         : normalizeAuditPath(workingDirectory, options.output);
       const seed = options.seed ? parseIntegerOption(options.seed, '--seed') : undefined;
+      const startTime = performance.now();
+      let historyMetadata = buildKnownGenerationMetadata({
+        absoluteFile,
+        count,
+        format,
+        seed,
+        workingDirectory,
+      });
 
       if (options.tableName !== undefined && format !== 'sql') {
-        process.stderr.write('Error: --table-name can only be used when the effective output format is sql\n');
+        const errorMessage = '--table-name can only be used when the effective output format is sql';
+
+        await tryAppendFailureHistoryRecord({
+          enabled: historyEnabled,
+          historyPath,
+          metadata: historyMetadata,
+          status: 'failure',
+          durationMs: performance.now() - startTime,
+          recordCount: 0,
+          errorMessage,
+          outputPath: historyOutputPath,
+          savedContextName: options.saveContext,
+        });
+
+        process.stderr.write(`Error: ${errorMessage}\n`);
         process.exitCode = 1;
         return;
       }
@@ -326,31 +364,26 @@ export const generateCommand = new Command('generate')
       try {
         source = await fs.readFile(absoluteFile, 'utf-8');
       } catch (err: unknown) {
-        if (isNodeError(err)) {
-          if (err.code === 'ENOENT') {
-            console.error(`Error: File '${file}' not found`);
-          } else if (err.code === 'EACCES') {
-            console.error(`Error: Permission denied reading '${file}'`);
-          } else {
-            console.error(`Error reading file: ${err.message}`);
-          }
-        } else {
-          console.error(`Error reading file: ${String(err)}`);
-        }
+        const errorMessage = buildSourceReadErrorMessage(file, err);
+
+        await tryAppendFailureHistoryRecord({
+          enabled: historyEnabled,
+          historyPath,
+          metadata: historyMetadata,
+          status: 'failure',
+          durationMs: performance.now() - startTime,
+          recordCount: 0,
+          errorMessage,
+          outputPath: historyOutputPath,
+          savedContextName: options.saveContext,
+        });
+
+        console.error(errorMessage.startsWith('Error reading file:') ? errorMessage : `Error: ${errorMessage}`);
         process.exit(3);
         throw new Error('Unreachable');
       }
 
-      let historyMetadata = buildKnownGenerationMetadata({
-        absoluteFile,
-        count,
-        format,
-        seed,
-        workingDirectory,
-      });
-
       // Step 2: Validate and generate
-      const startTime = performance.now();
       const records: Array<Record<string, unknown>> = [];
 
       const genOptions: GenerateOptions = {

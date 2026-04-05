@@ -1,6 +1,6 @@
 # Story 12.2: Generation History Logging
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -62,6 +62,12 @@ This story also introduces the first history-facing CLI surface with `td history
   - [x] Extend CLI unit tests to cover default logging, `--no-history`, configurable history directory, failed-generation logging, and `td history --last <n>` output.
   - [x] Extend `packages/cli/features/generateCommand.feature` for default history creation and multi-run accumulation, add a dedicated `packages/cli/features/historyCommand.feature`, and update `packages/cli/tests/run-cucumber.ts` plus step definitions so the feature actually runs.
   - [x] Do not add dormant feature files that are not referenced by the active CLI Cucumber runner.
+
+  ### Review Findings
+
+  - [x] [Review][Patch] Early setup failures bypass history logging [packages/cli/src/commands/generate.ts:309]
+  - [x] [Review][Patch] `td history` crashes on malformed history logs [packages/cli/src/commands/history.ts:63]
+  - [x] [Review][Patch] Required history failure-path coverage is incomplete [packages/cli/src/commands/generate.test.ts:985]
 
 ## Dev Notes
 

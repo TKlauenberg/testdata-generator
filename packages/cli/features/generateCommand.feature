@@ -70,6 +70,7 @@ Feature: Generate Command
   Scenario: Disable generation history with --no-history
     Given QA Tester has a valid DSL schema fixture "valid-simple.td"
     When QA Tester runs "td generate valid-simple.td --count 2 --no-history"
+    Then QA Tester should see JSON output on stdout
     Then the history log file ".td-history.jsonl" should not exist
     And the generate command exit code should be 0
 

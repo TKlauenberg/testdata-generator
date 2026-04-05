@@ -120,4 +120,24 @@ describe('td history', () => {
     expect(stdout).toContain('| success |');
     expect(await fs.access(path.join(workspaceDirectory, 'audit/trail/.td-history.jsonl')).then(() => true).catch(() => false)).toBe(true);
   });
+
+  test('reports malformed history logs as a controlled CLI error', async () => {
+    const workspaceDirectory = await createWorkspaceDirectory();
+    await fs.writeFile(
+      path.join(workspaceDirectory, '.td-history.jsonl'),
+      '{"metadata":\n',
+      'utf-8',
+    );
+
+    const proc = spawn(['bun', CLI_PATH, 'history'], {
+      cwd: workspaceDirectory,
+      stderr: 'pipe',
+    });
+
+    const stderr = await new Response(proc.stderr).text();
+    const exitCode = await proc.exited;
+
+    expect(exitCode).toBe(1);
+    expect(stderr).toContain('Invalid JSON in history log at line 1');
+  });
 });
