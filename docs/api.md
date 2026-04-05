@@ -107,51 +107,102 @@ try {
 
 Programmatic formatting reuses the core adapters instead of CLI code.
 
+`createGenerationMetadata()` builds the canonical generation metadata contract used across JSON, CSV, and SQL output. The shared contract includes:
+
+- `timestamp`
+- `sourcePattern`
+- `count`
+- `format`
+- optional `seed`
+- package `version`
+- deterministic `patternHash`
+- optional `lineage` entries for imported patterns and workspace generators
+
 ### JSON
 
 ```typescript
-import { generateData, JsonAdapter } from '@testdata-ai/core';
+import { createGenerationMetadata, generateData, JsonAdapter } from '@testdata-ai/core';
 
 const adapter = new JsonAdapter({
   outputPath: 'artifacts/users.json',
   format: 'array',
-  metadata: {
+  metadata: createGenerationMetadata({
     sourcePattern: 'inline-schema.td',
     count: 100,
+    format: 'json',
     seed: 42,
-  },
+    lineageInputs: [
+      {
+        type: 'root-pattern',
+        identifier: 'inline-schema.td',
+        content: source,
+      },
+    ],
+  }),
 });
 
 await adapter.write(generateData(source, { count: 100, seed: 42 }));
 ```
+
+Array JSON output remains `{"metadata": ..., "data": [...]}`. JSONL output continues to emit the metadata record first as `{"_metadata": ...}`.
 
 ### CSV
 
 ```typescript
-import { generateData, CsvAdapter } from '@testdata-ai/core';
+import { createGenerationMetadata, generateData, CsvAdapter } from '@testdata-ai/core';
 
 const adapter = new CsvAdapter({
   outputPath: 'artifacts/users.csv',
   delimiter: ',',
+  metadata: createGenerationMetadata({
+    sourcePattern: 'inline-schema.td',
+    count: 100,
+    format: 'csv',
+    seed: 42,
+    lineageInputs: [
+      {
+        type: 'root-pattern',
+        identifier: 'inline-schema.td',
+        content: source,
+      },
+    ],
+  }),
 });
 
 await adapter.write(generateData(source, { count: 100, seed: 42 }));
 ```
 
+CSV output now starts with a machine-readable metadata comment line before the header row.
+
 ### SQL
 
 ```typescript
-import { generateData, SqlAdapter } from '@testdata-ai/core';
+import { createGenerationMetadata, generateData, SqlAdapter } from '@testdata-ai/core';
 
 const adapter = new SqlAdapter({
   outputPath: 'artifacts/users.sql',
   tableName: 'public.users',
   dialect: 'postgres',
   batchSize: 100,
+  metadata: createGenerationMetadata({
+    sourcePattern: 'inline-schema.td',
+    count: 100,
+    format: 'sql',
+    seed: 42,
+    lineageInputs: [
+      {
+        type: 'root-pattern',
+        identifier: 'inline-schema.td',
+        content: source,
+      },
+    ],
+  }),
 });
 
 await adapter.write(generateData(source, { count: 100, seed: 42 }));
 ```
+
+SQL output now starts with a metadata comment block using leading `--` comment lines.
 
 ### Adapter Option Types
 
@@ -165,6 +216,7 @@ type JsonAdapterOptions = {
 type CsvAdapterOptions = {
   outputPath: string;
   delimiter?: string;
+  metadata?: Partial<AdapterMetadata>;
 };
 
 type SqlAdapterOptions = {
@@ -172,6 +224,7 @@ type SqlAdapterOptions = {
   tableName: string;
   dialect?: 'postgres' | 'mysql';
   batchSize?: number;
+  metadata?: Partial<AdapterMetadata>;
 };
 ```
 

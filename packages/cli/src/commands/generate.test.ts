@@ -1,5 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
 import { spawn } from 'bun';
+import { decodeGenerationMetadataComment, GENERATION_METADATA_COMMENT_LABEL } from '@testdata-ai/core';
 import * as fs from 'fs/promises';
 import * as os from 'node:os';
 import * as path from 'path';
@@ -16,16 +17,65 @@ function parseJson<T>(input: string): T {
   return parsed as T;
 }
 
+interface GeneratedJsonOutput {
+  readonly metadata: {
+    readonly timestamp: string;
+    readonly sourcePattern?: string;
+    readonly count?: number;
+    readonly format: string;
+    readonly seed?: number;
+    readonly version: string;
+    readonly patternHash?: string;
+  };
+  readonly data: Array<Record<string, unknown>>;
+}
+
+function isGeneratedJsonOutput(value: unknown): value is GeneratedJsonOutput {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    return false;
+  }
+
+  const candidate = value as Partial<GeneratedJsonOutput>;
+  return candidate.metadata !== undefined
+    && candidate.data !== undefined
+    && Array.isArray(candidate.data);
+}
+
+function extractGeneratedJsonOutput(input: string): GeneratedJsonOutput {
+  const parsed = parseJson<unknown>(input);
+  if (!isGeneratedJsonOutput(parsed)) {
+    throw new Error('Expected generated output to contain metadata and a data array');
+  }
+
+  return parsed;
+}
+
+function extractGeneratedRecords(input: string): Array<Record<string, unknown>> {
+  return extractGeneratedJsonOutput(input).data;
+}
+
 function parseCsvLines(input: string): string[] {
   return input
     .trim()
     .split(/\r?\n/)
-    .filter((line) => line.length > 0);
+    .filter((line) => line.length > 0)
+    .filter((line) => !line.startsWith(`# ${GENERATION_METADATA_COMMENT_LABEL}`));
 }
 
-function isRecordArray(value: unknown): value is Array<Record<string, unknown>> {
-  return Array.isArray(value)
-    && value.every((item) => item !== null && typeof item === 'object' && !Array.isArray(item));
+function decodeMetadataCommentLine(line: string): ReturnType<typeof decodeGenerationMetadataComment> {
+  const trimmed = line.trim();
+  const csvPrefix = `# ${GENERATION_METADATA_COMMENT_LABEL}`;
+  const sqlPrefix = `-- ${GENERATION_METADATA_COMMENT_LABEL}`;
+
+  if (trimmed.startsWith(csvPrefix)) {
+    return decodeGenerationMetadataComment(trimmed.slice(csvPrefix.length));
+  }
+
+  if (trimmed.startsWith(sqlPrefix)) {
+    return decodeGenerationMetadataComment(trimmed.slice(sqlPrefix.length));
+  }
+
+  throw new Error(`Expected a metadata comment line, received: ${line}`);
 }
 
 async function createGlobalConfigHome(config: unknown): Promise<string> {
@@ -65,11 +115,7 @@ describe('Generate Command - File Reading', () => {
       parseJson<unknown>(output);
     }).not.toThrow();
 
-    const records = parseJson<unknown>(output);
-    expect(isRecordArray(records)).toBe(true);
-    if (!isRecordArray(records)) {
-      throw new Error('Expected generated output to be a JSON array of records');
-    }
+    const records = extractGeneratedRecords(output);
     expect(records.length).toBe(10); // Default count
   });
 
@@ -181,11 +227,7 @@ describe('Generate Command - Generation Options', () => {
     ]);
 
     const output = await new Response(proc.stdout).text();
-    const records = parseJson<unknown>(output);
-
-    if (!isRecordArray(records)) {
-      throw new Error('Expected generated output to be a JSON array of records');
-    }
+    const records = extractGeneratedRecords(output);
 
     expect(records).toHaveLength(10);
   });
@@ -201,11 +243,7 @@ describe('Generate Command - Generation Options', () => {
     ]);
 
     const output = await new Response(proc.stdout).text();
-    const records = parseJson<unknown>(output);
-
-    if (!isRecordArray(records)) {
-      throw new Error('Expected generated output to be a JSON array of records');
-    }
+    const records = extractGeneratedRecords(output);
 
     expect(records).toHaveLength(50);
   });
@@ -221,11 +259,7 @@ describe('Generate Command - Generation Options', () => {
     ]);
 
     const output = await new Response(proc.stdout).text();
-    const records = parseJson<unknown>(output);
-
-    if (!isRecordArray(records)) {
-      throw new Error('Expected generated output to be a JSON array of records');
-    }
+    const records = extractGeneratedRecords(output);
 
     expect(records).toHaveLength(25);
   });
@@ -257,7 +291,14 @@ describe('Generate Command - Generation Options', () => {
 
     const output2 = await new Response(proc2.stdout).text();
 
-    expect(output1).toBe(output2);
+    const result1 = extractGeneratedJsonOutput(output1);
+    const result2 = extractGeneratedJsonOutput(output2);
+
+    expect(result1.data).toEqual(result2.data);
+    expect({ ...result1.metadata, timestamp: '<normalized>' }).toEqual({
+      ...result2.metadata,
+      timestamp: '<normalized>',
+    });
   });
 
   test('respects -s shorthand for seed', async () => {
@@ -298,11 +339,7 @@ describe('Generate Command - Generation Options', () => {
       });
 
       const output = await new Response(proc.stdout).text();
-      const records = parseJson<unknown>(output);
-
-      if (!isRecordArray(records)) {
-        throw new Error('Expected generated output to be a JSON array of records');
-      }
+      const records = extractGeneratedRecords(output);
 
       expect(records).toHaveLength(3);
     } finally {
@@ -334,11 +371,7 @@ describe('Generate Command - Generation Options', () => {
       });
 
       const output = await new Response(proc.stdout).text();
-      const records = parseJson<unknown>(output);
-
-      if (!isRecordArray(records)) {
-        throw new Error('Expected generated output to be a JSON array of records');
-      }
+      const records = extractGeneratedRecords(output);
 
       expect(records).toHaveLength(2);
     } finally {
@@ -397,11 +430,7 @@ describe('Generate Command - Generation Options', () => {
       });
 
       const output = await new Response(proc.stdout).text();
-      const records = parseJson<unknown>(output);
-
-      if (!isRecordArray(records)) {
-        throw new Error('Expected generated output to be a JSON array of records');
-      }
+      const records = extractGeneratedRecords(output);
 
       expect(records).toHaveLength(2);
 
@@ -466,11 +495,7 @@ describe('Generate Command - Generation Options', () => {
       });
 
       const output = await new Response(proc.stdout).text();
-      const records = parseJson<unknown>(output);
-
-      if (!isRecordArray(records)) {
-        throw new Error('Expected generated output to be a JSON array of records');
-      }
+      const records = extractGeneratedRecords(output);
 
       expect(records).toHaveLength(1);
 
@@ -533,11 +558,7 @@ describe('Generate Command - Generation Options', () => {
       });
 
       const output = await new Response(proc.stdout).text();
-      const records = parseJson<unknown>(output);
-
-      if (!isRecordArray(records)) {
-        throw new Error('Expected generated output to be a JSON array of records');
-      }
+      const records = extractGeneratedRecords(output);
 
       expect(records).toHaveLength(1);
       expect(records[0]?.contact).toBe('workspace@example.com');
@@ -594,11 +615,7 @@ describe('Generate Command - Generation Options', () => {
       });
 
       const output = await new Response(proc.stdout).text();
-      const records = parseJson<unknown>(output);
-
-      if (!isRecordArray(records)) {
-        throw new Error('Expected generated output to be a JSON array of records');
-      }
+      const records = extractGeneratedRecords(output);
 
       expect(records).toHaveLength(2);
       expect(records[0]).toHaveProperty('id');
@@ -657,11 +674,7 @@ describe('Generate Command - Generation Options', () => {
       });
 
       const output = await new Response(proc.stdout).text();
-      const records = parseJson<unknown>(output);
-
-      if (!isRecordArray(records)) {
-        throw new Error('Expected generated output to be a JSON array of records');
-      }
+      const records = extractGeneratedRecords(output);
 
       expect(records).toHaveLength(1);
       expect(records[0]?.contact).toBe('schema@example.com');
@@ -815,10 +828,7 @@ describe('Generate Command - Output Handling', () => {
     const exitCode = await proc.exited;
 
     expect(exitCode).toBe(0);
-    const generatedRecords = parseJson<unknown>(stdout);
-    if (!isRecordArray(generatedRecords)) {
-      throw new Error('Expected generated output to be a JSON array of records');
-    }
+    const generatedRecords = extractGeneratedRecords(stdout);
 
     expect(generatedRecords).toHaveLength(3);
 
@@ -885,13 +895,13 @@ describe('Generate Command - Output Handling', () => {
     const exitCode = await proc.exited;
     expect(exitCode).toBe(0);
 
-    const generatedOutput = parseJson<readonly unknown[]>(await fs.readFile(outputFile, 'utf-8'));
+    const generatedOutput = extractGeneratedJsonOutput(await fs.readFile(outputFile, 'utf-8'));
     const savedContext = parseJson<{ readonly data: readonly unknown[] }>(
       await fs.readFile(path.join(outputDir, 'contexts', 'baseline-with-output.json'), 'utf-8'),
     );
 
-    expect(generatedOutput).toHaveLength(4);
-    expect(savedContext.data).toEqual(generatedOutput);
+    expect(generatedOutput.data).toHaveLength(4);
+    expect(savedContext.data).toEqual(generatedOutput.data);
   });
 
   test('uses the global default save-context directory when the flag is omitted', async () => {
@@ -1067,7 +1077,7 @@ describe('Generate Command - Multi-Format Output', () => {
     const content = await fs.readFile(outputFile, 'utf-8');
 
     expect(exitCode).toBe(0);
-    expect(content.startsWith('id,name,active')).toBe(true);
+    expect(parseCsvLines(content)[0]).toBe('id,name,active');
     expect(() => parseJson(content)).toThrow();
   });
 
@@ -1187,7 +1197,14 @@ describe('Generate Command - Multi-Format Output', () => {
 
     expect(stdoutExitCode).toBe(0);
     expect(fileExitCode).toBe(0);
-    expect(stdout).toBe(fileContent);
+    const stdoutLines = stdout.trim().split(/\r?\n/);
+    const fileLines = fileContent.trim().split(/\r?\n/);
+
+    expect(stdoutLines.slice(1)).toEqual(fileLines.slice(1));
+    expect({ ...decodeMetadataCommentLine(stdoutLines[0] ?? ''), timestamp: '<normalized>' }).toEqual({
+      ...decodeMetadataCommentLine(fileLines[0] ?? ''),
+      timestamp: '<normalized>',
+    });
   });
 
   test('keeps sql stdout byte-for-byte consistent with file output', async () => {
@@ -1230,7 +1247,14 @@ describe('Generate Command - Multi-Format Output', () => {
 
     expect(stdoutExitCode).toBe(0);
     expect(fileExitCode).toBe(0);
-    expect(stdout).toBe(fileContent);
+    const stdoutLines = stdout.trim().split(/\r?\n/);
+    const fileLines = fileContent.trim().split(/\r?\n/);
+
+    expect(stdoutLines.slice(1)).toEqual(fileLines.slice(1));
+    expect({ ...decodeMetadataCommentLine(stdoutLines[0] ?? ''), timestamp: '<normalized>' }).toEqual({
+      ...decodeMetadataCommentLine(fileLines[0] ?? ''),
+      timestamp: '<normalized>',
+    });
   });
 
   test('rejects --table-name when the effective output format is not sql', async () => {

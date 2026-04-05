@@ -1,4 +1,9 @@
-import type { IAdapter, SqlAdapterOptions, SqlDialect } from './types';
+import {
+  createGenerationMetadata,
+  encodeGenerationMetadataComment,
+  GENERATION_METADATA_COMMENT_LABEL,
+} from '../common';
+import type { AdapterMetadata, IAdapter, SqlAdapterOptions, SqlDialect } from './types';
 
 const DEFAULT_BATCH_SIZE = 100;
 
@@ -68,6 +73,7 @@ export class SqlAdapter implements IAdapter {
   private readonly _tableName: string;
   private readonly _dialect: SqlDialect;
   private readonly _batchSize: number;
+  private readonly _metadata: AdapterMetadata;
 
   constructor(options: SqlAdapterOptions) {
     if (!options.outputPath || options.outputPath.trim().length === 0) {
@@ -92,6 +98,16 @@ export class SqlAdapter implements IAdapter {
     this._tableName = options.tableName;
     this._dialect = dialect;
     this._batchSize = batchSize;
+    this._metadata = createGenerationMetadata({
+      timestamp: options.metadata?.timestamp,
+      sourcePattern: options.metadata?.sourcePattern,
+      count: options.metadata?.count,
+      format: 'sql',
+      seed: options.metadata?.seed,
+      version: options.metadata?.version,
+      patternHash: options.metadata?.patternHash,
+      lineage: options.metadata?.lineage,
+    });
   }
 
   async write(records: AsyncIterable<Record<string, unknown>>): Promise<void> {
@@ -103,6 +119,8 @@ export class SqlAdapter implements IAdapter {
       let columns: string[] | null = null;
       let quotedColumns: string[] = [];
       let pendingRows: string[] = [];
+
+      file.write(`-- ${GENERATION_METADATA_COMMENT_LABEL}${encodeGenerationMetadataComment(this._metadata)}\n`);
 
       const flushBatch = (): void => {
         if (columns === null || pendingRows.length === 0) {

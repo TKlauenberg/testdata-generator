@@ -1,6 +1,11 @@
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
 import { mkdir, rm } from 'node:fs/promises';
 import * as path from 'node:path';
+import {
+  createGenerationMetadata,
+  encodeGenerationMetadataComment,
+  GENERATION_METADATA_COMMENT_LABEL,
+} from '../../common';
 import { loadCsvContext, parseCsvStream } from './csvLoader';
 import type { ContextData } from '../types';
 
@@ -37,6 +42,36 @@ describe('loadCsvContext', () => {
     ]);
     expect(context.metadata.format).toBe('csv');
     expect(context.metadata.recordCount).toBe(2);
+  });
+
+  test('parses leading metadata comments emitted by the CSV adapter', async () => {
+    const metadata = createGenerationMetadata({
+      timestamp: '2026-04-05T10:30:00.000Z',
+      sourcePattern: 'schemas/users.td',
+      count: 1,
+      format: 'csv',
+      seed: 42,
+      version: '0.1.0',
+      lineageInputs: [
+        { type: 'root-pattern', identifier: 'schemas/users.td', content: 'schema User { id: number }' },
+      ],
+    });
+    const filePath = await writeCsvFixture(
+      'metadata.csv',
+      [
+        `# ${GENERATION_METADATA_COMMENT_LABEL}${encodeGenerationMetadataComment(metadata)}`,
+        'id,email',
+        'u-1,qa.one@example.com',
+      ].join('\n'),
+    );
+
+    const context = await loadCsvContext(filePath);
+
+    expect(context.metadata.timestamp).toBe('2026-04-05T10:30:00.000Z');
+    expect(context.metadata.sourcePattern).toBe('schemas/users.td');
+    expect(context.metadata.seed).toBe(42);
+    expect(context.metadata.patternHash).toBeDefined();
+    expect(context.records).toEqual([{ id: 'u-1', email: 'qa.one@example.com' }]);
   });
 
   test('handles quoted fields and escaped quotes/commas', async () => {

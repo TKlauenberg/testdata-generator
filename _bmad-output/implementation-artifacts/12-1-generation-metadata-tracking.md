@@ -1,6 +1,6 @@
 # Story 12.1: Generation Metadata Tracking
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -28,39 +28,39 @@ The current codebase already has three partial metadata seams: `JsonAdapter` wri
 
 ## Tasks / Subtasks
 
-- [ ] Define one canonical generation metadata contract and lineage policy instead of adding another ad hoc envelope (AC: 1, 2, 3, 4, 5, 6)
-  - [ ] Reuse and extend the existing metadata vocabulary in `packages/core/src/adapters/types.ts` and `packages/core/src/context/types.ts` so JSON output, CSV output, SQL output, and saved context files describe the same core fields.
-  - [ ] Include at minimum `timestamp`, `sourcePattern`, `version`, `count`, `format`, and optional `seed`, while deciding explicitly whether the pattern identity field is a version string, deterministic content hash, or both.
-  - [ ] Define the Epic 11 carry-forward rule for composed inputs up front: imported files, workspace generators, and schema inheritance must either contribute directly to metadata identity/hash or be preserved as explicit lineage fields so later Story 12.3 does not need to retrofit trustworthiness.
+- [x] Define one canonical generation metadata contract and lineage policy instead of adding another ad hoc envelope (AC: 1, 2, 3, 4, 5, 6)
+  - [x] Reuse and extend the existing metadata vocabulary in `packages/core/src/adapters/types.ts` and `packages/core/src/context/types.ts` so JSON output, CSV output, SQL output, and saved context files describe the same core fields.
+  - [x] Include at minimum `timestamp`, `sourcePattern`, `version`, `count`, `format`, and optional `seed`, while deciding explicitly whether the pattern identity field is a version string, deterministic content hash, or both.
+  - [x] Define the Epic 11 carry-forward rule for composed inputs up front: imported files, workspace generators, and schema inheritance must either contribute directly to metadata identity/hash or be preserved as explicit lineage fields so later Story 12.3 does not need to retrofit trustworthiness.
 
-- [ ] Thread metadata through the existing generation and formatting flow without changing generated record payloads (AC: 1, 2, 3, 5, 6, 7, 8, 9)
-  - [ ] Keep `generateData()` returning `AsyncIterable<Record<string, unknown>>`; metadata belongs in output formatting and persistence layers, not inside each generated record.
-  - [ ] Add a shared metadata-construction seam that can be called from CLI output formatting and any direct adapter usage, instead of duplicating timestamp/version/source logic in several files.
-  - [ ] Update `packages/cli/src/commands/generate.ts` so JSON output no longer bypasses the metadata-aware path for normal CLI output.
-  - [ ] Ensure the CLI computes metadata once from the real schema path, effective count, optional seed, selected format, package version, and chosen pattern identity field, then passes that metadata into the relevant formatter/adapter.
+- [x] Thread metadata through the existing generation and formatting flow without changing generated record payloads (AC: 1, 2, 3, 5, 6, 7, 8, 9)
+  - [x] Keep `generateData()` returning `AsyncIterable<Record<string, unknown>>`; metadata belongs in output formatting and persistence layers, not inside each generated record.
+  - [x] Add a shared metadata-construction seam that can be called from CLI output formatting and any direct adapter usage, instead of duplicating timestamp/version/source logic in several files.
+  - [x] Update `packages/cli/src/commands/generate.ts` so JSON output no longer bypasses the metadata-aware path for normal CLI output.
+  - [x] Ensure the CLI computes metadata once from the real schema path, effective count, optional seed, selected format, package version, and chosen pattern identity field, then passes that metadata into the relevant formatter/adapter.
 
-- [ ] Extend output adapters consistently across JSON, CSV, and SQL (AC: 7, 8, 9)
-  - [ ] Preserve the existing JSON envelope shape of `{"metadata": ..., "data": [...]}` for array output and the `_metadata` first-line convention for JSONL, but make CLI JSON output use the same contract.
-  - [ ] Extend `CsvAdapterOptions` and `SqlAdapterOptions` to accept metadata, and emit deterministic comment headers before the data body.
-  - [ ] Use a CSV comment convention that is machine-readable and stable, and teach the existing CSV loader to ignore or parse those leading metadata comment lines so current CSV round-trip behavior remains valid.
-  - [ ] Emit SQL metadata as leading `-- ...` comments that do not interfere with existing SQL execution tests.
+- [x] Extend output adapters consistently across JSON, CSV, and SQL (AC: 7, 8, 9)
+  - [x] Preserve the existing JSON envelope shape of `{"metadata": ..., "data": [...]}` for array output and the `_metadata` first-line convention for JSONL, but make CLI JSON output use the same contract.
+  - [x] Extend `CsvAdapterOptions` and `SqlAdapterOptions` to accept metadata, and emit deterministic comment headers before the data body.
+  - [x] Use a CSV comment convention that is machine-readable and stable, and teach the existing CSV loader to ignore or parse those leading metadata comment lines so current CSV round-trip behavior remains valid.
+  - [x] Emit SQL metadata as leading `-- ...` comments that do not interfere with existing SQL execution tests.
 
-- [ ] Establish deterministic pattern identity for Story 12.1 without overreaching into full history tooling (AC: 4)
-  - [ ] Prefer a pure helper that derives the identity from source content and explicitly chosen lineage inputs rather than filesystem timestamps, git state, or mutable environment data.
-  - [ ] Keep the hash/version behavior deterministic and unit-testable so Story 12.3 can build on it rather than rewrite it.
-  - [ ] Do not implement `td diff` or history querying in this story; those belong to Stories 12.2 and 12.3.
+- [x] Establish deterministic pattern identity for Story 12.1 without overreaching into full history tooling (AC: 4)
+  - [x] Prefer a pure helper that derives the identity from source content and explicitly chosen lineage inputs rather than filesystem timestamps, git state, or mutable environment data.
+  - [x] Keep the hash/version behavior deterministic and unit-testable so Story 12.3 can build on it rather than rewrite it.
+  - [x] Do not implement `td diff` or history querying in this story; those belong to Stories 12.2 and 12.3.
 
-- [ ] Add regression coverage in both unit and BDD harnesses, including current round-trip and CLI behaviors (AC: 10, 11)
-  - [ ] Extend adapter unit tests under `packages/core/src/adapters/` to verify metadata presence, structure, escaping, and format-specific rendering for JSON, CSV, and SQL.
-  - [ ] Extend loader tests if CSV comment headers require parser adjustments.
-  - [ ] Extend `packages/core/features/csv-output-adapter.feature` and `packages/core/features/sql-output-adapter.feature` so the acceptance layer verifies metadata comments while preserving current loadability and SQL executability.
-  - [ ] Extend CLI tests and `packages/cli/features/generateCommand.feature` to verify metadata appears in JSON, CSV, and SQL output from the actual command path.
+- [x] Add regression coverage in both unit and BDD harnesses, including current round-trip and CLI behaviors (AC: 10, 11)
+  - [x] Extend adapter unit tests under `packages/core/src/adapters/` to verify metadata presence, structure, escaping, and format-specific rendering for JSON, CSV, and SQL.
+  - [x] Extend loader tests if CSV comment headers require parser adjustments.
+  - [x] Extend `packages/core/features/csv-output-adapter.feature` and `packages/core/features/sql-output-adapter.feature` so the acceptance layer verifies metadata comments while preserving current loadability and SQL executability.
+  - [x] Extend CLI tests and `packages/cli/features/generateCommand.feature` to verify metadata appears in JSON, CSV, and SQL output from the actual command path.
 
-- [ ] Keep documentation impact explicit while scoping the implementation to metadata tracking only (AC: 1, 4, 7, 8, 9)
-  - [ ] Update `docs/api.md` if the programmatic output examples or adapter usage examples change.
-  - [ ] Update `docs/configuration.md` only if metadata behavior becomes configurable in this story.
-  - [ ] Update `docs/foundation-patterns.md` if the project begins documenting metadata lineage or pattern identity rules as user-facing behavior.
-  - [ ] Do not add history logging, `--no-history`, `td history`, or platform-export flags in Story 12.1.
+- [x] Keep documentation impact explicit while scoping the implementation to metadata tracking only (AC: 1, 4, 7, 8, 9)
+  - [x] Update `docs/api.md` if the programmatic output examples or adapter usage examples change.
+  - [x] Update `docs/configuration.md` only if metadata behavior becomes configurable in this story.
+  - [x] Update `docs/foundation-patterns.md` if the project begins documenting metadata lineage or pattern identity rules as user-facing behavior.
+  - [x] Do not add history logging, `--no-history`, `td history`, or platform-export flags in Story 12.1.
 
 ## Dev Notes
 
@@ -233,18 +233,58 @@ GPT-5.4
 - No dedicated UX planning artifact matching `*ux*.md` was found in planning artifacts.
 - Current implementation gap confirmed: JSON metadata exists only through direct `JsonAdapter` usage, CLI JSON output bypasses that path, and CSV/SQL outputs currently emit no metadata.
 - Current regression risk confirmed: CSV comment headers will break the existing CSV loader unless the loader is updated to ignore or parse them deliberately.
+- Implemented canonical metadata in `packages/core/src/common/generationMetadata.ts`, with deterministic `patternHash` generation from explicit lineage inputs and reusable comment encoding helpers.
+- Routed CLI generation through `validateSchema()` + `generate()` so metadata is built once from resolved declarations, imported source files, and configured workspace generators before any formatter runs.
+- Validation executed successfully with `bun run test:core`, `bun run test:cli`, `bun run --cwd packages/core test:bdd`, `bun run --cwd packages/cli test:bdd`, and `bun run lint`.
 
 ### Completion Notes List
 
 - Ultimate context engine analysis completed - comprehensive developer guide created.
 - Story file created for `12-1-generation-metadata-tracking` with status `ready-for-dev`.
 - Sprint tracking advanced Epic 12 from `backlog` to `in-progress` and Story 12.1 from `backlog` to `ready-for-dev`.
+- Added a shared generation metadata contract with deterministic lineage-aware hashing, encoded metadata comments, and aligned context metadata fields.
+- CLI JSON, CSV, and SQL outputs now all pass through metadata-aware adapters; CLI JSON no longer bypasses the adapter path.
+- CSV output now emits a machine-readable metadata comment that `loadCsvContext()` parses without breaking round-trip behavior; SQL output emits leading metadata comments that preserve execution behavior.
+- Expanded unit, CLI, and BDD coverage for JSON envelopes, CSV comments, SQL comments, save-context interactions, and direct adapter usage; updated API docs to show metadata-aware adapter usage.
 
 ### File List
 
 - `_bmad-output/implementation-artifacts/12-1-generation-metadata-tracking.md`
 - `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- `docs/api.md`
+- `packages/cli/features/generateCommand.feature`
+- `packages/cli/features/step_definitions/generateCommand.steps.ts`
+- `packages/cli/features/step_definitions/saveGeneratedContext.steps.ts`
+- `packages/cli/src/commands/generate.test.ts`
+- `packages/cli/src/commands/generate.ts`
+- `packages/core/features/csv-output-adapter.feature`
+- `packages/core/features/sql-output-adapter.feature`
+- `packages/core/features/step_definitions/csv-output-adapter.steps.ts`
+- `packages/core/features/support/abilities/UseCsvAdapter.ts`
+- `packages/core/features/support/abilities/UseSqlAdapter.ts`
+- `packages/core/features/support/questions/CsvAdapterQuestions.ts`
+- `packages/core/features/support/tasks/CsvAdapterTasks.ts`
+- `packages/core/features/support/tasks/SqlAdapterTasks.ts`
+- `packages/core/src/adapters/csvAdapter.test.ts`
+- `packages/core/src/adapters/csvAdapter.ts`
+- `packages/core/src/adapters/jsonAdapter.test.ts`
+- `packages/core/src/adapters/jsonAdapter.ts`
+- `packages/core/src/adapters/sqlAdapter.test.ts`
+- `packages/core/src/adapters/sqlAdapter.ts`
+- `packages/core/src/adapters/types.test.ts`
+- `packages/core/src/adapters/types.ts`
+- `packages/core/src/common/generationMetadata.test.ts`
+- `packages/core/src/common/generationMetadata.ts`
+- `packages/core/src/common/index.ts`
+- `packages/core/src/context/contextManager.ts`
+- `packages/core/src/context/loaders/csvLoader.test.ts`
+- `packages/core/src/context/loaders/csvLoader.ts`
+- `packages/core/src/context/loaders/jsonLoader.ts`
+- `packages/core/src/context/types.ts`
+- `packages/core/src/generateData.test.ts`
 
 ### Change Log
 
 - 2026-04-05: Created story context artifact via create-story workflow and updated sprint status to `ready-for-dev`.
+- 2026-04-05: Implemented canonical generation metadata, deterministic lineage-aware hashing, metadata-aware CLI output formatting, and CSV/SQL metadata comments.
+- 2026-04-05: Added unit and BDD regression coverage for metadata across adapters and CLI output paths, and updated API documentation.

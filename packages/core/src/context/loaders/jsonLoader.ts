@@ -1,4 +1,5 @@
 import { err, ok } from '../../common/result';
+import type { GenerationMetadataLineageEntry } from '../../common';
 import type { Result } from '../../common/result';
 import type {
   ContextData,
@@ -77,12 +78,38 @@ function validateSavedContextMetadata(
     return err(`Invalid saved context metadata in "${filePath}": tags must be an array of strings`);
   }
 
+  if (candidate.seed !== undefined && typeof candidate.seed !== 'number') {
+    return err(`Invalid saved context metadata in "${filePath}": seed must be a number when provided`);
+  }
+
+  if (candidate.patternHash !== undefined && typeof candidate.patternHash !== 'string') {
+    return err(`Invalid saved context metadata in "${filePath}": patternHash must be a string when provided`);
+  }
+
+  if (
+    candidate.lineage !== undefined
+    && (!Array.isArray(candidate.lineage)
+      || !candidate.lineage.every((entry) => {
+        const lineageEntry = entry as Partial<GenerationMetadataLineageEntry>;
+        return (lineageEntry.type === 'root-pattern'
+          || lineageEntry.type === 'imported-pattern'
+          || lineageEntry.type === 'workspace-generator')
+          && typeof lineageEntry.identifier === 'string'
+          && typeof lineageEntry.hash === 'string';
+      }))
+  ) {
+    return err(`Invalid saved context metadata in "${filePath}": lineage entries must include type, identifier, and hash`);
+  }
+
   return ok({
     timestamp: candidate.timestamp,
     sourcePattern: candidate.sourcePattern,
     version: candidate.version,
     count: candidate.count,
     tags: normalizeContextTags(candidate.tags),
+    seed: candidate.seed,
+    patternHash: candidate.patternHash,
+    lineage: candidate.lineage,
   });
 }
 
@@ -195,6 +222,9 @@ export async function loadJsonContext(filePath: string): Promise<ContextData> {
       timestamp: savedMetadata?.timestamp,
       sourcePattern: savedMetadata?.sourcePattern,
       version: savedMetadata?.version,
+      seed: savedMetadata?.seed,
+      patternHash: savedMetadata?.patternHash,
+      lineage: savedMetadata?.lineage,
     },
   };
 }

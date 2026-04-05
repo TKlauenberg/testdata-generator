@@ -113,6 +113,7 @@ describe('JsonAdapter', () => {
           timestamp: string;
           sourcePattern?: string;
           count?: number;
+          format: string;
           seed?: number;
           version: string;
         };
@@ -122,6 +123,7 @@ describe('JsonAdapter', () => {
       expect(result.metadata.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
       expect(result.metadata.sourcePattern).toBe('User.td');
       expect(result.metadata.count).toBe(2);
+      expect(result.metadata.format).toBe('json');
       expect(result.metadata.seed).toBe(12345);
       expect(result.metadata.version).toBeDefined();
     });
@@ -258,12 +260,13 @@ describe('JsonAdapter', () => {
 
       const lines = await readJsonlFile(TEST_FILE_JSONL);
 
-      const metadataLine = lines[0] as { _metadata: { timestamp: string; sourcePattern?: string; count?: number; seed?: number } };
+      const metadataLine = lines[0] as { _metadata: { timestamp: string; sourcePattern?: string; count?: number; format: string; seed?: number } };
 
       expect(metadataLine._metadata).toBeDefined();
       expect(metadataLine._metadata.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
       expect(metadataLine._metadata.sourcePattern).toBe('User.td');
       expect(metadataLine._metadata.count).toBe(1000);
+      expect(metadataLine._metadata.format).toBe('jsonl');
       expect(metadataLine._metadata.seed).toBe(42);
     });
 

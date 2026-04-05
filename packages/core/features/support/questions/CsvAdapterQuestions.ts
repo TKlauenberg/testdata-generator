@@ -1,4 +1,5 @@
 import { Question, type AnswersQuestions, type UsesAbilities } from '@serenity-js/core';
+import { UseCsvAdapter } from '../abilities/UseCsvAdapter';
 import { UseCsvContextLoader } from '../abilities/UseCsvContextLoader';
 
 export const LoadedGeneratedCsvRecordCount = (): ReturnType<typeof Question.about<number>> => {
@@ -30,6 +31,36 @@ export const LoadedGeneratedCsvFieldValue = (
     (actor: AnswersQuestions & UsesAbilities) => {
       const context = UseCsvContextLoader.as(actor).getContext();
       return context?.records[index]?.[field];
+    },
+  );
+};
+
+export const GeneratedCsvOutput = (): ReturnType<typeof Question.about<Promise<string>>> => {
+  return Question.about<Promise<string>>(
+    'generated CSV output',
+    async (actor: AnswersQuestions & UsesAbilities) => {
+      const outputPath = actor.abilityTo(UseCsvAdapter).getLastOutputPath();
+      return await Bun.file(outputPath).text();
+    },
+  );
+};
+
+export const LoadedGeneratedCsvSourcePattern = (): ReturnType<typeof Question.about<string>> => {
+  return Question.about<string>(
+    'loaded generated CSV source pattern',
+    (actor: AnswersQuestions & UsesAbilities) => {
+      const context = UseCsvContextLoader.as(actor).getContext();
+      return context?.metadata.sourcePattern ?? '';
+    },
+  );
+};
+
+export const LoadedGeneratedCsvPatternHash = (): ReturnType<typeof Question.about<string>> => {
+  return Question.about<string>(
+    'loaded generated CSV pattern hash',
+    (actor: AnswersQuestions & UsesAbilities) => {
+      const context = UseCsvContextLoader.as(actor).getContext();
+      return context?.metadata.patternHash ?? '';
     },
   );
 };

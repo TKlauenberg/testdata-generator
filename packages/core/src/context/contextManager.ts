@@ -1,5 +1,6 @@
 import * as path from 'node:path';
 import { mkdir } from 'node:fs/promises';
+import { isGenerationMetadata } from '../common';
 import { version } from '../version';
 import { loadCsvContext } from './loaders/csvLoader';
 import { loadJsonContext } from './loaders/jsonLoader';
@@ -38,7 +39,20 @@ function hasValidContextTags(tags: unknown): tags is readonly string[] {
 function hasValidOptionalSavedContextMetadata(metadata: ContextData['metadata']): boolean {
   return (metadata.timestamp === undefined || typeof metadata.timestamp === 'string')
     && (metadata.sourcePattern === undefined || typeof metadata.sourcePattern === 'string')
-    && (metadata.version === undefined || typeof metadata.version === 'string');
+    && (metadata.version === undefined || typeof metadata.version === 'string')
+    && (metadata.seed === undefined || typeof metadata.seed === 'number')
+    && (metadata.patternHash === undefined || typeof metadata.patternHash === 'string')
+    && (metadata.lineage === undefined
+      || isGenerationMetadata({
+        timestamp: metadata.timestamp ?? new Date(0).toISOString(),
+        sourcePattern: metadata.sourcePattern,
+        count: metadata.recordCount,
+        format: metadata.format,
+        seed: metadata.seed,
+        version: metadata.version ?? version,
+        patternHash: metadata.patternHash,
+        lineage: metadata.lineage,
+      }));
 }
 
 function mergeContextTags(

@@ -11,12 +11,14 @@ Feature: Generate Command
     Given QA Tester has a valid DSL schema fixture "valid-simple.td"
     When QA Tester runs "td generate valid-simple.td"
     Then QA Tester should see JSON output on stdout
+    And QA Tester should see generation metadata in JSON output on stdout
     And the generate command exit code should be 0
 
   @generate @csv
   Scenario: Infer CSV output from the output file extension
     Given QA Tester has a valid DSL schema fixture "valid-simple.td"
     When QA Tester runs "td generate valid-simple.td --count 2 --output reports/users.csv"
+    Then the generated file "reports/users.csv" should contain generation metadata comment
     Then the generated file "reports/users.csv" should start with "id,name,active"
     And the generate command exit code should be 0
 
@@ -24,6 +26,7 @@ Feature: Generate Command
   Scenario: Infer SQL output and table name from the output file extension
     Given QA Tester has a valid DSL schema fixture "valid-simple.td"
     When QA Tester runs "td generate valid-simple.td --count 2 --output reports/audit-log.sql"
+    Then the generated file "reports/audit-log.sql" should contain generation metadata comment
     Then the generated file "reports/audit-log.sql" should contain SQL inserts for table "audit-log"
     And the generate command exit code should be 0
 
@@ -32,12 +35,14 @@ Feature: Generate Command
     Given QA Tester has a valid DSL schema fixture "valid-simple.td"
     When QA Tester runs "td generate valid-simple.td --count 2 --format sql --table-name qa_users"
     Then QA Tester should see SQL output for table "qa_users" on stdout
+    And QA Tester should see SQL metadata comment on stdout
     And the generate command exit code should be 0
 
   @generate @precedence
   Scenario: Let explicit format override the output file extension
     Given QA Tester has a valid DSL schema fixture "valid-simple.td"
     When QA Tester runs "td generate valid-simple.td --count 2 --format csv --output reports/users.json"
+    Then the generated file "reports/users.json" should contain generation metadata comment
     Then the generated file "reports/users.json" should start with "id,name,active"
     And the generate command exit code should be 0
 
@@ -46,6 +51,7 @@ Feature: Generate Command
     Given QA Tester has a valid DSL schema fixture "valid-simple.td"
     When QA Tester runs "td generate valid-simple.td --count 2 --format csv --save-context csv-users"
     Then QA Tester should see CSV output on stdout
+    And QA Tester should see CSV metadata comment on stdout
     And the generated context file "contexts/csv-users.json" should exist
     And the generated context file "contexts/csv-users.json" should contain 2 records
     And the generate command exit code should be 0

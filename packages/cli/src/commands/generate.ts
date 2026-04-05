@@ -7,8 +7,24 @@
  */
 
 import { Command } from 'commander';
-import { CsvAdapter, generateData, saveAsContext, SqlAdapter, ValidationError } from '@testdata-ai/core';
-import type { Diagnostic, GenerateOptions } from '@testdata-ai/core';
+import {
+  createGenerationMetadata,
+  CsvAdapter,
+  generate,
+  JsonAdapter,
+  saveAsContext,
+  SqlAdapter,
+  validateSchema,
+  ValidationError,
+} from '@testdata-ai/core';
+import type {
+  AdapterMetadata,
+  Diagnostic,
+  GenerateOptions,
+  GenerationMetadataLineageInput,
+  ValidatedProgram,
+  WorkspaceGeneratorSpec,
+} from '@testdata-ai/core';
 import * as fs from 'fs/promises';
 import * as os from 'node:os';
 import * as path from 'path';
@@ -31,6 +47,91 @@ const PROGRESS_THRESHOLD = 100;
  */
 function isNodeError(err: unknown): err is NodeJS.ErrnoException {
   return err instanceof Error && 'code' in err;
+}
+
+interface BuildGenerationMetadataOptions {
+  readonly absoluteFile: string;
+  readonly count: number;
+  readonly format: CliOutputFormat;
+  readonly seed?: number;
+  readonly source: string;
+  readonly validatedProgram: ValidatedProgram;
+  readonly workingDirectory: string;
+  readonly workspaceGenerators: readonly WorkspaceGeneratorSpec[];
+}
+
+function toPosixPath(value: string): string {
+  return value.split(path.sep).join('/');
+}
+
+function serializeDeterministically(value: unknown): string {
+  if (value === null || value === undefined) {
+    return JSON.stringify(value);
+  }
+
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return JSON.stringify(value);
+  }
+
+  if (Array.isArray(value)) {
+    return `[${value.map((entry) => serializeDeterministically(entry)).join(',')}]`;
+  }
+
+  if (typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, entryValue]) => `${JSON.stringify(key)}:${serializeDeterministically(entryValue)}`);
+
+    return `{${entries.join(',')}}`;
+  }
+
+  return JSON.stringify(Object.prototype.toString.call(value));
+}
+
+function toLineageIdentifier(workingDirectory: string, filePath: string): string {
+  const relativePath = path.relative(workingDirectory, filePath);
+  return toPosixPath(relativePath.length > 0 ? relativePath : path.basename(filePath));
+}
+
+async function buildGenerationMetadata(options: BuildGenerationMetadataOptions): Promise<AdapterMetadata> {
+  const lineageInputs: GenerationMetadataLineageInput[] = [
+    {
+      type: 'root-pattern',
+      identifier: toLineageIdentifier(options.workingDirectory, options.absoluteFile),
+      content: options.source,
+    },
+  ];
+
+  const importedFiles = Array.from(new Set(
+    options.validatedProgram.ast.declarations
+      .map((declaration) => path.resolve(declaration.location.file))
+      .filter((filePath) => filePath !== path.resolve(options.absoluteFile)),
+  )).sort((left, right) => left.localeCompare(right));
+
+  for (const importedFile of importedFiles) {
+    const importedSource = await fs.readFile(importedFile, 'utf-8');
+    lineageInputs.push({
+      type: 'imported-pattern',
+      identifier: toLineageIdentifier(options.workingDirectory, importedFile),
+      content: importedSource,
+    });
+  }
+
+  for (const generator of [...options.workspaceGenerators].sort((left, right) => left.name.localeCompare(right.name))) {
+    lineageInputs.push({
+      type: 'workspace-generator',
+      identifier: generator.name,
+      content: serializeDeterministically(generator.definition),
+    });
+  }
+
+  return createGenerationMetadata({
+    sourcePattern: toLineageIdentifier(options.workingDirectory, options.absoluteFile),
+    count: options.count,
+    format: options.format,
+    seed: options.seed,
+    lineageInputs,
+  });
 }
 
 /**
@@ -140,17 +241,33 @@ export const generateCommand = new Command('generate')
       };
 
       try {
-        // Show progress for large datasets
-        let recordCount = 0;
-        const showProgress = count > PROGRESS_THRESHOLD;
-
-        for await (const record of generateData(source, {
-          ...genOptions,
+        const validationResult = validateSchema(source, absoluteFile, {
           defaultGenerators: cliConfig.generatorDefaults,
           workspaceGenerators: cliConfig.generators,
           currentFile: absoluteFile,
           workspaceRoot,
-        })) {
+        });
+
+        if (!validationResult.ok) {
+          throw new ValidationError(validationResult.errors);
+        }
+
+        const metadata = await buildGenerationMetadata({
+          absoluteFile,
+          count,
+          format,
+          seed,
+          source,
+          validatedProgram: validationResult.value,
+          workingDirectory,
+          workspaceGenerators: cliConfig.generators,
+        });
+
+        // Show progress for large datasets
+        let recordCount = 0;
+        const showProgress = count > PROGRESS_THRESHOLD;
+
+        for await (const record of generate(validationResult.value, genOptions)) {
           records.push(record);
           recordCount++;
 
@@ -174,6 +291,7 @@ export const generateCommand = new Command('generate')
           const stdoutOutput = await writeFormattedOutput({
             records,
             format,
+            metadata,
             outputPath: options.output,
             sqlTableName,
           });
@@ -283,6 +401,7 @@ interface ResolveSqlTableNameOptions {
 interface WriteFormattedOutputOptions {
   readonly records: readonly Record<string, unknown>[];
   readonly format: CliOutputFormat;
+  readonly metadata: AdapterMetadata;
   readonly outputPath?: string;
   readonly sqlTableName?: string;
 }
@@ -356,29 +475,20 @@ async function writeFormattedOutput(options: WriteFormattedOutputOptions): Promi
     const outputDirectory = path.dirname(options.outputPath);
     await fs.mkdir(outputDirectory, { recursive: true });
 
-    if (options.format === 'json') {
-      await fs.writeFile(options.outputPath, JSON.stringify(options.records, null, 2));
-      return undefined;
-    }
-
-    const adapterFormat = options.format;
     await writeAdapterOutput({
       records: options.records,
-      format: adapterFormat,
+      format: options.format,
+      metadata: options.metadata,
       outputPath: options.outputPath,
       sqlTableName: options.sqlTableName,
     });
     return undefined;
   }
 
-  const adapterFormat = options.format;
-  if (adapterFormat === 'json') {
-    return JSON.stringify(options.records, null, 2);
-  }
-
   return renderAdapterOutputToString({
     records: options.records,
-    format: adapterFormat,
+    format: options.format,
+    metadata: options.metadata,
     outputPath: options.outputPath,
     sqlTableName: options.sqlTableName,
   });
@@ -386,7 +496,8 @@ async function writeFormattedOutput(options: WriteFormattedOutputOptions): Promi
 
 async function renderAdapterOutputToString(options: {
   readonly records: readonly Record<string, unknown>[];
-  readonly format: Exclude<CliOutputFormat, 'json'>;
+  readonly format: CliOutputFormat;
+  readonly metadata: AdapterMetadata;
   readonly outputPath?: string;
   readonly sqlTableName?: string;
 }): Promise<string> {
@@ -397,6 +508,7 @@ async function renderAdapterOutputToString(options: {
     await writeAdapterOutput({
       records: options.records,
       format: options.format,
+      metadata: options.metadata,
       outputPath: tempOutputPath,
       sqlTableName: options.sqlTableName,
     });
@@ -409,12 +521,23 @@ async function renderAdapterOutputToString(options: {
 
 async function writeAdapterOutput(options: {
   readonly records: readonly Record<string, unknown>[];
-  readonly format: Exclude<CliOutputFormat, 'json'>;
+  readonly format: CliOutputFormat;
+  readonly metadata: AdapterMetadata;
   readonly outputPath: string;
   readonly sqlTableName?: string;
 }): Promise<void> {
+  if (options.format === 'json') {
+    const adapter = new JsonAdapter({
+      outputPath: options.outputPath,
+      format: 'array',
+      metadata: options.metadata,
+    });
+    await adapter.write(createRecordStream(options.records));
+    return;
+  }
+
   if (options.format === 'csv') {
-    const adapter = new CsvAdapter({ outputPath: options.outputPath });
+    const adapter = new CsvAdapter({ outputPath: options.outputPath, metadata: options.metadata });
     await adapter.write(createRecordStream(options.records));
     return;
   }
@@ -422,6 +545,7 @@ async function writeAdapterOutput(options: {
   const adapter = new SqlAdapter({
     outputPath: options.outputPath,
     tableName: options.sqlTableName ?? 'generated_records',
+    metadata: options.metadata,
   });
   await adapter.write(createRecordStream(options.records));
 }

@@ -1,4 +1,8 @@
 import { err, ok } from '../../common/result';
+import {
+  decodeGenerationMetadataComment,
+  GENERATION_METADATA_COMMENT_LABEL,
+} from '../../common';
 import type { Result } from '../../common/result';
 import type { ContextData, ContextRecord, JsonValue } from '../types';
 
@@ -56,6 +60,21 @@ function mapRowToRecord(
 
 function isRowBlank(row: readonly string[]): boolean {
   return row.every((cell) => cell.length === 0);
+}
+
+function extractMetadataCommentPayload(row: readonly string[]): string | undefined {
+  if (row.length !== 1) {
+    return undefined;
+  }
+
+  const trimmed = row[0]?.trim();
+  const prefix = `# ${GENERATION_METADATA_COMMENT_LABEL}`;
+
+  if (trimmed === undefined || !trimmed.startsWith(prefix)) {
+    return undefined;
+  }
+
+  return trimmed.slice(prefix.length).trim();
 }
 
 export async function parseCsvStream(
@@ -247,12 +266,44 @@ export async function loadCsvContext(filePath: string): Promise<ContextData> {
   const records: ContextRecord[] = [];
   let headers: readonly string[] | null = null;
   let csvRowNumber = 0;
+  let generationMetadata:
+    | {
+        readonly timestamp: string;
+        readonly sourcePattern?: string;
+        readonly version: string;
+        readonly seed?: number;
+        readonly patternHash?: string;
+        readonly lineage?: readonly import('../../common').GenerationMetadataLineageEntry[];
+      }
+    | undefined;
 
   let parseResult: Result<void, string>;
   try {
     parseResult = await parseCsvStream(file.stream(), (row) => {
       if (row.length === 1 && row[0] === '' && headers === null) {
         return ok(undefined);
+      }
+
+      if (headers === null) {
+        const metadataPayload = extractMetadataCommentPayload(row);
+        if (metadataPayload !== undefined) {
+          try {
+            const decoded = decodeGenerationMetadataComment(metadataPayload);
+            generationMetadata = {
+              timestamp: decoded.timestamp,
+              sourcePattern: decoded.sourcePattern,
+              version: decoded.version,
+              seed: decoded.seed,
+              patternHash: decoded.patternHash,
+              lineage: decoded.lineage,
+            };
+          } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            return err(`Invalid CSV metadata comment: ${message}`);
+          }
+
+          return ok(undefined);
+        }
       }
 
       csvRowNumber += 1;
@@ -314,6 +365,12 @@ export async function loadCsvContext(filePath: string): Promise<ContextData> {
       loadedAt: new Date().toISOString(),
       recordCount: records.length,
       tags: [],
+      timestamp: generationMetadata?.timestamp,
+      sourcePattern: generationMetadata?.sourcePattern,
+      version: generationMetadata?.version,
+      seed: generationMetadata?.seed,
+      patternHash: generationMetadata?.patternHash,
+      lineage: generationMetadata?.lineage,
     },
   };
 }

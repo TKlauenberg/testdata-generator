@@ -1,4 +1,9 @@
-import type { CsvAdapterOptions, IAdapter } from './types';
+import {
+  createGenerationMetadata,
+  encodeGenerationMetadataComment,
+  GENERATION_METADATA_COMMENT_LABEL,
+} from '../common';
+import type { AdapterMetadata, CsvAdapterOptions, IAdapter } from './types';
 
 function serializeCsvValue(value: unknown): string {
   if (value === null || value === undefined) {
@@ -32,6 +37,7 @@ function escapeCsvValue(value: string, delimiter: string): string {
 export class CsvAdapter implements IAdapter {
   private readonly _outputPath: string;
   private readonly _delimiter: string;
+  private readonly _metadata: AdapterMetadata;
 
   constructor(options: CsvAdapterOptions) {
     if (!options.outputPath || options.outputPath.trim().length === 0) {
@@ -40,6 +46,16 @@ export class CsvAdapter implements IAdapter {
 
     this._outputPath = options.outputPath;
     this._delimiter = options.delimiter ?? ',';
+    this._metadata = createGenerationMetadata({
+      timestamp: options.metadata?.timestamp,
+      sourcePattern: options.metadata?.sourcePattern,
+      count: options.metadata?.count,
+      format: 'csv',
+      seed: options.metadata?.seed,
+      version: options.metadata?.version,
+      patternHash: options.metadata?.patternHash,
+      lineage: options.metadata?.lineage,
+    });
   }
 
   async write(records: AsyncIterable<Record<string, unknown>>): Promise<void> {
@@ -48,6 +64,8 @@ export class CsvAdapter implements IAdapter {
 
     try {
       let headers: string[] | null = null;
+
+      file.write(`# ${GENERATION_METADATA_COMMENT_LABEL}${encodeGenerationMetadataComment(this._metadata)}\n`);
 
       for await (const record of records) {
         if (headers === null) {

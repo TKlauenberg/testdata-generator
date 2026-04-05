@@ -1,4 +1,5 @@
 import { Actor, Interaction, Task, type UsesAbilities } from '@serenity-js/core';
+import { createGenerationMetadata } from '../../../src/common';
 import type { SqlDialect } from '../../../src/adapters';
 import { UseGenerateDataAPI } from '../abilities/UseGenerateDataAPI';
 import { UseSqlAdapter } from '../abilities/UseSqlAdapter';
@@ -63,12 +64,25 @@ export class WriteRecordsToSql extends Task {
 
     const api = UseGenerateDataAPI.as(actor);
     const sqlAdapter = actor.abilityTo(UseSqlAdapter);
+    const records = api.getRecords();
+    const metadata = createGenerationMetadata({
+      sourcePattern: this._filename,
+      count: records.length,
+      format: 'sql',
+      lineageInputs: [
+        {
+          type: 'root-pattern',
+          identifier: this._filename,
+          content: JSON.stringify(records),
+        },
+      ],
+    });
 
-    await sqlAdapter.writeToFile(arrayToAsyncIterable(api.getRecords()), this._filename, {
+    await sqlAdapter.writeToFile(arrayToAsyncIterable(records), this._filename, {
       tableName: this._tableName,
       dialect: this._dialect,
       batchSize: this._batchSize,
-    });
+    }, metadata);
   }
 }
 

@@ -1,3 +1,5 @@
+import type { GenerationMetadata } from '../common';
+
 /**
  * Adapter Interface
  *
@@ -14,27 +16,7 @@ export interface IAdapter {
   write(records: AsyncIterable<Record<string, unknown>>): Promise<void>;
 }
 
-/**
- * Metadata included in generated output files
- *
- * Provides traceability and reproducibility for generated test data.
- */
-export interface AdapterMetadata {
-  /** ISO 8601 timestamp of generation */
-  readonly timestamp: string;
-
-  /** Source schema file name (optional) */
-  readonly sourcePattern?: string;
-
-  /** Expected number of records (optional, may not be known upfront) */
-  readonly count?: number;
-
-  /** RNG seed used for generation (optional, for reproducibility) */
-  readonly seed?: number;
-
-  /** Generator version */
-  readonly version: string;
-}
+export type AdapterMetadata = GenerationMetadata;
 
 /**
  * Configuration options for JsonAdapter
@@ -59,6 +41,9 @@ export interface CsvAdapterOptions {
 
   /** Field delimiter, defaults to comma */
   readonly delimiter?: string;
+
+  /** Optional metadata to include in output */
+  readonly metadata?: Partial<AdapterMetadata>;
 }
 
 /** Supported SQL dialects for identifier quoting */
@@ -79,4 +64,7 @@ export interface SqlAdapterOptions {
 
   /** Maximum rows per INSERT statement */
   readonly batchSize?: number;
+
+  /** Optional metadata to include in output */
+  readonly metadata?: Partial<AdapterMetadata>;
 }

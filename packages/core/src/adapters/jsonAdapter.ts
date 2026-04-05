@@ -1,5 +1,5 @@
 import type { IAdapter, AdapterMetadata, JsonAdapterOptions } from './types';
-import { version } from '../version';
+import { createGenerationMetadata } from '../common';
 
 /**
  * JSON Output Adapter
@@ -27,12 +27,16 @@ export class JsonAdapter implements IAdapter {
     this._outputPath = options.outputPath;
     this._format = options.format ?? 'array';
 
-    // Generate metadata with defaults (L2: Use version from index)
-    this._metadata = {
-      timestamp: new Date().toISOString(),
-      version,
-      ...options.metadata,
-    };
+    this._metadata = createGenerationMetadata({
+      timestamp: options.metadata?.timestamp,
+      sourcePattern: options.metadata?.sourcePattern,
+      count: options.metadata?.count,
+      format: this._format === 'jsonl' ? 'jsonl' : 'json',
+      seed: options.metadata?.seed,
+      version: options.metadata?.version,
+      patternHash: options.metadata?.patternHash,
+      lineage: options.metadata?.lineage,
+    });
   }
 
   /**

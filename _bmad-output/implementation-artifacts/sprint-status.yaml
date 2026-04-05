@@ -133,7 +133,7 @@ development_status:
   epic-11-retrospective: done
 
   epic-12: in-progress
-  12-1-generation-metadata-tracking: ready-for-dev
+  12-1-generation-metadata-tracking: review
   12-2-generation-history-logging: backlog
   12-3-pattern-version-tracking: backlog
   12-4-platform-migration-preparation: backlog

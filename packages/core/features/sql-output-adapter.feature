@@ -22,6 +22,7 @@ Feature: SQL Output Adapter
       id REAL, name TEXT, active INTEGER
       """
     And QATester executes the generated SQL against the in-memory table
+    Then the generated SQL should contain "-- testdata-ai-metadata:"
     Then the generated SQL should contain "INSERT INTO \"sql_users\""
     And the executed SQL should insert 3 rows
     And executed SQL row 0 field "id" should be numeric
@@ -38,6 +39,7 @@ Feature: SQL Output Adapter
       id INTEGER, notes TEXT, active INTEGER
       """
     And QATester executes the generated SQL against the in-memory table
+    Then the generated SQL should contain "-- testdata-ai-metadata:"
     Then the generated SQL should contain "INSERT INTO `qa_users`"
     And the executed SQL should insert 2 rows
     And executed SQL row 0 field "notes" should equal string "O'Brien'); DROP TABLE users; --"

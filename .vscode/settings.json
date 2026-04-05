@@ -54,6 +54,7 @@
     "/^bun run --cwd packages/core test:bdd$/": {
       "approve": true,
       "matchCommandLine": true
-    }
+    },
+    "bun": true
   }
 }

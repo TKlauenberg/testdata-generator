@@ -1,6 +1,11 @@
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
 import { mkdir, rm } from 'node:fs/promises';
 import * as path from 'node:path';
+import {
+  createGenerationMetadata,
+  encodeGenerationMetadataComment,
+  GENERATION_METADATA_COMMENT_LABEL,
+} from '../common';
 import { SqlAdapter } from './sqlAdapter';
 
 const TEST_OUTPUT_DIR = path.join(import.meta.dir, '../../__test-output__/sql-adapter');
@@ -18,6 +23,20 @@ async function readSql(filePath: string): Promise<string> {
   return await Bun.file(filePath).text();
 }
 
+function createSqlMetadata(count: number) {
+  return createGenerationMetadata({
+    timestamp: '2026-04-05T10:20:00.000Z',
+    sourcePattern: 'schemas/users.td',
+    count,
+    format: 'sql',
+    seed: 42,
+    version: '0.1.0',
+    lineageInputs: [
+      { type: 'root-pattern', identifier: 'schemas/users.td', content: 'schema User { id: number }' },
+    ],
+  });
+}
+
 describe('SqlAdapter', () => {
   beforeEach(async () => {
     await mkdir(TEST_OUTPUT_DIR, { recursive: true });
@@ -32,6 +51,7 @@ describe('SqlAdapter', () => {
       outputPath: TEST_FILE,
       tableName: 'public.users',
       batchSize: 2,
+      metadata: createSqlMetadata(3),
     });
 
     await adapter.write(
@@ -45,10 +65,9 @@ describe('SqlAdapter', () => {
 
     const content = await readSql(TEST_FILE);
 
-    expect(content).toBe(
-      'INSERT INTO "public"."users" ("name", "id", "active") VALUES (\'Alice\', 1, TRUE), (\'Bob\', 2, NULL);\n' +
-        'INSERT INTO "public"."users" ("name", "id", "active") VALUES (\'Cara\', 3, FALSE);\n',
-    );
+    expect(content).toContain('INSERT INTO "public"."users" ("name", "id", "active") VALUES (\'Alice\', 1, TRUE), (\'Bob\', 2, NULL);\n');
+    expect(content).toContain('INSERT INTO "public"."users" ("name", "id", "active") VALUES (\'Cara\', 3, FALSE);\n');
+    expect(content).toStartWith(`-- ${GENERATION_METADATA_COMMENT_LABEL}${encodeGenerationMetadataComment(createSqlMetadata(3))}\n`);
   });
 
   test('truncates an existing file before writing fresh SQL output', async () => {
@@ -57,13 +76,14 @@ describe('SqlAdapter', () => {
     const adapter = new SqlAdapter({
       outputPath: TEST_FILE,
       tableName: 'users',
+      metadata: createSqlMetadata(1),
     });
 
     await adapter.write(createRecordStream([{ id: 2 }]));
 
     const content = await readSql(TEST_FILE);
 
-    expect(content).toBe('INSERT INTO "users" ("id") VALUES (2);\n');
+    expect(content).toContain('INSERT INTO "users" ("id") VALUES (2);\n');
   });
 
   test('supports MySQL identifier quoting and escapes embedded backticks', async () => {
@@ -71,26 +91,28 @@ describe('SqlAdapter', () => {
       outputPath: TEST_FILE,
       tableName: 'qa.users',
       dialect: 'mysql',
+      metadata: createSqlMetadata(1),
     });
 
     await adapter.write(createRecordStream([{ 'user`name': 'Alice', value: 1 }]));
 
     const content = await readSql(TEST_FILE);
 
-    expect(content).toBe("INSERT INTO `qa`.`users` (`user``name`, `value`) VALUES ('Alice', 1);\n");
+    expect(content).toContain("INSERT INTO `qa`.`users` (`user``name`, `value`) VALUES ('Alice', 1);\n");
   });
 
   test('escapes injection-like strings into a single safe SQL literal', async () => {
     const adapter = new SqlAdapter({
       outputPath: TEST_FILE,
       tableName: 'users',
+      metadata: createSqlMetadata(1),
     });
 
     await adapter.write(createRecordStream([{ payload: "O'Brien'); DROP TABLE users; --" }]));
 
     const content = await readSql(TEST_FILE);
 
-    expect(content).toBe(
+    expect(content).toContain(
       "INSERT INTO \"users\" (\"payload\") VALUES ('O''Brien''); DROP TABLE users; --');\n",
     );
   });
@@ -99,19 +121,21 @@ describe('SqlAdapter', () => {
     const adapter = new SqlAdapter({
       outputPath: TEST_FILE,
       tableName: 'users',
+      metadata: createSqlMetadata(1),
     });
 
     await adapter.write(createRecordStream([{ notes: 'line 1\nline 2' }]));
 
     const content = await readSql(TEST_FILE);
 
-    expect(content).toBe('INSERT INTO "users" ("notes") VALUES (\'line 1\nline 2\');\n');
+    expect(content).toContain('INSERT INTO "users" ("notes") VALUES (\'line 1\nline 2\');\n');
   });
 
   test('serializes NULL, booleans, numbers, bigint, arrays, and objects', async () => {
     const adapter = new SqlAdapter({
       outputPath: TEST_FILE,
       tableName: 'users',
+      metadata: createSqlMetadata(1),
     });
 
     await adapter.write(
@@ -130,12 +154,12 @@ describe('SqlAdapter', () => {
 
     const content = await readSql(TEST_FILE);
 
-    expect(content).toBe(
+    expect(content).toContain(
       'INSERT INTO "users" ("nullable", "boolTrue", "boolFalse", "count", "big", "tags", "profile") VALUES (NULL, TRUE, FALSE, 42, 9007199254740993, \'["sql","adapter"]\', \'{"role":"qa","level":2}\');\n',
     );
   });
 
-  test('creates an empty file when no non-empty records are emitted', async () => {
+  test('writes metadata comments even when no non-empty records are emitted', async () => {
     const adapter = new SqlAdapter({
       outputPath: TEST_FILE,
       tableName: 'users',
@@ -145,7 +169,7 @@ describe('SqlAdapter', () => {
 
     const content = await readSql(TEST_FILE);
 
-    expect(content).toBe('');
+    expect(content).toStartWith(`-- ${GENERATION_METADATA_COMMENT_LABEL}`);
   });
 
   test('rejects empty outputPath and tableName values', () => {

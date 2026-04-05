@@ -137,12 +137,20 @@ Then('stdout should contain {int} generated records', (count: number) => {
   const stdout = state.stdout ?? '';
   const parsed = JSON.parse(stdout) as unknown;
 
-  if (!Array.isArray(parsed)) {
-    throw new Error(`Expected stdout to contain a JSON array, received: ${stdout}`);
+  if (
+    parsed === null
+    || typeof parsed !== 'object'
+    || Array.isArray(parsed)
+    || !('data' in parsed)
+    || !Array.isArray((parsed as { readonly data?: unknown }).data)
+  ) {
+    throw new Error(`Expected stdout to contain a JSON metadata envelope, received: ${stdout}`);
   }
 
-  if (parsed.length !== count) {
-    throw new Error(`Expected ${count} generated records, received ${parsed.length}`);
+  const records = (parsed as { readonly data: readonly unknown[] }).data;
+
+  if (records.length !== count) {
+    throw new Error(`Expected ${count} generated records, received ${records.length}`);
   }
 });
 

@@ -18,8 +18,11 @@ Feature: CSV Output Adapter
     When QATester generates 5 records using the public generateData API
     And QATester writes the records to CSV file "users.csv"
     And QATester loads the generated CSV output
+    Then the generated CSV should contain "# testdata-ai-metadata:"
     Then the loaded CSV output should contain 5 records
     And the loaded CSV output metadata format should be "csv"
+    And the loaded CSV output source pattern should be "users.csv"
+    And the loaded CSV output should include a pattern hash
     And loaded CSV output record 0 should include fields "id", "name", and "active"
     And loaded CSV output record 0 field "id" should be numeric
     And loaded CSV output record 0 field "name" should be a non-empty string
@@ -32,6 +35,7 @@ Feature: CSV Output Adapter
       | 2  | Line 1\nLine 2       | plain           |
     When QATester writes the prepared records to CSV file "quoted.csv"
     And QATester loads the generated CSV output
+    Then the generated CSV should contain "# testdata-ai-metadata:"
     Then loaded CSV output record 0 field "notes" should equal string "Doe, Jane"
     And loaded CSV output record 0 field "comment" should equal string "He said \"hello\""
     And loaded CSV output record 1 field "notes" should equal string "Line 1\nLine 2"

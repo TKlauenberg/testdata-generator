@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import type { IAdapter, AdapterMetadata, JsonAdapterOptions } from './types';
+import type { AdapterMetadata, CsvAdapterOptions, IAdapter, JsonAdapterOptions, SqlAdapterOptions } from './types';
 
 describe('Adapter Types', () => {
   describe('IAdapter interface', () => {
@@ -23,10 +23,12 @@ describe('Adapter Types', () => {
     test('should allow all required fields', () => {
       const metadata: AdapterMetadata = {
         timestamp: '2026-02-05T14:32:01.234Z',
+        format: 'json',
         version: '1.0.0',
       };
 
       expect(metadata.timestamp).toBe('2026-02-05T14:32:01.234Z');
+      expect(metadata.format).toBe('json');
       expect(metadata.version).toBe('1.0.0');
     });
 
@@ -35,13 +37,17 @@ describe('Adapter Types', () => {
         timestamp: '2026-02-05T14:32:01.234Z',
         sourcePattern: 'User.td',
         count: 1000,
+        format: 'csv',
         seed: 12345,
         version: '1.0.0',
+        patternHash: 'abc123',
       };
 
       expect(metadata.sourcePattern).toBe('User.td');
       expect(metadata.count).toBe(1000);
+      expect(metadata.format).toBe('csv');
       expect(metadata.seed).toBe(12345);
+      expect(metadata.patternHash).toBe('abc123');
     });
   });
 
@@ -82,6 +88,32 @@ describe('Adapter Types', () => {
       expect(options.metadata?.sourcePattern).toBe('User.td');
       expect(options.metadata?.count).toBe(100);
       expect(options.metadata?.seed).toBe(42);
+    });
+
+    test('should allow metadata option on CSV and SQL adapters', () => {
+      const csvOptions: CsvAdapterOptions = {
+        outputPath: '/tmp/output.csv',
+        metadata: {
+          sourcePattern: 'User.td',
+          count: 100,
+          format: 'csv',
+          patternHash: 'hash-1',
+        },
+      };
+
+      const sqlOptions: SqlAdapterOptions = {
+        outputPath: '/tmp/output.sql',
+        tableName: 'users',
+        metadata: {
+          sourcePattern: 'User.td',
+          count: 100,
+          format: 'sql',
+          patternHash: 'hash-2',
+        },
+      };
+
+      expect(csvOptions.metadata?.format).toBe('csv');
+      expect(sqlOptions.metadata?.format).toBe('sql');
     });
   });
 });

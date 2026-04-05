@@ -1,4 +1,5 @@
 import { After, Given, Then, When } from '@cucumber/cucumber';
+import { decodeGenerationMetadataComment, GENERATION_METADATA_COMMENT_LABEL } from '@testdata-ai/core';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import * as path from 'node:path';
@@ -32,7 +33,25 @@ function parseCsvLines(input: string): string[] {
   return input
     .trim()
     .split(/\r?\n/)
-    .filter((line) => line.length > 0);
+    .filter((line) => line.length > 0)
+    .filter((line) => !line.startsWith(`# ${GENERATION_METADATA_COMMENT_LABEL}`));
+}
+
+function isGeneratedJsonOutput(value: unknown): value is {
+  readonly metadata: { readonly format: string };
+  readonly data: readonly unknown[];
+} {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    return false;
+  }
+
+  const candidate = value as { readonly metadata?: unknown; readonly data?: unknown };
+  return candidate.metadata !== undefined && Array.isArray(candidate.data);
+}
+
+function containsMetadataComment(content: string): boolean {
+  return content.includes(`# ${GENERATION_METADATA_COMMENT_LABEL}`)
+    || content.includes(`-- ${GENERATION_METADATA_COMMENT_LABEL}`);
 }
 
 async function readSavedContext(relativePath: string): Promise<{
@@ -87,8 +106,20 @@ When('QA Tester runs {string}', async (command: string) => {
 Then('QA Tester should see JSON output on stdout', () => {
   const parsed = JSON.parse(state.stdout ?? '') as unknown;
 
-  if (!Array.isArray(parsed)) {
+  if (!isGeneratedJsonOutput(parsed)) {
     throw new Error(`Expected JSON array output, received: ${state.stdout ?? ''}`);
+  }
+});
+
+Then('QA Tester should see generation metadata in JSON output on stdout', () => {
+  const parsed = JSON.parse(state.stdout ?? '') as unknown;
+
+  if (!isGeneratedJsonOutput(parsed)) {
+    throw new Error(`Expected JSON metadata envelope, received: ${state.stdout ?? ''}`);
+  }
+
+  if (parsed.metadata.format !== 'json') {
+    throw new Error(`Expected JSON metadata format to be json, received: ${parsed.metadata.format}`);
   }
 });
 
@@ -100,6 +131,14 @@ Then('QA Tester should see CSV output on stdout', () => {
   }
 });
 
+Then('QA Tester should see CSV metadata comment on stdout', () => {
+  const stdout = state.stdout ?? '';
+
+  if (!stdout.includes(`# ${GENERATION_METADATA_COMMENT_LABEL}`)) {
+    throw new Error(`Expected CSV metadata comment, received: ${stdout}`);
+  }
+});
+
 Then('QA Tester should see SQL output for table {string} on stdout', (tableName: string) => {
   const stdout = state.stdout ?? '';
 
@@ -108,12 +147,40 @@ Then('QA Tester should see SQL output for table {string} on stdout', (tableName:
   }
 });
 
+Then('QA Tester should see SQL metadata comment on stdout', () => {
+  const stdout = state.stdout ?? '';
+
+  if (!stdout.includes(`-- ${GENERATION_METADATA_COMMENT_LABEL}`)) {
+    throw new Error(`Expected SQL metadata comment, received: ${stdout}`);
+  }
+});
+
 Then('the generated file {string} should start with {string}', async (relativePath: string, prefix: string) => {
   const content = await readFile(path.join(requireWorkspaceDir(), relativePath), 'utf-8');
+  const normalizedContent = parseCsvLines(content).join('\n');
 
-  if (!content.startsWith(prefix)) {
+  if (!normalizedContent.startsWith(prefix)) {
     throw new Error(`Expected ${relativePath} to start with '${prefix}', received: ${content}`);
   }
+});
+
+Then('the generated file {string} should contain generation metadata comment', async (relativePath: string) => {
+  const content = await readFile(path.join(requireWorkspaceDir(), relativePath), 'utf-8');
+
+  if (!containsMetadataComment(content)) {
+    throw new Error(`Expected ${relativePath} to contain a generation metadata comment, received: ${content}`);
+  }
+
+  const firstLine = content.split(/\r?\n/).find((line) => line.length > 0) ?? '';
+  const prefix = firstLine.startsWith('# ')
+    ? `# ${GENERATION_METADATA_COMMENT_LABEL}`
+    : `-- ${GENERATION_METADATA_COMMENT_LABEL}`;
+
+  if (!firstLine.startsWith(prefix)) {
+    throw new Error(`Expected first non-empty line in ${relativePath} to be a metadata comment, received: ${firstLine}`);
+  }
+
+  decodeGenerationMetadataComment(firstLine.slice(prefix.length));
 });
 
 Then('the generated file {string} should contain SQL inserts for table {string}', async (relativePath: string, tableName: string) => {

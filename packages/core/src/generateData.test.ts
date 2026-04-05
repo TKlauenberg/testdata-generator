@@ -9,6 +9,7 @@ import { describe, test, expect } from 'bun:test';
 import * as fs from 'node:fs/promises';
 import { tmpdir } from 'os';
 import path from 'path';
+import { GENERATION_METADATA_COMMENT_LABEL } from './common';
 import { generateData } from './generateData';
 import { CsvAdapter, JsonAdapter, SqlAdapter, ValidationError } from './index';
 import type { ContextData } from './context';
@@ -549,8 +550,9 @@ describe('generateData()', () => {
       const output = await Bun.file(outputPath).text();
       const lines = output.trim().split('\n');
 
-      expect(lines).toHaveLength(3);
-      expect(lines[0]).toBe('id,email');
+      expect(lines).toHaveLength(4);
+      expect(lines[0]).toStartWith(`# ${GENERATION_METADATA_COMMENT_LABEL}`);
+      expect(lines[1]).toBe('id,email');
     });
 
     test('streams generated records into SqlAdapter without involving CLI code', async () => {
@@ -572,6 +574,7 @@ describe('generateData()', () => {
 
       const output = await Bun.file(outputPath).text();
 
+      expect(output).toStartWith(`-- ${GENERATION_METADATA_COMMENT_LABEL}`);
       expect(output).toContain('INSERT INTO "users" ("id", "active") VALUES');
       expect(output).toMatch(/\b(TRUE|FALSE)\b/);
     });

@@ -1,4 +1,5 @@
 import { Actor, Task, Interaction, type UsesAbilities } from '@serenity-js/core';
+import { createGenerationMetadata } from '../../../src/common';
 import { UseCsvAdapter } from '../abilities/UseCsvAdapter';
 import { UseCsvContextLoader } from '../abilities/UseCsvContextLoader';
 import { UseGenerateDataAPI } from '../abilities/UseGenerateDataAPI';
@@ -29,8 +30,20 @@ export class WriteRecordsToCsv extends Task {
     const csvAdapter = actor.abilityTo(UseCsvAdapter);
     const api = UseGenerateDataAPI.as(actor);
     const records = api.getRecords();
+    const metadata = createGenerationMetadata({
+      sourcePattern: this._filename,
+      count: records.length,
+      format: 'csv',
+      lineageInputs: [
+        {
+          type: 'root-pattern',
+          identifier: this._filename,
+          content: JSON.stringify(records),
+        },
+      ],
+    });
 
-    await csvAdapter.writeToFile(arrayToAsyncIterable(records), this._filename, this._delimiter);
+    await csvAdapter.writeToFile(arrayToAsyncIterable(records), this._filename, this._delimiter, metadata);
   }
 }
 

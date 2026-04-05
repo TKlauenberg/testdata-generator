@@ -1,9 +1,16 @@
 import { Given, When, Then, DataTable } from '@cucumber/cucumber';
 import { actorCalled } from '@serenity-js/core';
-import { Ensure, equals } from '@serenity-js/assertions';
+import { Ensure, equals, not } from '@serenity-js/assertions';
 import { expect } from 'bun:test';
 import { WriteRecordsToCsv, StorePreparedCsvRecords, LoadGeneratedCsvOutput } from '../support/tasks/CsvAdapterTasks';
-import { LoadedGeneratedCsvFieldValue, LoadedGeneratedCsvMetadataFormat, LoadedGeneratedCsvRecordCount } from '../support/questions/CsvAdapterQuestions';
+import {
+  GeneratedCsvOutput,
+  LoadedGeneratedCsvFieldValue,
+  LoadedGeneratedCsvMetadataFormat,
+  LoadedGeneratedCsvPatternHash,
+  LoadedGeneratedCsvRecordCount,
+  LoadedGeneratedCsvSourcePattern,
+} from '../support/questions/CsvAdapterQuestions';
 
 Given('{actor} has CSV-ready generated records:', async (actorName: string, table: DataTable) => {
   await actorCalled(actorName).attemptsTo(StorePreparedCsvRecords.fromTable(table.hashes()));
@@ -60,4 +67,21 @@ Then('loaded CSV output record {int} field {string} should be a non-empty string
 Then('loaded CSV output record {int} field {string} should be boolean', async (index: number, field: string) => {
   const value = await actorCalled('QATester').answer(LoadedGeneratedCsvFieldValue(index, field));
   expect(typeof value).toBe('boolean');
+});
+
+Then('the generated CSV should contain {string}', async (fragment: string) => {
+  const csv = await actorCalled('QATester').answer(GeneratedCsvOutput());
+  expect(csv).toContain(fragment);
+});
+
+Then('the loaded CSV output source pattern should be {string}', async (sourcePattern: string) => {
+  await actorCalled('QATester').attemptsTo(
+    Ensure.that(LoadedGeneratedCsvSourcePattern(), equals(sourcePattern)),
+  );
+});
+
+Then('the loaded CSV output should include a pattern hash', async () => {
+  await actorCalled('QATester').attemptsTo(
+    Ensure.that(LoadedGeneratedCsvPatternHash(), not(equals(''))),
+  );
 });

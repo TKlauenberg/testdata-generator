@@ -1,6 +1,11 @@
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
 import { mkdir, rm } from 'node:fs/promises';
 import * as path from 'node:path';
+import {
+  createGenerationMetadata,
+  encodeGenerationMetadataComment,
+  GENERATION_METADATA_COMMENT_LABEL,
+} from '../common';
 import { loadCsvContext } from '../context';
 import { CsvAdapter } from './csvAdapter';
 
@@ -17,6 +22,20 @@ async function readCsv(filePath: string): Promise<string> {
   return await Bun.file(filePath).text();
 }
 
+function createCsvMetadata(count: number) {
+  return createGenerationMetadata({
+    timestamp: '2026-04-05T10:15:00.000Z',
+    sourcePattern: 'schemas/users.td',
+    count,
+    format: 'csv',
+    seed: 42,
+    version: '0.1.0',
+    lineageInputs: [
+      { type: 'root-pattern', identifier: 'schemas/users.td', content: 'schema User { id: number }' },
+    ],
+  });
+}
+
 describe('CsvAdapter', () => {
   beforeEach(async () => {
     await mkdir(TEST_OUTPUT_DIR, { recursive: true });
@@ -27,7 +46,8 @@ describe('CsvAdapter', () => {
   });
 
   test('writes header row from the first record and preserves field order', async () => {
-    const adapter = new CsvAdapter({ outputPath: TEST_FILE });
+    const metadata = createCsvMetadata(2);
+    const adapter = new CsvAdapter({ outputPath: TEST_FILE, metadata });
 
     await adapter.write(
       createRecordStream([
@@ -38,13 +58,15 @@ describe('CsvAdapter', () => {
 
     const content = await readCsv(TEST_FILE);
 
-    expect(content).toBe('id,name,active\n1,Alice,true\n2,Bob,false\n');
+    expect(content).toBe(
+      `# ${GENERATION_METADATA_COMMENT_LABEL}${encodeGenerationMetadataComment(metadata)}\nid,name,active\n1,Alice,true\n2,Bob,false\n`,
+    );
   });
 
   test('truncates an existing file before writing new CSV content', async () => {
     await Bun.write(TEST_FILE, 'id,name\n1,stale\ntrailing-garbage');
 
-    const adapter = new CsvAdapter({ outputPath: TEST_FILE });
+    const adapter = new CsvAdapter({ outputPath: TEST_FILE, metadata: createCsvMetadata(1) });
 
     await adapter.write(
       createRecordStream([
@@ -54,11 +76,11 @@ describe('CsvAdapter', () => {
 
     const content = await readCsv(TEST_FILE);
 
-    expect(content).toBe('id,name\n2,Fresh\n');
+    expect(content).toContain('\nid,name\n2,Fresh\n');
   });
 
   test('skips leading empty records until it finds headers to write', async () => {
-    const adapter = new CsvAdapter({ outputPath: TEST_FILE });
+    const adapter = new CsvAdapter({ outputPath: TEST_FILE, metadata: createCsvMetadata(1) });
 
     await adapter.write(
       createRecordStream([
@@ -69,11 +91,11 @@ describe('CsvAdapter', () => {
 
     const content = await readCsv(TEST_FILE);
 
-    expect(content).toBe('id,name\n1,Alice\n');
+    expect(content).toContain('\nid,name\n1,Alice\n');
   });
 
   test('escapes commas, quotes, carriage returns, and embedded newlines', async () => {
-    const adapter = new CsvAdapter({ outputPath: TEST_FILE });
+    const adapter = new CsvAdapter({ outputPath: TEST_FILE, metadata: createCsvMetadata(1) });
 
     await adapter.write(
       createRecordStream([
@@ -88,13 +110,13 @@ describe('CsvAdapter', () => {
 
     const content = await readCsv(TEST_FILE);
 
-    expect(content).toBe(
+    expect(content).toContain(
       'id,comma,quote,multiline\n1,"Doe, Jane","He said ""hello""","Line 1\r\nLine 2\nLine 3"\n',
     );
   });
 
   test('supports a custom delimiter while keeping comma as the default', async () => {
-    const adapter = new CsvAdapter({ outputPath: TEST_FILE, delimiter: ';' });
+    const adapter = new CsvAdapter({ outputPath: TEST_FILE, delimiter: ';', metadata: createCsvMetadata(1) });
 
     await adapter.write(
       createRecordStream([
@@ -104,11 +126,11 @@ describe('CsvAdapter', () => {
 
     const content = await readCsv(TEST_FILE);
 
-    expect(content).toBe('id;value;plain\n1;"alpha;beta";ok\n');
+    expect(content).toContain('\nid;value;plain\n1;"alpha;beta";ok\n');
   });
 
   test('serializes nested objects and arrays as JSON strings before escaping', async () => {
-    const adapter = new CsvAdapter({ outputPath: TEST_FILE });
+    const adapter = new CsvAdapter({ outputPath: TEST_FILE, metadata: createCsvMetadata(1) });
 
     await adapter.write(
       createRecordStream([
@@ -122,14 +144,14 @@ describe('CsvAdapter', () => {
 
     const content = await readCsv(TEST_FILE);
 
-    expect(content).toBe(
+    expect(content).toContain(
       'id,profile,tags\n1,"{""role"":""qa"",""level"":2}","[""smoke"",""csv""]"\n',
     );
   });
 
   test('writes large streams without buffering records into an intermediate array', async () => {
-    const adapter = new CsvAdapter({ outputPath: TEST_FILE });
     const recordCount = 10000;
+    const adapter = new CsvAdapter({ outputPath: TEST_FILE, metadata: createCsvMetadata(recordCount) });
     let produced = 0;
 
     async function* generateRecords(): AsyncIterable<Record<string, unknown>> {
@@ -145,18 +167,20 @@ describe('CsvAdapter', () => {
 
     expect(produced).toBe(recordCount);
     expect(context.metadata.recordCount).toBe(recordCount);
+    expect(context.metadata.sourcePattern).toBe('schemas/users.td');
+    expect(context.metadata.patternHash).toBeDefined();
     expect(context.records[0]).toEqual({ id: 0, value: 'row-0' });
     expect(context.records[recordCount - 1]).toEqual({ id: recordCount - 1, value: `row-${recordCount - 1}` });
   });
 
-  test('creates an empty file when no records are emitted', async () => {
+  test('writes metadata comment even when no records are emitted', async () => {
     const adapter = new CsvAdapter({ outputPath: TEST_FILE });
 
     await adapter.write(createRecordStream([]));
 
     const content = await readCsv(TEST_FILE);
 
-    expect(content).toBe('');
+    expect(content).toStartWith(`# ${GENERATION_METADATA_COMMENT_LABEL}`);
   });
 
   test('rejects an empty outputPath', () => {

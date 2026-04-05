@@ -27,3 +27,19 @@ export {
   typeMismatch,
   duplicateDefinition,
 } from './diagnostic';
+
+export type {
+  CreateGenerationMetadataOptions,
+  GenerationMetadata,
+  GenerationMetadataFormat,
+  GenerationMetadataLineageEntry,
+  GenerationMetadataLineageInput,
+  GenerationMetadataLineageType,
+} from './generationMetadata';
+export {
+  createGenerationMetadata,
+  decodeGenerationMetadataComment,
+  encodeGenerationMetadataComment,
+  GENERATION_METADATA_COMMENT_LABEL,
+  isGenerationMetadata,
+} from './generationMetadata';
