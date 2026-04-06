@@ -132,9 +132,9 @@ development_status:
   11-4-reference-validation-and-type-safety: done
   epic-11-retrospective: done
 
-  epic-12: in-progress
+  epic-12: done
   12-1-generation-metadata-tracking: done
   12-2-generation-history-logging: done
   12-3-pattern-version-tracking: done
   12-4-platform-migration-preparation: done
-  epic-12-retrospective: optional
+  epic-12-retrospective: done
