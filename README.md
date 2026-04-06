@@ -1,25 +1,25 @@
-# testdata-ai
+# testdata-generator
 
 Declarative test data generation using a custom DSL with deterministic, reproducible output.
 
 ## Overview
 
-testdata-ai is a TypeScript-based tool for generating realistic test data from declarative schema definitions. It uses a custom domain-specific language (DSL) to describe data structures and generation rules, producing deterministic output through a seeded PRNG implementation.
+testdata-generator is a TypeScript-based tool for generating realistic test data from declarative schema definitions. It uses a custom domain-specific language (DSL) to describe data structures and generation rules, producing deterministic output through a seeded PRNG implementation.
 
 ## Workspace Structure
 
 This is a Bun monorepo with two packages:
 
 ```
-testdata-ai/
+testdata-generator/
 ├── packages/
-│   ├── core/                    # @testdata-ai/core (library)
+│   ├── core/                    # @testdata-generator/core (library)
 │   │   ├── src/
 │   │   │   ├── index.ts         # Public API exports
 │   │   │   └── index.test.ts    # Core tests
 │   │   ├── package.json
 │   │   └── tsconfig.json
-│   └── cli/                     # @testdata-ai/cli (CLI tool)
+│   └── cli/                     # @testdata-generator/cli (CLI tool)
 │       ├── bin/
 │       │   ├── td.ts            # CLI executable
 │       │   └── td.test.ts       # CLI tests
@@ -35,8 +35,8 @@ testdata-ai/
 
 ### Packages
 
-- **`@testdata-ai/core`**: Core library containing the scanner, parser, semantic analyzer, and generator
-- **`@testdata-ai/cli`**: Command-line interface tool for working with .td schema files
+- **`@testdata-generator/core`**: Core library containing the scanner, parser, semantic analyzer, and generator
+- **`@testdata-generator/cli`**: Command-line interface tool for working with .td schema files
 
 ## Quick Start
 
@@ -49,7 +49,7 @@ testdata-ai/
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd testdata-ai
+cd testdata-generator
 
 # Install dependencies
 bun install
@@ -80,7 +80,7 @@ The CLI supports both user-level `~/.tdconfig.json` and workspace `.tdconfig.jso
 
 ## Configuration
 
-testdata-ai uses a five-layer configuration model. Higher-priority layers completely override the same section in lower-priority layers (no deep merging within a section).
+testdata-generator uses a five-layer configuration model. Higher-priority layers completely override the same section in lower-priority layers (no deep merging within a section).
 
 **Priority order (highest first):** field-level > schema-level (`@defaults`) > workspace (`.tdconfig.json`) > global (`~/.tdconfig.json`) > built-in
 

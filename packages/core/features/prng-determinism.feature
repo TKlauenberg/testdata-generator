@@ -4,7 +4,7 @@ Feature: PRNG Deterministic Generation
   So that I can generate reproducible test data
 
   Background:
-    Given the testdata-ai core library is initialized
+    Given the testdata-generator core library is initialized
 
   @prng @determinism
   Scenario: Same seed produces identical sequences

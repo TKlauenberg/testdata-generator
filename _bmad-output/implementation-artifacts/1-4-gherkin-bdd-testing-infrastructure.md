@@ -100,7 +100,7 @@ So that **all subsequent tests can be written in readable Given/When/Then format
 
 ### 🎯 ULTIMATE CONTEXT ENGINE ANALYSIS - Everything You Need to Know!
 
-This story is **FOUNDATIONAL** for the entire testing strategy of testdata-ai. Every future story will write tests using this BDD infrastructure, so it must be robust, well-documented, and easy to use. The acceptance criteria in the epics document are already written in Given/When/Then format, making BDD the natural testing approach.
+This story is **FOUNDATIONAL** for the entire testing strategy of testdata-generator. Every future story will write tests using this BDD infrastructure, so it must be robust, well-documented, and easy to use. The acceptance criteria in the epics document are already written in Given/When/Then format, making BDD the natural testing approach.
 
 ### Critical Importance
 
@@ -302,7 +302,7 @@ Feature: Test Data Generation
   So that I can ensure they are correct before generating data
 
   Background:
-    Given the testdata-ai core library is initialized
+    Given the testdata-generator core library is initialized
 
   @validation @happy-path
   Scenario: Valid schema validation succeeds

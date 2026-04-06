@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { version } from '@testdata-ai/core';
+import { version } from '@testdata-generator/core';
 
 describe('Workspace Integration', () => {
   test('CLI can import from core package via workspace link', () => {

@@ -22,7 +22,7 @@ function parseProgram(source: string, filePath: string) {
 
 describe('resolveProgramImports()', () => {
   test('suggests a nearby relative .td file when an import path has a typo', async () => {
-    const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-import-typo-'));
+    const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-generator-import-typo-'));
     const commonDir = path.join(workspace, 'common');
     const mainFile = path.join(workspace, 'main.td');
     const profileFile = path.join(commonDir, 'profile.td');
@@ -54,7 +54,7 @@ describe('resolveProgramImports()', () => {
   });
 
   test('suggests a workspace-relative file when a relative import points to the wrong directory', async () => {
-    const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-import-moved-file-'));
+    const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-generator-import-moved-file-'));
     const appsDir = path.join(workspace, 'apps');
     const commonDir = path.join(workspace, 'common');
     const mainFile = path.join(appsDir, 'main.td');
@@ -109,7 +109,7 @@ describe('resolveProgramImports()', () => {
   });
 
   test('detects circular imports using canonical file paths', async () => {
-    const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-import-cycle-'));
+    const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-generator-import-cycle-'));
     const aFile = path.join(workspace, 'a.td');
     const bFile = path.join(workspace, 'nested', 'b.td');
 
@@ -143,7 +143,7 @@ describe('resolveProgramImports()', () => {
   });
 
   test('suggests a workspace-relative import when the workspace path has a typo', async () => {
-    const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-workspace-import-typo-'));
+    const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-generator-workspace-import-typo-'));
     const commonDir = path.join(workspace, 'common');
     const appsDir = path.join(workspace, 'apps');
     const currentFile = path.join(appsDir, 'main.td');
@@ -178,7 +178,7 @@ describe('resolveProgramImports()', () => {
   });
 
   test('never suggests importing the current file itself', async () => {
-    const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-self-import-suggestion-'));
+    const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-generator-self-import-suggestion-'));
     const mainFile = path.join(workspace, 'main.td');
 
     await fs.writeFile(mainFile, 'schema Main { id: uuid }\n', 'utf-8');

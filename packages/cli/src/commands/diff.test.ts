@@ -60,7 +60,7 @@ async function readPatternHashes(historyPath: string): Promise<string[]> {
 
 describe('td diff', () => {
   test('shows preserved root-pattern changes between two stored hashes', async () => {
-    const workspaceDirectory = await createWorkspaceDirectory('testdata-ai-diff-command-');
+    const workspaceDirectory = await createWorkspaceDirectory('testdata-generator-diff-command-');
     await writeFixture(workspaceDirectory, 'valid-simple.td');
 
     await runCli(['generate', 'valid-simple.td', '--count', '1'], workspaceDirectory);
@@ -81,7 +81,7 @@ describe('td diff', () => {
   });
 
   test('reports no changes for identical hashes', async () => {
-    const workspaceDirectory = await createWorkspaceDirectory('testdata-ai-diff-identical-');
+    const workspaceDirectory = await createWorkspaceDirectory('testdata-generator-diff-identical-');
     await writeFixture(workspaceDirectory, 'valid-simple.td');
 
     await runCli(['generate', 'valid-simple.td', '--count', '1'], workspaceDirectory);
@@ -96,7 +96,7 @@ describe('td diff', () => {
   });
 
   test('returns a controlled error when either hash is unknown', async () => {
-    const workspaceDirectory = await createWorkspaceDirectory('testdata-ai-diff-missing-');
+    const workspaceDirectory = await createWorkspaceDirectory('testdata-generator-diff-missing-');
     await writeFixture(workspaceDirectory, 'valid-simple.td');
 
     await runCli(['generate', 'valid-simple.td', '--count', '1'], workspaceDirectory);
@@ -109,7 +109,7 @@ describe('td diff', () => {
   });
 
   test('rejects invalid hash arguments before reading from the snapshot store', async () => {
-    const workspaceDirectory = await createWorkspaceDirectory('testdata-ai-diff-invalid-hash-');
+    const workspaceDirectory = await createWorkspaceDirectory('testdata-generator-diff-invalid-hash-');
     await writeFixture(workspaceDirectory, 'valid-simple.td');
 
     await runCli(['generate', 'valid-simple.td', '--count', '1'], workspaceDirectory);
@@ -121,7 +121,7 @@ describe('td diff', () => {
   });
 
   test('resolves snapshots from the configured workspace-relative history directory', async () => {
-    const workspaceDirectory = await createWorkspaceDirectory('testdata-ai-diff-workspace-root-');
+    const workspaceDirectory = await createWorkspaceDirectory('testdata-generator-diff-workspace-root-');
     const nestedDirectory = path.join(workspaceDirectory, 'apps', 'qa');
 
     await fs.mkdir(nestedDirectory, { recursive: true });

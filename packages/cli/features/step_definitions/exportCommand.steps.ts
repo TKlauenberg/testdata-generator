@@ -9,7 +9,7 @@ import {
   persistPatternVersionSnapshot,
   saveAsContext,
   validateSchema,
-} from '@testdata-ai/core';
+} from '@testdata-generator/core';
 import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import * as path from 'node:path';
@@ -179,7 +179,7 @@ async function createSavedContextArtifact(relativePath: string): Promise<void> {
 }
 
 Given('the export test workspace exists', async () => {
-  state.workspaceDir ??= await mkdtemp(path.join(tmpdir(), 'testdata-ai-cli-export-bdd-'));
+  state.workspaceDir ??= await mkdtemp(path.join(tmpdir(), 'testdata-generator-cli-export-bdd-'));
 });
 
 Given('a context-backed generated JSON artifact {string} with matching audit history', async (relativePath: string) => {
@@ -216,7 +216,7 @@ Then('the export command exit code should be {int}', (expectedExitCode: number) 
 
 Then('stdout should contain a platform-ready export bundle', () => {
   const parsed = JSON.parse(state.stdout ?? '') as { readonly contract?: string; readonly version?: number };
-  if (parsed.contract !== 'testdata-ai/platform-ready-export' || parsed.version !== 1) {
+  if (parsed.contract !== 'testdata-generator/platform-ready-export' || parsed.version !== 1) {
     throw new Error(`Expected a platform-ready export bundle, received: ${state.stdout ?? ''}`);
   }
 });
@@ -260,7 +260,7 @@ Then('the file {string} should contain a platform-ready export bundle', async (r
   const content = await readFile(filePath, 'utf-8');
   const parsed = JSON.parse(content) as { readonly contract?: string; readonly version?: number };
 
-  if (parsed.contract !== 'testdata-ai/platform-ready-export' || parsed.version !== 1) {
+  if (parsed.contract !== 'testdata-generator/platform-ready-export' || parsed.version !== 1) {
     throw new Error(`Expected ${relativePath} to contain a platform-ready export bundle, received: ${content}`);
   }
 });

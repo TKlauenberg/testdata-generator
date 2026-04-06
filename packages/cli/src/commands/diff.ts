@@ -5,7 +5,7 @@ import {
   PatternVersionStoreParseError,
   PatternVersionStoreValidationError,
   readPatternVersionSnapshot,
-} from '@testdata-ai/core';
+} from '@testdata-generator/core';
 import * as path from 'node:path';
 import { CliConfigError, loadEffectiveConfig } from '../config';
 import { resolvePatternVersionStorePath } from '../historySupport';

@@ -244,7 +244,7 @@ Feature: DSL Schema Validation
   So that I can ensure they are correct before generating data
 
   Background:
-    Given the testdata-ai core library is initialized
+    Given the testdata-generator core library is initialized
 
   @validation @happy-path
   Scenario: Valid schema passes validation

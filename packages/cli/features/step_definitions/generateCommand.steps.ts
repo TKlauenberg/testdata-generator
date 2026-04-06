@@ -1,5 +1,5 @@
 import { After, Given, Then, When } from '@cucumber/cucumber';
-import { decodeGenerationMetadataComment, GENERATION_METADATA_COMMENT_LABEL } from '@testdata-ai/core';
+import { decodeGenerationMetadataComment, GENERATION_METADATA_COMMENT_LABEL } from '@testdata-generator/core';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import * as path from 'node:path';
@@ -83,8 +83,8 @@ async function readHistoryEntries(relativePath: string): Promise<Array<{
     .map((line) => JSON.parse(line) as { readonly status: string });
 }
 
-Given('the testdata-ai CLI is installed', async () => {
-  state.workspaceDir ??= await mkdtemp(path.join(tmpdir(), 'testdata-ai-cli-generate-bdd-'));
+Given('the testdata-generator CLI is installed', async () => {
+  state.workspaceDir ??= await mkdtemp(path.join(tmpdir(), 'testdata-generator-cli-generate-bdd-'));
 
   const cliFile = Bun.file(CLI_PATH);
   if (!(await cliFile.exists())) {

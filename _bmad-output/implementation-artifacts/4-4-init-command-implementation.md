@@ -117,11 +117,11 @@ packages/cli/
 ```
 
 **Core Library Integration Points:**
-From `@testdata-ai/core` package:
+From `@testdata-generator/core` package:
 ```typescript
 // Not needed directly - init just copies template files
 // But template must be valid for validate/generate commands
-import { scan, parse, analyze } from '@testdata-ai/core';
+import { scan, parse, analyze } from '@testdata-generator/core';
 ```
 
 **CLI Command Pattern (Commander.js):**
@@ -152,7 +152,7 @@ The init command follows a simple file-based template system:
 ```typescript
 // File: packages/cli/templates/basic.td
 //
-// This is a basic testdata-ai schema template demonstrating
+// This is a basic testdata-generator schema template demonstrating
 // common field types and generators.
 //
 // To generate data from this schema:
@@ -358,10 +358,10 @@ const __dirname = path.dirname(new URL(import.meta.url).pathname);
 1. **packages/cli/templates/basic.td** (TEMPLATE):
 
 ```typescript
-// testdata-ai Basic Schema Template
+// testdata-generator Basic Schema Template
 //
 // This template demonstrates the fundamental field types and generators
-// available in testdata-ai DSL.
+// available in testdata-generator DSL.
 //
 // Quick Start:
 //   1. Customize the schema by adding, removing, or modifying fields
@@ -891,7 +891,7 @@ process.exit(3); // File error
 
 4. **Library Usage Patterns:**
    - Commander.js v14.0.2 for CLI structure
-   - Core library imports from `@testdata-ai/core`
+   - Core library imports from `@testdata-generator/core`
    - File system operations with `fs/promises`
 
 **Recommended Git Workflow for This Story:**
@@ -980,7 +980,7 @@ function askQuestion(prompt: string): Promise<string> {
 
 **ESM Module Path Resolution:**
 
-For ESM modules (which testdata-ai uses), use `import.meta.url`:
+For ESM modules (which testdata-generator uses), use `import.meta.url`:
 
 ```typescript
 import { fileURLToPath } from 'url';

@@ -97,7 +97,7 @@ async function runConfigShow(): Promise<void> {
 }
 
 export const configCommand = new Command('config')
-  .description('Manage testdata-ai configuration')
+  .description('Manage testdata-generator configuration')
   .addCommand(
     new Command('show')
       .description('Show effective configuration with source of each setting')

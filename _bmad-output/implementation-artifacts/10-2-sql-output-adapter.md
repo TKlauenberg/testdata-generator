@@ -62,7 +62,7 @@ This story establishes the SQL output path in core only. CLI format selection, o
 
 - Epic 10 adds non-JSON outputs and a programmatic API. Story 10.2 should build directly on the adapter pattern established by Story 10.1 instead of inventing a parallel output architecture.
 - The repo already contains working `JsonAdapter` and `CsvAdapter` implementations in `packages/core/src/adapters/`; those files are the primary style and behavior references for constructor validation, streaming writes, and co-located tests.
-- This story is intentionally scoped to `@testdata-ai/core`. Do not add CLI `--format sql` wiring, output-path inference, or table-name option parsing here; that belongs to Story 10.3.
+- This story is intentionally scoped to `@testdata-generator/core`. Do not add CLI `--format sql` wiring, output-path inference, or table-name option parsing here; that belongs to Story 10.3.
 - SQL generation must stay in a conservative, portable `INSERT` subset so both MySQL and PostgreSQL modes are supported without adding engine-specific features that complicate later CLI integration.
 
 ### Technical Requirements

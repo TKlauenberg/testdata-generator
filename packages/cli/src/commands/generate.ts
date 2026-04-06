@@ -20,7 +20,7 @@ import {
   SqlAdapter,
   validateSchema,
   ValidationError,
-} from '@testdata-ai/core';
+} from '@testdata-generator/core';
 import type {
   AdapterMetadata,
   Diagnostic,
@@ -28,7 +28,7 @@ import type {
   GenerationMetadataLineageInput,
   ValidatedProgram,
   WorkspaceGeneratorSpec,
-} from '@testdata-ai/core';
+} from '@testdata-generator/core';
 import * as fs from 'fs/promises';
 import * as os from 'node:os';
 import * as path from 'path';
@@ -762,7 +762,7 @@ async function renderAdapterOutputToString(options: {
   readonly outputPath?: string;
   readonly sqlTableName?: string;
 }): Promise<string> {
-  const tempDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-cli-output-'));
+  const tempDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-generator-cli-output-'));
   const tempOutputPath = path.join(tempDirectory, `output.${options.format}`);
 
   try {

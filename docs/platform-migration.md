@@ -43,7 +43,7 @@ The platform-ready bundle uses this top-level structure:
 
 ```json
 {
-  "contract": "testdata-ai/platform-ready-export",
+  "contract": "testdata-generator/platform-ready-export",
   "version": 1,
   "exportedAt": "2026-04-06T12:00:00.000Z",
   "artifact": {

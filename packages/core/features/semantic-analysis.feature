@@ -4,7 +4,7 @@ Feature: Semantic Analysis
   So that I catch errors before attempting data generation
 
   Background:
-    Given the testdata-ai core library is initialized
+    Given the testdata-generator core library is initialized
 
   @semantic-analysis @happy-path
   Scenario: Valid schema passes semantic analysis

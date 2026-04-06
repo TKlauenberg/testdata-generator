@@ -3,7 +3,7 @@
 ## Complete Project Directory Structure
 
 ```
-testdata-ai/
+testdata-generator/
 ├── README.md                           # Project overview, quick start
 ├── LICENSE                             # MIT license
 ├── package.json                        # Bun workspaces root
@@ -28,7 +28,7 @@ testdata-ai/
 │       └── with-context.td
 │
 ├── packages/
-│   ├── core/                          # @testdata-ai/core
+│   ├── core/                          # @testdata-generator/core
 │   │   ├── package.json
 │   │   ├── tsconfig.json
 │   │   └── src/
@@ -96,7 +96,7 @@ testdata-ai/
 │   │           ├── location.ts        # SourceLocation type
 │   │           └── version.ts         # Version constant
 │   │
-│   └── cli/                           # @testdata-ai/cli
+│   └── cli/                           # @testdata-generator/cli
 │       ├── package.json
 │       ├── tsconfig.json
 │       ├── bin/
@@ -135,7 +135,7 @@ testdata-ai/
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                      @testdata-ai/cli                        │
+│                      @testdata-generator/cli                        │
 │  ┌─────────────────────────────────────────────────────┐    │
 │  │  Commands (generate, validate, init)                 │    │
 │  │  Error Formatter (Rust-style)                        │    │
@@ -146,7 +146,7 @@ testdata-ai/
 │                           ▼                                  │
 └─────────────────────────────────────────────────────────────┘
 ┌─────────────────────────────────────────────────────────────┐
-│                     @testdata-ai/core                        │
+│                     @testdata-generator/core                        │
 │  ┌───────────┐  ┌───────────┐  ┌───────────┐  ┌──────────┐ │
 │  │  Scanner  │→ │  Parser   │→ │ Analyzer  │→ │Generator │ │
 │  │  (scan)   │  │  (parse)  │  │ (analyze) │  │(generate)│ │
@@ -257,7 +257,7 @@ Context ────────────► generate()
 
 ## Public API Surface
 
-### @testdata-ai/core
+### @testdata-generator/core
 
 ```typescript
 // Main exports from packages/core/src/index.ts
@@ -276,7 +276,7 @@ export type { GenerateOptions, Record } from './generator';
 export type { Result, Diagnostic, SourceLocation } from './common';
 ```
 
-### @testdata-ai/cli
+### @testdata-generator/cli
 
 ```
 td generate <file.td> [options]
@@ -352,6 +352,6 @@ bun run publish               # Publish to npm
 
 ### Deployment Structure
 
-- **npm packages**: Published as `@testdata-ai/core` and `@testdata-ai/cli`
-- **CLI global install**: `bun add -g @testdata-ai/cli` or `npm install -g @testdata-ai/cli`
-- **Library usage**: Add `@testdata-ai/core` as dev dependency in test projects
+- **npm packages**: Published as `@testdata-generator/core` and `@testdata-generator/cli`
+- **CLI global install**: `bun add -g @testdata-generator/cli` or `npm install -g @testdata-generator/cli`
+- **Library usage**: Add `@testdata-generator/core` as dev dependency in test projects

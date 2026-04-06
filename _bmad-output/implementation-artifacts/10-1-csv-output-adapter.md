@@ -62,7 +62,7 @@ This story establishes the CSV output path in core only. CLI format selection be
 
 - Epic 10 adds non-JSON outputs and a programmatic API. Story 10.1 is the first output-format story and should create a reusable adapter pattern for Story 10.2 and CLI wiring in Story 10.3.
 - The repo already contains a working `JsonAdapter` in `packages/core/src/adapters/jsonAdapter.ts`; this is the primary implementation reference and should be adapted, not reimagined.
-- The story is intentionally scoped to `@testdata-ai/core`. Do not add CLI flags, output-format selection logic, or file-extension inference here; those belong to Story 10.3.
+- The story is intentionally scoped to `@testdata-generator/core`. Do not add CLI flags, output-format selection logic, or file-extension inference here; those belong to Story 10.3.
 - Re-import correctness must align with the existing CSV context loader semantics, because that is the repo's current CSV reader.
 
 ### Technical Requirements

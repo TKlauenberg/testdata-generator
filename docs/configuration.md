@@ -1,6 +1,6 @@
 # Configuration Reference
 
-testdata-ai uses a layered configuration model. Settings at higher-priority layers completely override the same section at lower-priority layers (no deep merging within a section).
+testdata-generator uses a layered configuration model. Settings at higher-priority layers completely override the same section at lower-priority layers (no deep merging within a section).
 
 ## Priority Stack (highest to lowest)
 
@@ -160,11 +160,11 @@ Built-in behavior:
 
 `td export --platform-ready` does not introduce any new configuration keys. It reuses the existing history settings so export, history, diff, and generate all resolve audit data from the same location.
 
-| Setting or Flag          | Scope                          | Description                                                                 |
-| ------------------------ | ------------------------------ | --------------------------------------------------------------------------- |
-| `history.logDirectory`   | Config file (global/workspace) | Directory containing `.td-history.jsonl` and `.td-pattern-versions`         |
-| `td export --platform-ready` | CLI runtime command        | Reads an existing metadata-bearing artifact and emits the migration bundle   |
-| `--output <file>`        | CLI runtime flag               | Writes the platform-ready bundle to a file instead of stdout                |
+| Setting or Flag              | Scope                          | Description                                                                |
+| ---------------------------- | ------------------------------ | -------------------------------------------------------------------------- |
+| `history.logDirectory`       | Config file (global/workspace) | Directory containing `.td-history.jsonl` and `.td-pattern-versions`        |
+| `td export --platform-ready` | CLI runtime command            | Reads an existing metadata-bearing artifact and emits the migration bundle |
+| `--output <file>`            | CLI runtime flag               | Writes the platform-ready bundle to a file instead of stdout               |
 
 Platform-ready export requirements:
 

@@ -6,15 +6,15 @@
 
 This project is library-first with CLI as the primary interface:
 
-- Core library: `@testdata-ai/core` (DSL parser + generator)
-- CLI tool: `@testdata-ai/cli` (command-line interface)
+- Core library: `@testdata-generator/core` (DSL parser + generator)
+- CLI tool: `@testdata-generator/cli` (command-line interface)
 
 ## Runtime Selection: Bun
 
 | Runtime     | Version  | Decision | Rationale                                        |
 | ----------- | -------- | -------- | ------------------------------------------------ |
-| **Node.js** | 22.x LTS | ❌       | Traditional choice, slower startup               |
-| **Bun**     | 1.x      | ✅       | Faster execution, built-in TypeScript, modern DX |
+| **Node.js** | 22.x LTS | ❌        | Traditional choice, slower startup               |
+| **Bun**     | 1.x      | ✅        | Faster execution, built-in TypeScript, modern DX |
 
 **Why Bun:**
 
@@ -29,8 +29,8 @@ This project is library-first with CLI as the primary interface:
 
 ## CLI Framework Selection
 
-| Framework        | Version  | Stars | Decision                                                                       |
-| ---------------- | -------- | ----- | ------------------------------------------------------------------------------ |
+| Framework        | Version  | Stars | Decision                                                                      |
+| ---------------- | -------- | ----- | ----------------------------------------------------------------------------- |
 | **oclif**        | v4.22.57 | 9.4k  | ❌ Too opinionated, CLI-first design conflicts with library-first architecture |
 | **Yargs**        | v18.0.0  | 11.4k | ❌ Good parsing but less integrated with TypeScript                            |
 | **Commander.js** | v14.0.2  | 27.8k | ✅ Lightweight, library-first friendly, excellent TypeScript support           |
@@ -55,9 +55,9 @@ This project is library-first with CLI as the primary interface:
 ## Project Structure
 
 ```
-testdata-ai/
+testdata-generator/
 ├── packages/
-│   ├── core/                    # @testdata-ai/core
+│   ├── core/                    # @testdata-generator/core
 │   │   ├── src/
 │   │   │   ├── scanner/         # Lexical analysis (tokens)
 │   │   │   ├── parser/          # Syntax analysis (AST)
@@ -69,7 +69,7 @@ testdata-ai/
 │   │   ├── package.json
 │   │   └── tsconfig.json
 │   │
-│   └── cli/                     # @testdata-ai/cli
+│   └── cli/                     # @testdata-generator/cli
 │       ├── src/
 │       │   ├── commands/        # generate, validate, init
 │       │   ├── formatters/      # Error formatting (Rust-style)
@@ -98,8 +98,8 @@ testdata-ai/
 
 ```bash
 # Create project structure
-mkdir -p testdata-ai/packages/{core,cli}/src
-cd testdata-ai
+mkdir -p testdata-generator/packages/{core,cli}/src
+cd testdata-generator
 
 # Initialize Bun workspace
 bun init -y
@@ -146,6 +146,6 @@ bun add -d @commander-js/extra-typings @types/bun
 
 - Publish to npm registry
 - Users can run with `bun` (recommended) or `node`
-- Global install: `bun add -g @testdata-ai/cli` or `npm install -g @testdata-ai/cli`
+- Global install: `bun add -g @testdata-generator/cli` or `npm install -g @testdata-generator/cli`
 
 **Note:** Project initialization should be the first implementation story, establishing the monorepo structure and build pipeline before DSL implementation begins.

@@ -122,12 +122,12 @@ packages/cli/
 ```
 
 **Core Library Integration Points:**
-From `@testdata-ai/core` package:
+From `@testdata-generator/core` package:
 ```typescript
-import { scan } from '@testdata-ai/core/scanner';
-import { parse } from '@testdata-ai/core/parser';
-import { analyze } from '@testdata-ai/core/analyzer';
-import type { Result, Diagnostic } from '@testdata-ai/core/common';
+import { scan } from '@testdata-generator/core/scanner';
+import { parse } from '@testdata-generator/core/parser';
+import { analyze } from '@testdata-generator/core/analyzer';
+import type { Result, Diagnostic } from '@testdata-generator/core/common';
 ```
 
 **CLI Command Pattern (Commander.js):**
@@ -298,11 +298,11 @@ try {
 
 **Core Library Dependencies:**
 ```typescript
-// From @testdata-ai/core (workspace package)
-import { scan } from '@testdata-ai/core/scanner';
-import { parse } from '@testdata-ai/core/parser';
-import { analyze } from '@testdata-ai/core/analyzer';
-import type { Result, Diagnostic } from '@testdata-ai/core/common';
+// From @testdata-generator/core (workspace package)
+import { scan } from '@testdata-generator/core/scanner';
+import { parse } from '@testdata-generator/core/parser';
+import { analyze } from '@testdata-generator/core/analyzer';
+import type { Result, Diagnostic } from '@testdata-generator/core/common';
 
 // All phases return Result<T, Diagnostic[]>
 type Result<T, E> =
@@ -335,8 +335,8 @@ if (!parseResult.ok) {
 1. **packages/cli/src/commands/validate.ts** (MAIN IMPLEMENTATION):
 ```typescript
 import { Command } from 'commander';
-import { scan, parse, analyze } from '@testdata-ai/core';
-import type { Result, Diagnostic } from '@testdata-ai/core';
+import { scan, parse, analyze } from '@testdata-generator/core';
+import type { Result, Diagnostic } from '@testdata-generator/core';
 import * as fs from 'fs/promises';
 
 export const validateCommand = new Command('validate')
@@ -556,7 +556,7 @@ Feature: Validate Command
   So that I can fix syntax errors quickly
 
   Background:
-    Given the testdata-ai CLI is installed
+    Given the testdata-generator CLI is installed
 
   @validate @happy-path
   Scenario: Validate valid schema
@@ -947,8 +947,8 @@ None - implementation proceeded smoothly with no blockers.
 
 ## Code Review Record
 
-**Reviewed:** 2026-02-12  
-**Reviewer:** Adversarial Code Review Agent  
+**Reviewed:** 2026-02-12
+**Reviewer:** Adversarial Code Review Agent
 **Status:** FIXED - All issues resolved
 
 ### Issues Found and Fixed
@@ -964,7 +964,7 @@ None - implementation proceeded smoothly with no blockers.
 6. 📝 NOTED: Test assertions limited by Bun stderr capture - documented limitation
 7. 📝 ANALYZED: Empty file behavior - returns valid (no errors), this is correct
 
-**LOW SEVERITY:**  
+**LOW SEVERITY:**
 8-10. 📝 NOTED: Minor issues documented, non-blocking
 
 ### Test Results After Fixes

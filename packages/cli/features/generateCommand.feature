@@ -4,7 +4,7 @@ Feature: Generate Command
   So that I can create test datasets in the format I need
 
   Background:
-    Given the testdata-ai CLI is installed
+    Given the testdata-generator CLI is installed
 
   @generate @json
   Scenario: Generate JSON to stdout by default

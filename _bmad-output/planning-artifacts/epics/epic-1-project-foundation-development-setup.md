@@ -1,6 +1,6 @@
 # Epic 1: Project Foundation & Development Setup
 
-Development team can start building testdata-ai with proper monorepo structure, tooling, and core utilities in place.
+Development team can start building testdata-generator with proper monorepo structure, tooling, and core utilities in place.
 
 ## Story 1.1: Initialize Bun Monorepo with Core and CLI Packages
 
@@ -10,7 +10,7 @@ So that **I can develop the library and CLI tool independently with clear separa
 
 **Acceptance Criteria:**
 
-**Given** I am setting up the testdata-ai project
+**Given** I am setting up the testdata-generator project
 **When** I initialize the monorepo structure
 **Then** a `packages/core/` directory exists with `package.json`, `tsconfig.json`, and `src/` folder
 **And** a `packages/cli/` directory exists with `package.json`, `tsconfig.json`, and `src/` folder

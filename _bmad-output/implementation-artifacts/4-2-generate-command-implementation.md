@@ -117,13 +117,13 @@ packages/cli/
 ```
 
 **Core Library Integration Points:**
-From `@testdata-ai/core` package:
+From `@testdata-generator/core` package:
 ```typescript
-import { scan } from '@testdata-ai/core/scanner';
-import { parse } from '@testdata-ai/core/parser';
-import { analyze } from '@testdata-ai/core/analyzer';
-import { generate } from '@testdata-ai/core/generator';
-import type { Result, Diagnostic } from '@testdata-ai/core/common';
+import { scan } from '@testdata-generator/core/scanner';
+import { parse } from '@testdata-generator/core/parser';
+import { analyze } from '@testdata-generator/core/analyzer';
+import { generate } from '@testdata-generator/core/generator';
+import type { Result, Diagnostic } from '@testdata-generator/core/common';
 ```
 
 **CLI Command Pattern (Commander.js):**
@@ -262,12 +262,12 @@ program.addCommand(generateCommand);
 
 **Core Library Dependencies:**
 ```typescript
-// From @testdata-ai/core (workspace package)
-import { scan } from '@testdata-ai/core/scanner';
-import { parse } from '@testdata-ai/core/parser';
-import { analyze } from '@testdata-ai/core/analyzer';
-import { generate } from '@testdata-ai/core/generator';
-import type { Result, Diagnostic, GenerateOptions } from '@testdata-ai/core';
+// From @testdata-generator/core (workspace package)
+import { scan } from '@testdata-generator/core/scanner';
+import { parse } from '@testdata-generator/core/parser';
+import { analyze } from '@testdata-generator/core/analyzer';
+import { generate } from '@testdata-generator/core/generator';
+import type { Result, Diagnostic, GenerateOptions } from '@testdata-generator/core';
 
 // All phases return Result<T, Diagnostic[]>
 // Generator returns AsyncIterable<Record>
@@ -289,8 +289,8 @@ for await (const record of generate(schema, options)) {
 1. **packages/cli/src/commands/generate.ts** (MAIN IMPLEMENTATION):
 ```typescript
 import { Command } from 'commander';
-import { scan, parse, analyze, generate } from '@testdata-ai/core';
-import type { Result, Diagnostic, GenerateOptions } from '@testdata-ai/core';
+import { scan, parse, analyze, generate } from '@testdata-generator/core';
+import type { Result, Diagnostic, GenerateOptions } from '@testdata-generator/core';
 import * as fs from 'fs/promises';
 
 export const generateCommand = new Command('generate')
@@ -358,7 +358,7 @@ Feature: Generate Command
   So that I can create test datasets quickly
 
   Background:
-    Given the testdata-ai CLI is installed
+    Given the testdata-generator CLI is installed
 
   @generate @happy-path
   Scenario: Generate data to stdout
@@ -868,7 +868,7 @@ This is Story 2 of 5 in Epic 4: CLI Tool Interface.
 - Story 4.3: Validate command (can reuse file reading and validation logic)
 - Story 4.4: Init command (can follow same command pattern)
 - Story 4.5: Error formatter (will enhance error display from this story)
-- End-to-end workflow: User can now use testdata-ai from command line!
+- End-to-end workflow: User can now use testdata-generator from command line!
 
 **Critical Integration Points:**
 1. **Core Library Pipeline:** This story is the first real integration of CLI with the complete DSL pipeline (scan → parse → analyze → generate)

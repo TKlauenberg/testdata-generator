@@ -5,7 +5,7 @@ import {
   PatternVersionStoreParseError,
   PatternVersionStoreValidationError,
   PlatformReadyExportError,
-} from '@testdata-ai/core';
+} from '@testdata-generator/core';
 import { mkdir } from 'node:fs/promises';
 import * as path from 'node:path';
 import { CliConfigError, loadEffectiveConfig } from '../config';

@@ -648,7 +648,7 @@ Feature: Identity Field Generation
   So that records have realistic primary keys and IDs
 
   Background:
-    Given the testdata-ai core library is initialized
+    Given the testdata-generator core library is initialized
 
   @identity @uuid
   Scenario: Generate records with UUID primary keys

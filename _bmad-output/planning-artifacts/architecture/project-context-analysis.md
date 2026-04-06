@@ -55,7 +55,7 @@ Critical NFRs that will drive architectural decisions:
 - TypeScript/Node.js implementation (Node.js 18+ requirement)
 - Zero external parser dependencies (hand-written parser)
 - Cross-platform: Windows, macOS, Linux
-- npm distribution: `@testdata-ai/core` (library) + `@testdata-ai/cli` (global tool)
+- npm distribution: `@testdata-generator/core` (library) + `@testdata-generator/cli` (global tool)
 
 **Research-Validated Decisions:**
 

@@ -247,7 +247,7 @@ describe('validateSchema()', () => {
     });
 
     test('should validate schemas that extend imported base schemas', async () => {
-      const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-inheritance-'));
+      const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-generator-inheritance-'));
       const commonDir = path.join(workspaceRoot, 'common');
       const appsDir = path.join(workspaceRoot, 'apps');
       await fs.mkdir(commonDir, { recursive: true });
@@ -695,7 +695,7 @@ schema ExtendedUser extends User {
 
   describe('performance requirements', () => {
     test('resolves relative imports from the current file', async () => {
-      const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-imports-'));
+      const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-generator-imports-'));
       const importedFile = path.join(workspace, 'common.td');
       const rootFile = path.join(workspace, 'main.td');
 
@@ -726,7 +726,7 @@ schema ExtendedUser extends User {
     });
 
     test('resolves @workspace imports when a workspace root is provided', async () => {
-      const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-workspace-imports-'));
+      const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-generator-workspace-imports-'));
       const commonDirectory = path.join(workspace, 'common');
       const appDirectory = path.join(workspace, 'apps');
       const importedFile = path.join(commonDirectory, 'shared.td');
@@ -762,7 +762,7 @@ schema ExtendedUser extends User {
     });
 
     test('accepts imported profile and context declarations alongside imported schemas', async () => {
-      const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-imported-symbols-'));
+      const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-generator-imported-symbols-'));
       const importedFile = path.join(workspace, 'shared.td');
       const rootFile = path.join(workspace, 'main.td');
 
@@ -827,7 +827,7 @@ schema ExtendedUser extends User {
     });
 
     test('detects circular imports using canonical absolute paths', async () => {
-      const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-circular-imports-'));
+      const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-generator-circular-imports-'));
       const aFile = path.join(workspace, 'a.td');
       const bFile = path.join(workspace, 'nested', 'b.td');
 
@@ -860,7 +860,7 @@ schema ExtendedUser extends User {
     });
 
     test('reports duplicate imported and local schema definitions through the analyzer', async () => {
-      const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-duplicate-imports-'));
+      const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-generator-duplicate-imports-'));
       const importedFile = path.join(workspace, 'common.td');
       const rootFile = path.join(workspace, 'main.td');
 

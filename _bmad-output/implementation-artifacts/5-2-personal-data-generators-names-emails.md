@@ -404,7 +404,7 @@ Feature: Personal Data Generation
   So that my test datasets look like production data
 
   Background:
-    Given the testdata-ai core library is initialized
+    Given the testdata-generator core library is initialized
 
   @personal @happy-path
   Scenario: Generate user records with names and emails

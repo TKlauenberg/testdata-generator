@@ -357,8 +357,8 @@ await adapter.write(generateData(source, { count: 1000, seed: 42 }));
 ✅ **Integration Example for Documentation:**
 ```typescript
 // Complete example: DSL source → Generated data → JSON file
-import { generateData } from '@testdata-ai/core';
-import { JsonAdapter } from '@testdata-ai/core/adapters';
+import { generateData } from '@testdata-generator/core';
+import { JsonAdapter } from '@testdata-generator/core/adapters';
 
 const source = `
 schema User {
@@ -467,7 +467,7 @@ if (!result.ok) {
 
 **Scenario 1: Basic Usage**
 ```typescript
-import { generateData } from '@testdata-ai/core';
+import { generateData } from '@testdata-generator/core';
 
 const schema = `
 schema User {
@@ -501,7 +501,7 @@ console.assert(JSON.stringify(records1) === JSON.stringify(records2));
 
 **Scenario 3: Error Handling**
 ```typescript
-import { generateData } from '@testdata-ai/core';
+import { generateData } from '@testdata-generator/core';
 
 const invalidSchema = `schema User { id: whoops }`;
 
@@ -517,7 +517,7 @@ try {
 
 **Scenario 4: Large Dataset with Adapter**
 ```typescript
-import { generateData, JsonAdapter } from '@testdata-ai/core';
+import { generateData, JsonAdapter } from '@testdata-generator/core';
 
 const schema = `
 schema Transaction {
@@ -540,11 +540,11 @@ console.log('Generated 100,000 records to transactions.json');
 
 ### 🔗 References
 
-- [Project Context](file:///run/media/tobi/Data/testdata/testdata-ai/_bmad-output/planning-artifacts/project-context.md) - 45 critical implementation rules
-- [Epic 3: Basic Data Generation](file:///run/media/tobi/Data/testdata/testdata-ai/_bmad-output/planning-artifacts/epics/epic-3-basic-data-generation.md) - Full epic context with all 6 stories
-- [Previous Story 3.5](file:///run/media/tobi/Data/testdata/testdata-ai/_bmad-output/implementation-artifacts/3-5-json-output-adapter.md) - JSON Output Adapter implementation
-- [Architecture: Core Decisions](file:///run/media/tobi/Data/testdata/testdata-ai/_bmad-output/planning-artifacts/architecture/core-architectural-decisions.md) - Multi-pass pipeline, Result pattern
-- [PRD](file:///run/media/tobi/Data/testdata/testdata-ai/_bmad-output/planning-artifacts/prd.md) - Product requirements and success criteria
+- [Project Context](file:///run/media/tobi/Data/testdata/testdata-generator/_bmad-output/planning-artifacts/project-context.md) - 45 critical implementation rules
+- [Epic 3: Basic Data Generation](file:///run/media/tobi/Data/testdata/testdata-generator/_bmad-output/planning-artifacts/epics/epic-3-basic-data-generation.md) - Full epic context with all 6 stories
+- [Previous Story 3.5](file:///run/media/tobi/Data/testdata/testdata-generator/_bmad-output/implementation-artifacts/3-5-json-output-adapter.md) - JSON Output Adapter implementation
+- [Architecture: Core Decisions](file:///run/media/tobi/Data/testdata/testdata-generator/_bmad-output/planning-artifacts/architecture/core-architectural-decisions.md) - Multi-pass pipeline, Result pattern
+- [PRD](file:///run/media/tobi/Data/testdata/testdata-generator/_bmad-output/planning-artifacts/prd.md) - Product requirements and success criteria
 
 ### 🎯 Story Success Criteria
 

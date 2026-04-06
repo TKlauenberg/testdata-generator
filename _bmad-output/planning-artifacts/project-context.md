@@ -1,5 +1,5 @@
 ---
-project_name: 'testdata-ai'
+project_name: 'testdata-generator'
 user_name: 'Tobi'
 date: '2025-12-21'
 sections_completed: ['technology_stack', 'language_rules', 'architecture_testing', 'critical_rules']
@@ -8,7 +8,7 @@ rule_count: 45
 optimized_for_llm: true
 ---
 
-# Project Context: testdata-ai
+# Project Context: testdata-generator
 
 > Critical implementation rules for AI agents. Follow these exactly.
 
@@ -143,8 +143,8 @@ optimized_for_llm: true
 ### Monorepo Structure
 
 - **2-package monorepo** using Bun workspaces
-  - `packages/core/` - @testdata-ai/core (library)
-  - `packages/cli/` - @testdata-ai/cli (CLI tool)
+  - `packages/core/` - @testdata-generator/core (library)
+  - `packages/cli/` - @testdata-generator/cli (CLI tool)
 - **Core must NOT import from CLI** - one-way dependency only
 
 ### Multi-Pass Compilation Pipeline

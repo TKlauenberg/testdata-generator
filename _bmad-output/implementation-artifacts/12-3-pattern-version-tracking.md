@@ -82,7 +82,7 @@ Keep the scope tight and honest. This story is about deterministic pattern-versi
 
 ### Architecture Compliance
 
-- Keep the current package boundary intact: reusable version lookup, snapshot persistence, and diff computation belong in `@testdata-ai/core`; CLI owns command parsing, config resolution, path resolution, and terminal output.
+- Keep the current package boundary intact: reusable version lookup, snapshot persistence, and diff computation belong in `@testdata-generator/core`; CLI owns command parsing, config resolution, path resolution, and terminal output.
 - Core must not depend on Commander or CLI config types. Pass resolved paths and options from CLI to core helpers.
 - Preserve strict TypeScript, ESM-only modules, and export-boundary discipline through `index.ts` files.
 - Preserve the existing metadata pipeline in `packages/cli/src/commands/generate.ts`. Pattern-version persistence should happen in that orchestration seam after metadata is known, not inside output adapters.

@@ -1,10 +1,10 @@
 Feature: CLI Foundation
   As a QA tester
   I want a working command-line interface
-  So that I can use testdata-ai from the command line
+  So that I can use testdata-generator from the command line
 
   Background:
-    Given the testdata-ai CLI is installed
+    Given the testdata-generator CLI is installed
 
   @cli @happy-path
   Scenario: Display version information
@@ -21,7 +21,7 @@ Feature: CLI Foundation
   @cli @happy-path
   Scenario: Display help information
     When QA Tester runs "td --help"
-    Then QA Tester should see "testdata-ai"
+    Then QA Tester should see "testdata-generator"
     And QA Tester should see "Declarative test data generation"
     And QA Tester should see "Options:"
     And the exit code should be 0
@@ -29,7 +29,7 @@ Feature: CLI Foundation
   @cli @happy-path
   Scenario: Display help with short flag
     When QA Tester runs "td -h"
-    Then QA Tester should see "testdata-ai"
+    Then QA Tester should see "testdata-generator"
     And the exit code should be 0
 
   @cli @error-handling

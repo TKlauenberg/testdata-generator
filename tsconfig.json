@@ -12,9 +12,14 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "paths": {
-      "@testdata-ai/core": ["./packages/core/src/index.ts"]
+      "@testdata-generator/core": [
+        "./packages/core/src/index.ts"
+      ]
     },
     "baseUrl": "."
   },
-  "exclude": ["node_modules", "dist"]
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

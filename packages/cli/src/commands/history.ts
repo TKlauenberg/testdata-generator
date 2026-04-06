@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { GenerationHistoryParseError, queryGenerationHistory } from '@testdata-ai/core';
+import { GenerationHistoryParseError, queryGenerationHistory } from '@testdata-generator/core';
 import * as path from 'node:path';
 import { CliConfigError, loadEffectiveConfig } from '../config';
 import { resolveHistoryLogPath } from '../historySupport';

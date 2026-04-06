@@ -565,7 +565,7 @@ Feature: PRNG Deterministic Generation
   So that I can generate reproducible test data
 
   Background:
-    Given the testdata-ai core library is initialized
+    Given the testdata-generator core library is initialized
 
   @prng @determinism
   Scenario: Same seed produces identical sequences
@@ -738,9 +738,9 @@ No issues encountered during implementation.
 
 **Review Status:** ✅ APPROVED WITH FIXES APPLIED
 
-**Issues Found:** 2 High, 3 Medium, 2 Low  
-**Issues Fixed:** 5 High/Medium (100%)  
-**Tests Added:** 9 new edge case tests  
+**Issues Found:** 2 High, 3 Medium, 2 Low
+**Issues Fixed:** 5 High/Medium (100%)
+**Tests Added:** 9 new edge case tests
 **Test Results:** 279/279 pass (was 270) - 0 regressions
 
 #### Issues Identified and Resolved

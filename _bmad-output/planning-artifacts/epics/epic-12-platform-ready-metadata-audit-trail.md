@@ -17,7 +17,7 @@ So that **I know when and how the data was created**.
 **And** metadata includes source pattern file path
 **And** metadata includes pattern version or hash (for change tracking)
 **And** metadata includes generation options (count, seed, format)
-**And** metadata includes testdata-ai version used for generation
+**And** metadata includes testdata-generator version used for generation
 **And** JSON output includes metadata as header object
 **And** CSV output includes metadata as comment header
 **And** SQL output includes metadata as SQL comments

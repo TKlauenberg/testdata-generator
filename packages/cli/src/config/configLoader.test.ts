@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test';
 import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { generateData, validateSchema } from '@testdata-ai/core';
+import { generateData, validateSchema } from '@testdata-generator/core';
 import {
   CliConfigError,
   findWorkspaceConfigPath,
@@ -15,7 +15,7 @@ import { BUILT_IN_CLI_CONFIG, GLOBAL_CONFIG_FILE_NAME, resolveGlobalConfigPath }
 const tempDirectories = new Set<string>();
 
 async function createHomeDirectory(): Promise<string> {
-  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-cli-config-'));
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-generator-cli-config-'));
   tempDirectories.add(directory);
   return directory;
 }
@@ -29,7 +29,7 @@ async function writeGlobalConfig(homeDirectory: string, config: unknown): Promis
 }
 
 async function createWorkspaceDirectory(): Promise<string> {
-  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-cli-workspace-'));
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-generator-cli-workspace-'));
   tempDirectories.add(directory);
   return directory;
 }

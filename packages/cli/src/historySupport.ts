@@ -1,4 +1,4 @@
-import { HISTORY_LOG_FILE_NAME, PATTERN_VERSION_STORE_DIRECTORY_NAME } from '@testdata-ai/core';
+import { HISTORY_LOG_FILE_NAME, PATTERN_VERSION_STORE_DIRECTORY_NAME } from '@testdata-generator/core';
 import * as path from 'node:path';
 
 function toPosixPath(value: string): string {

@@ -89,7 +89,7 @@ The safest implementation path is to export an existing metadata-bearing local a
 
 ### Architecture Compliance
 
-- Keep reusable export-envelope construction, metadata decoding, and audit-data assembly in `@testdata-ai/core`; keep command parsing, file-path resolution, stdout/file writing, and CLI help in `@testdata-ai/cli`.
+- Keep reusable export-envelope construction, metadata decoding, and audit-data assembly in `@testdata-generator/core`; keep command parsing, file-path resolution, stdout/file writing, and CLI help in `@testdata-generator/cli`.
 - Do not push platform export logic into output adapters. Adapters remain responsible for generated-data formatting, while export bundles are higher-level audit and migration artifacts.
 - Reuse `packages/cli/src/historySupport.ts` for `history.logDirectory` and `.td-pattern-versions` resolution so export, history, diff, and generate stay aligned.
 - Follow the same command-registration pattern already used in `packages/cli/bin/td.ts` with `program.addCommand(...)`.

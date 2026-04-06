@@ -5,19 +5,19 @@ QA testers can use intuitive command-line commands to generate, validate, and in
 ## Story 4.1: CLI Foundation with Commander.js
 
 As a **QA tester**,
-I want **a command-line tool for testdata-ai**,
+I want **a command-line tool for testdata-generator**,
 So that **I can use the tool without writing code**.
 
 **Acceptance Criteria:**
 
-**Given** I need a CLI interface for testdata-ai
+**Given** I need a CLI interface for testdata-generator
 **When** I implement the CLI in `packages/cli/src/`
 **Then** Commander.js v14.0.2 is installed and configured
 **And** a `bin/td.ts` file exists with shebang `#!/usr/bin/env bun`
 **And** the CLI is executable with `td` command after global install
 **And** `td --version` displays the current version number
 **And** `td --help` displays all available commands
-**And** the CLI package depends on `@testdata-ai/core` for functionality
+**And** the CLI package depends on `@testdata-generator/core` for functionality
 **And** the package.json includes `bin` field pointing to `td.ts`
 **And** TypeScript compilation produces executable JavaScript
 **And** unit tests verify CLI initialization and argument parsing

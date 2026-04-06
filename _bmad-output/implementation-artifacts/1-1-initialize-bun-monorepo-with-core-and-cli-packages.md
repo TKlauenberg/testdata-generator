@@ -12,7 +12,7 @@ so that **I can develop the library and CLI tool independently with clear separa
 
 ## Acceptance Criteria
 
-**Given** I am setting up the testdata-ai project
+**Given** I am setting up the testdata-generator project
 **When** I initialize the monorepo structure
 **Then** a `packages/core/` directory exists with `package.json`, `tsconfig.json`, and `src/` folder
 **And** a `packages/cli/` directory exists with `package.json`, `tsconfig.json`, and `src/` folder
@@ -85,14 +85,14 @@ so that **I can develop the library and CLI tool independently with clear separa
 **Monorepo Structure:**
 
 ```
-testdata-ai/
+testdata-generator/
 ├── packages/
-│   ├── core/                    # @testdata-ai/core (library)
+│   ├── core/                    # @testdata-generator/core (library)
 │   │   ├── package.json
 │   │   ├── tsconfig.json
 │   │   └── src/
 │   │       └── index.ts         # Public API exports
-│   └── cli/                     # @testdata-ai/cli (CLI tool)
+│   └── cli/                     # @testdata-generator/cli (CLI tool)
 │       ├── package.json
 │       ├── tsconfig.json
 │       ├── bin/
@@ -116,8 +116,8 @@ testdata-ai/
 
 - Root package.json: `"workspaces": ["packages/*"]`
 - All packages: `"type": "module"` for ESM
-- Core package: Named `@testdata-ai/core`
-- CLI package: Named `@testdata-ai/cli`
+- Core package: Named `@testdata-generator/core`
+- CLI package: Named `@testdata-generator/cli`
 
 ### Implementation Guidance
 
@@ -126,8 +126,8 @@ testdata-ai/
 1. **Create project structure:**
 
    ```bash
-   mkdir -p testdata-ai/packages/{core,cli}/src
-   cd testdata-ai
+   mkdir -p testdata-generator/packages/{core,cli}/src
+   cd testdata-generator
    ```
 
 2. **Initialize Bun workspace:**
@@ -156,7 +156,7 @@ testdata-ai/
 
 ```json
 {
-  "name": "testdata-ai",
+  "name": "testdata-generator",
   "version": "0.1.0",
   "private": true,
   "workspaces": ["packages/*"],
@@ -192,7 +192,7 @@ testdata-ai/
 
 ```json
 {
-  "name": "@testdata-ai/core",
+  "name": "@testdata-generator/core",
   "version": "0.1.0",
   "type": "module",
   "main": "./dist/index.js",
@@ -237,7 +237,7 @@ export const version = '0.1.0';
 
 ```json
 {
-  "name": "@testdata-ai/cli",
+  "name": "@testdata-generator/cli",
   "version": "0.1.0",
   "type": "module",
   "bin": {
@@ -248,7 +248,7 @@ export const version = '0.1.0';
     "test": "bun test"
   },
   "dependencies": {
-    "@testdata-ai/core": "workspace:*",
+    "@testdata-generator/core": "workspace:*",
     "commander": "^14.0.2"
   },
   "devDependencies": {
@@ -276,11 +276,11 @@ export const version = '0.1.0';
 ```typescript
 #!/usr/bin/env bun
 import { Command } from 'commander';
-import { version } from '@testdata-ai/core';
+import { version } from '@testdata-generator/core';
 
 const program = new Command();
 
-program.name('td').description('testdata-ai - Declarative test data generation').version(version);
+program.name('td').description('testdata-generator - Declarative test data generation').version(version);
 
 // Future commands will be added here in subsequent stories
 
@@ -372,7 +372,7 @@ describe('CLI', () => {
   test('shows help', async () => {
     const proc = spawn(['bun', 'packages/cli/bin/td.ts', '--help']);
     const output = await new Response(proc.stdout).text();
-    expect(output).toContain('testdata-ai');
+    expect(output).toContain('testdata-generator');
   });
 });
 ```
@@ -458,8 +458,8 @@ All fixes verified with passing tests and clean git status.
 **Implementation Summary:**
 
 - ✅ Created Bun monorepo structure with workspaces configuration
-- ✅ Initialized @testdata-ai/core package with TypeScript strict mode
-- ✅ Initialized @testdata-ai/cli package with Commander.js integration
+- ✅ Initialized @testdata-generator/core package with TypeScript strict mode
+- ✅ Initialized @testdata-generator/cli package with Commander.js integration
 - ✅ Configured shared TypeScript configuration with ESNext target and ESM modules
 - ✅ Successfully ran `bun install` and verified workspace linking
 - ✅ Created functional CLI executable (`td`) with version and help commands
@@ -495,7 +495,7 @@ All fixes verified with passing tests and clean git status.
 - Created: `packages/cli/src/workspace.test.ts` (workspace integration tests)
 - Created: `packages/cli/bin/td.ts`
 - Created: `packages/cli/bin/td.test.ts`
-- Modified: `README.md` (replaced old content with testdata-ai documentation)
+- Modified: `README.md` (replaced old content with testdata-generator documentation)
 
 **Build Artifacts (NOT committed to git):**
 

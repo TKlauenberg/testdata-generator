@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 import { Command } from 'commander';
-import { version } from '@testdata-ai/core';
+import { version } from '@testdata-generator/core';
 import { generateCommand } from '../src/commands/generate.js';
 import { exportCommand } from '../src/commands/export.js';
 import { historyCommand } from '../src/commands/history.js';
@@ -13,7 +13,7 @@ const program = new Command();
 
 program
   .name('td')
-  .description('testdata-ai - Declarative test data generation')
+  .description('testdata-generator - Declarative test data generation')
   .version(version as string);
 
 // Register commands

@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
 import { spawn } from 'bun';
-import { decodeGenerationMetadataComment, GENERATION_METADATA_COMMENT_LABEL } from '@testdata-ai/core';
+import { decodeGenerationMetadataComment, GENERATION_METADATA_COMMENT_LABEL } from '@testdata-generator/core';
 import * as fs from 'fs/promises';
 import * as os from 'node:os';
 import * as path from 'path';
@@ -118,7 +118,7 @@ async function copyFixtureToWorkspace(fixtureName: string, workspaceDirectory: s
 }
 
 async function createGlobalConfigHome(config: unknown): Promise<string> {
-  const homeDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-cli-home-'));
+  const homeDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-generator-cli-home-'));
   await fs.writeFile(
     path.join(homeDirectory, '.tdconfig.json'),
     `${JSON.stringify(config, null, 2)}\n`,
@@ -128,7 +128,7 @@ async function createGlobalConfigHome(config: unknown): Promise<string> {
 }
 
 async function createWorkspaceConfigDirectory(config: unknown): Promise<string> {
-  const workspaceDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-cli-workspace-'));
+  const workspaceDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-generator-cli-workspace-'));
   await fs.writeFile(
     path.join(workspaceDirectory, '.tdconfig.json'),
     `${JSON.stringify(config, null, 2)}\n`,
@@ -724,7 +724,7 @@ describe('Generate Command - Generation Options', () => {
   });
 
   test('fails with exit code 1 when global config JSON is invalid', async () => {
-    const homeDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-cli-home-'));
+    const homeDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-generator-cli-home-'));
     await fs.writeFile(path.join(homeDirectory, '.tdconfig.json'), '{"defaults":', 'utf-8');
 
     try {

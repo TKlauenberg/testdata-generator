@@ -510,7 +510,7 @@ Modified files:
 
 ### Project Context Reference
 
-**Full Project Context:** See `_bmad-output/planning-artifacts/product-brief-testdata-ai-2025-12-11.md` and `_bmad-output/planning-artifacts/prd.md`
+**Full Project Context:** See `_bmad-output/planning-artifacts/product-brief-testdata-generator-2025-12-11.md` and `_bmad-output/planning-artifacts/prd.md`
 
 **Epic Context:** This story is part of Epic 2 (DSL Core - Parse and Validate Schemas), which establishes the foundation for the custom DSL that will be used throughout the project.
 

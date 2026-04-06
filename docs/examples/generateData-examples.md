@@ -21,7 +21,7 @@ For the canonical reference, see [Programmatic API](../api.md).
 Generate a small dataset from a simple DSL schema:
 
 ```typescript
-import { generateData } from '@testdata-ai/core';
+import { generateData } from '@testdata-generator/core';
 
 const schema = `
   schema User {
@@ -51,7 +51,7 @@ for await (const record of generateData(schema, { count: 10 })) {
 Generate the same data across multiple runs using a seed:
 
 ```typescript
-import { generateData } from '@testdata-ai/core';
+import { generateData } from '@testdata-generator/core';
 
 const schema = `
   schema User {
@@ -91,7 +91,7 @@ console.assert(JSON.stringify(run1) === JSON.stringify(run2));
 Handle validation errors gracefully:
 
 ```typescript
-import { generateData, ValidationError } from '@testdata-ai/core';
+import { generateData, ValidationError } from '@testdata-generator/core';
 
 const invalidSchema = `
   schema User {
@@ -108,7 +108,7 @@ try {
   if (error instanceof ValidationError) {
     console.error('Schema validation failed:');
     console.error(`  ${error.message}`);
-    
+
     // Access detailed diagnostics
     error.diagnostics.forEach(diagnostic => {
       console.error(
@@ -137,7 +137,7 @@ try {
 Generate 100k+ records without running out of memory:
 
 ```typescript
-import { generateData } from '@testdata-ai/core';
+import { generateData } from '@testdata-generator/core';
 import { writeFile } from 'fs/promises';
 
 const schema = `
@@ -156,7 +156,7 @@ for await (const record of generateData(schema, { count: 100000, seed: 999 })) {
   // Process each record individually
   // DO NOT accumulate in array - defeats streaming purpose!
   count++;
-  
+
   if (count % 10000 === 0) {
     console.log(`Generated ${count} records...`);
   }
@@ -179,7 +179,7 @@ console.log(`  Rate: ${(count / duration).toFixed(0)} records/sec`);
 Generate data and write to JSON file in one pipeline:
 
 ```typescript
-import { generateData, JsonAdapter } from '@testdata-ai/core';
+import { generateData, JsonAdapter } from '@testdata-generator/core';
 
 const schema = `
   schema User {
@@ -216,7 +216,7 @@ console.log('✓ Generated 1000 users to users.json');
 Generate data and write it to CSV using the published package-root surface:
 
 ```typescript
-import { generateData, CsvAdapter } from '@testdata-ai/core';
+import { generateData, CsvAdapter } from '@testdata-generator/core';
 
 const adapter = new CsvAdapter({
   outputPath: 'users.csv',
@@ -233,7 +233,7 @@ await adapter.write(generateData(schema, { count: 1000, seed: 42 }));
 Generate data and emit batched SQL `INSERT` statements:
 
 ```typescript
-import { generateData, SqlAdapter } from '@testdata-ai/core';
+import { generateData, SqlAdapter } from '@testdata-generator/core';
 
 const adapter = new SqlAdapter({
   outputPath: 'users.sql',
@@ -277,19 +277,19 @@ await adapter.write(generateData(schema, { count: 1000, seed: 42 }));
 Generate data for multiple schemas in one source:
 
 ```typescript
-import { generateData } from '@testdata-ai/core';
+import { generateData } from '@testdata-generator/core';
 
 const schema = `
   schema User {
     id: number
     name: string
   }
-  
+
   schema Product {
     sku: string
     price: number
   }
-  
+
   schema Order {
     orderId: number
     total: number
@@ -430,10 +430,10 @@ for await (const record of data) {
 - **Docs**: [Project README](../../README.md)
 - **API Reference**: [Programmatic API](../api.md)
 - **Examples**: This file
-- **Issues**: [GitHub Issues](https://github.com/testdata-ai/testdata-ai/issues)
+- **Issues**: [GitHub Issues](https://github.com/testdata-generator/testdata-generator/issues)
 
 ---
 
 ## Version
 
-Examples for `@testdata-ai/core` v0.1.0
+Examples for `@testdata-generator/core` v0.1.0

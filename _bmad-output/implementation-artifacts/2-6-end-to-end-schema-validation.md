@@ -318,7 +318,7 @@ packages/core/src/
 └── index.ts          # Update to export validateSchema
 ```
 
-**Public API Surface (@testdata-ai/core):**
+**Public API Surface (@testdata-generator/core):**
 ```typescript
 // Main validation function
 export { validateSchema } from './validate';
@@ -815,7 +815,7 @@ function sortDiagnostics(diagnostics: Diagnostic[]): Diagnostic[] {
 
 ```typescript
 // ============================================
-// @testdata-ai/core Public API
+// @testdata-generator/core Public API
 // ============================================
 
 // Validation (NEW - Story 2.6)
@@ -1014,7 +1014,7 @@ Claude Sonnet 4.5
 **Performance:**
 - No optimization needed - met requirements without changes
 - Small schemas: ~10-50ms
-- Medium schemas: ~50-200ms  
+- Medium schemas: ~50-200ms
 - Large schemas: ~200-800ms (well under 1000ms requirement)
 
 ### Debug Log References

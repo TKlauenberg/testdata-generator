@@ -70,7 +70,7 @@ describe('Validate Command - Validation Success', () => {
   });
 
   test('validates schemas that use relative imports', async () => {
-    const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-cli-validate-imports-'));
+    const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-generator-cli-validate-imports-'));
     const importedFile = path.join(workspace, 'common.td');
     const rootFile = path.join(workspace, 'main.td');
 

@@ -19,13 +19,13 @@ afterEach(async () => {
 });
 
 async function createHomeDirectory(): Promise<string> {
-  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-config-show-home-'));
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-generator-config-show-home-'));
   tempDirectories.add(directory);
   return directory;
 }
 
 async function createWorkspaceDirectory(): Promise<string> {
-  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-config-show-ws-'));
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-generator-config-show-ws-'));
   tempDirectories.add(directory);
   return directory;
 }

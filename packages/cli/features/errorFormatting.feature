@@ -4,7 +4,7 @@ Feature: Rust-Style Error Formatting
   So that I can fix issues without developer help
 
   Background:
-    Given the testdata-ai CLI is installed
+    Given the testdata-generator CLI is installed
 
   @error-formatting @happy-path
   Scenario: Display single error with visual pointer

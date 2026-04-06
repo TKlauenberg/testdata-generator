@@ -20,7 +20,7 @@ afterEach(async () => {
 });
 
 async function createWorkspaceDirectory(): Promise<string> {
-  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-history-command-'));
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-generator-history-command-'));
   tempDirectories.add(directory);
   return directory;
 }

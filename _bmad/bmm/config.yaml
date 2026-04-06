@@ -3,7 +3,7 @@
 # Version: 6.2.2
 # Date: 2026-04-01T21:06:29.648Z
 
-project_name: testdata-ai
+project_name: testdata-generator
 user_skill_level: intermediate
 planning_artifacts: "{project-root}/_bmad-output/planning-artifacts"
 implementation_artifacts: "{project-root}/_bmad-output/implementation-artifacts"

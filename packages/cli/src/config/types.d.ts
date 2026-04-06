@@ -1,4 +1,4 @@
-import type { DefaultSpec, WorkspaceGeneratorSpec } from '@testdata-ai/core';
+import type { DefaultSpec, WorkspaceGeneratorSpec } from '@testdata-generator/core';
 export type CliConfigSource = 'built-in' | 'global' | 'workspace';
 export type CliConfigSection = 'defaults' | 'context' | 'generatorDefaults' | 'generators';
 export type CliOutputFormat = 'json' | 'csv' | 'sql';

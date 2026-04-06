@@ -25,17 +25,17 @@ import {
   type SqlAdapterOptions,
   type ContextData,
   type ContextCollectionInput,
-} from '@testdata-ai/core';
+} from '@testdata-generator/core';
 ```
 
-Do not rely on undocumented deep imports or unpublished subpaths such as `@testdata-ai/core/adapters`.
+Do not rely on undocumented deep imports or unpublished subpaths such as `@testdata-generator/core/adapters`.
 
 ## `generateData(source, options)`
 
 `generateData()` validates inline DSL source and returns an `AsyncIterable<Record<string, unknown>>`.
 
 ```typescript
-import { generateData } from '@testdata-ai/core';
+import { generateData } from '@testdata-generator/core';
 
 const source = `
   schema User {
@@ -95,7 +95,7 @@ Derived schemas inherit base fields, can add new fields, and can override inheri
 Validation failures preserve the existing exception-based public contract.
 
 ```typescript
-import { generateData, ValidationError } from '@testdata-ai/core';
+import { generateData, ValidationError } from '@testdata-generator/core';
 
 try {
   await Array.fromAsync(generateData('schema User { id: whoops }', { count: 1 }));
@@ -130,7 +130,7 @@ Programmatic formatting reuses the core adapters instead of CLI code.
 ### JSON
 
 ```typescript
-import { createGenerationMetadata, generateData, JsonAdapter } from '@testdata-ai/core';
+import { createGenerationMetadata, generateData, JsonAdapter } from '@testdata-generator/core';
 
 const adapter = new JsonAdapter({
   outputPath: 'artifacts/users.json',
@@ -165,7 +165,7 @@ import {
   createGenerationHistoryEntry,
   createGenerationMetadata,
   queryGenerationHistory,
-} from '@testdata-ai/core';
+} from '@testdata-generator/core';
 
 const metadata = createGenerationMetadata({
   sourcePattern: 'schemas/users.td',
@@ -195,7 +195,7 @@ History entries reuse the canonical `GenerationMetadata` contract under `entry.m
 The core package exposes a deterministic platform-ready export helper for packaging existing local artifacts together with the audit data introduced in Stories 12.1 through 12.3.
 
 ```typescript
-import { createPlatformReadyExport } from '@testdata-ai/core';
+import { createPlatformReadyExport } from '@testdata-generator/core';
 
 const bundle = await createPlatformReadyExport({
   artifactPath: 'artifacts/users.json',
@@ -204,7 +204,7 @@ const bundle = await createPlatformReadyExport({
   exportedAt: '2026-04-06T12:00:00.000Z',
 });
 
-console.log(bundle.contract); // 'testdata-ai/platform-ready-export'
+console.log(bundle.contract); // 'testdata-generator/platform-ready-export'
 console.log(bundle.metadata.patternHash);
 ```
 
@@ -228,7 +228,7 @@ import {
   createPatternVersionSnapshot,
   persistPatternVersionSnapshot,
   readPatternVersionSnapshot,
-} from '@testdata-ai/core';
+} from '@testdata-generator/core';
 
 const lineageInputs = [
   {
@@ -296,7 +296,7 @@ These fields are preserved through generated JSON, CSV, SQL, saved-context JSON,
 ### CSV
 
 ```typescript
-import { createGenerationMetadata, generateData, CsvAdapter } from '@testdata-ai/core';
+import { createGenerationMetadata, generateData, CsvAdapter } from '@testdata-generator/core';
 
 const adapter = new CsvAdapter({
   outputPath: 'artifacts/users.csv',
@@ -324,7 +324,7 @@ CSV output now starts with a machine-readable metadata comment line before the h
 ### SQL
 
 ```typescript
-import { createGenerationMetadata, generateData, SqlAdapter } from '@testdata-ai/core';
+import { createGenerationMetadata, generateData, SqlAdapter } from '@testdata-generator/core';
 
 const adapter = new SqlAdapter({
   outputPath: 'artifacts/users.sql',
@@ -382,7 +382,7 @@ import {
   generateData,
   type ContextData,
   type ContextCollectionInput,
-} from '@testdata-ai/core';
+} from '@testdata-generator/core';
 
 const users: ContextData = {
   records: [{ email: 'qa@example.com' }],
@@ -410,7 +410,7 @@ for await (const record of generateData(source, { count: 5, context, seed: 17 })
 
 ```typescript
 import { describe, test, expect } from 'bun:test';
-import { generateData } from '@testdata-ai/core';
+import { generateData } from '@testdata-generator/core';
 
 describe('seeded user generation', () => {
   test('creates deterministic records for assertions', async () => {
@@ -433,7 +433,7 @@ describe('seeded user generation', () => {
 
 ```typescript
 import { test, expect } from '@playwright/test';
-import { generateData } from '@testdata-ai/core';
+import { generateData } from '@testdata-generator/core';
 
 test('provisions inline data for a browser flow', async ({ page }) => {
   const source = `

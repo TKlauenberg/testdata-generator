@@ -1,4 +1,4 @@
-# Product Brief: testdata-ai
+# Product Brief: testdata-generator
 
 **Date:** 2025-12-11
 **Author:** Tobi
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-testdata-ai is a DSL-powered Test Data Management Platform that enables QA testers to generate complex, realistic test data without programming expertise.
+testdata-generator is a DSL-powered Test Data Management Platform that enables QA testers to generate complex, realistic test data without programming expertise.
 
 **The Problem:** Performance testing requires large datasets, but current approaches force oversimplified generation that produces repetitive, unrealistic data. QA testers depend on developers to build test data tooling or spend hours manually creating data for each test scenario.
 
@@ -423,7 +423,7 @@ This product brief was informed by:
 
 ---
 
-_This Product Brief captures the vision and requirements for testdata-ai._
+_This Product Brief captures the vision and requirements for testdata-generator._
 
 _It was created through collaborative discovery and reflects the unique needs of this project._
 

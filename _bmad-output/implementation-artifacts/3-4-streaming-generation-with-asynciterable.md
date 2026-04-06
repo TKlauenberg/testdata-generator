@@ -682,7 +682,7 @@ Feature: Streaming Data Generation
   So that I can create test data without running out of memory
 
   Background:
-    Given the testdata-ai core library is initialized
+    Given the testdata-generator core library is initialized
     And I have a validated program with a simple schema
 
   Scenario: Generate small dataset with streaming

@@ -12,7 +12,7 @@
 
 **Dependencies:**
 - Commander.js v14.0.2 (external package - install during story)
-- @testdata-ai/core package (exists from Epic 3)
+- @testdata-generator/core package (exists from Epic 3)
 
 **Status:** No blockers. Good to implement.
 

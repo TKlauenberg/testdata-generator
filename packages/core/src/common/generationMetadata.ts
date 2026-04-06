@@ -67,7 +67,7 @@ export interface CreateGenerationMetadataOptions {
   readonly platformReserved?: GenerationMetadataPlatformReserved;
 }
 
-export const GENERATION_METADATA_COMMENT_LABEL = 'testdata-ai-metadata: ';
+export const GENERATION_METADATA_COMMENT_LABEL = 'testdata-generator-metadata: ';
 
 function hashText(content: string): string {
   return createHash('sha256').update(content).digest('hex');

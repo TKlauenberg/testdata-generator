@@ -4,7 +4,7 @@ Feature: Temporal Data Generation
   So that I can create time-based test scenarios with deterministic results
 
   Background:
-    Given QA Tester is working with the testdata-ai system
+    Given QA Tester is working with the testdata-generator system
 
   @temporal @dates
   Scenario: Generate events with random dates in last year

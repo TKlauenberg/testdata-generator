@@ -1,8 +1,8 @@
 import { Command } from 'commander';
 import * as fs from 'fs/promises';
 import * as path from 'node:path';
-import { validateSchema } from '@testdata-ai/core';
-import type { Diagnostic } from '@testdata-ai/core';
+import { validateSchema } from '@testdata-generator/core';
+import type { Diagnostic } from '@testdata-generator/core';
 import { CliConfigError, loadEffectiveConfig } from '../config';
 import { formatErrors } from '../formatters';
 

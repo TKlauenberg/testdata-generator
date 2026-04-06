@@ -73,7 +73,7 @@ So that **I can create data on-demand during test execution**.
 
 **Given** I need to generate data in automated tests
 **When** I use the core library API
-**Then** the core library can be imported as `import { generateData } from '@testdata-ai/core'`
+**Then** the core library can be imported as `import { generateData } from '@testdata-generator/core'`
 **And** `generateData()` accepts inline DSL schema as string
 **And** `generateData()` returns `AsyncIterable<Record>` for streaming
 **And** the API supports all generation options (count, seed, format)

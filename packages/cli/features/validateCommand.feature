@@ -4,7 +4,7 @@ Feature: Validate Command
   So that I can fix syntax errors quickly
 
   Background:
-    Given the testdata-ai CLI is installed
+    Given the testdata-generator CLI is installed
 
   @validate @happy-path
   Scenario: Validate valid schema

@@ -34,7 +34,7 @@
 ## Implementation Handoff
 
 **For AI Agents:**
-This architecture document is your complete guide for implementing testdata-ai. Follow all decisions, patterns, and structures exactly as documented.
+This architecture document is your complete guide for implementing testdata-generator. Follow all decisions, patterns, and structures exactly as documented.
 
 **First Implementation Priority:**
 Begin with the foundational structure and core compilation pipeline:

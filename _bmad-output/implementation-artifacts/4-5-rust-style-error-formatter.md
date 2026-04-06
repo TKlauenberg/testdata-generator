@@ -73,7 +73,7 @@ So that **I can fix issues without needing developer help**.
 **What's Already Implemented:**
 
 - ✅ **Core Library:** Complete DSL pipeline (scanner → parser → analyzer) with Diagnostic system
-- ✅ **Diagnostic Structure:** Rich error objects with code, message, severity, location, suggestion (from `@testdata-ai/core`)
+- ✅ **Diagnostic Structure:** Rich error objects with code, message, severity, location, suggestion (from `@testdata-generator/core`)
 - ✅ **Result Type Pattern:** Errors accumulate through validation pipeline without exceptions
 - ✅ **CLI Commands:** Generate and validate commands (Stories 4.2, 4.3) with **simplified error display**
 - ✅ **Exit Code Conventions:** 0=success, 1=validation, 2=generation, 3=file errors
@@ -137,7 +137,7 @@ packages/cli/
 
 **Core Library Integration Points:**
 
-From `@testdata-ai/core` package:
+From `@testdata-generator/core` package:
 ```typescript
 // Diagnostic type (already exists in core/src/common/diagnostic.ts)
 export interface Diagnostic {
@@ -381,10 +381,10 @@ const colors = {
 
 Source content already loaded in both validate and generate commands - just pass it to formatter.
 
-**@testdata-ai/core Types:**
+**@testdata-generator/core Types:**
 
 ```typescript
-import type { Diagnostic } from '@testdata-ai/core';
+import type { Diagnostic } from '@testdata-generator/core';
 
 // Diagnostic interface already defined in core/src/common/diagnostic.ts
 // No changes to core library needed
@@ -557,7 +557,7 @@ formatters/
 - Pure functions where possible (formatters receive input, return string)
 
 **Integration Points:**
-- Import from `@testdata-ai/core`: `Diagnostic` type only
+- Import from `@testdata-generator/core`: `Diagnostic` type only
 - Import from `chalk`: color utilities
 - Export through `index.ts`: public API only
 
@@ -568,7 +568,7 @@ formatters/
 ```typescript
 import { describe, it, expect } from 'bun:test';
 import { formatError, formatErrors } from './errorFormatter';
-import type { Diagnostic } from '@testdata-ai/core';
+import type { Diagnostic } from '@testdata-generator/core';
 
 describe('errorFormatter', () => {
   describe('formatError()', () => {
@@ -663,7 +663,7 @@ Feature: Rust-Style Error Formatting
   So that I can fix issues without developer help
 
   Background:
-    Given the testdata-ai CLI is installed
+    Given the testdata-generator CLI is installed
 
   @error-formatting @happy-path
   Scenario: Display single error with visual pointer

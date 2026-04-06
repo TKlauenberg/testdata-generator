@@ -1,4 +1,4 @@
-# testdata-ai - Product Requirements Document
+# testdata-generator - Product Requirements Document
 
 **Author:** Tobi
 **Date:** 2025-12-11
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-testdata-ai is a DSL-powered Test Data Management Platform that enables QA testers to generate complex, realistic test data without programming expertise. The platform solves the "Performance Testing Paradox": performance tests require large datasets, but current approaches force oversimplified generation that produces unrealistic data.
+testdata-generator is a DSL-powered Test Data Management Platform that enables QA testers to generate complex, realistic test data without programming expertise. The platform solves the "Performance Testing Paradox": performance tests require large datasets, but current approaches force oversimplified generation that produces unrealistic data.
 
 The core value proposition is **reusable test data patterns**: build a library of proven generation rules once, then generate new data for test cases in seconds instead of hours. Individual QA testers start with a local library+CLI tool, teams share patterns via version control, and organizations eventually manage test data as a centralized platform asset.
 
@@ -190,22 +190,22 @@ Success means QA testers have a **growing library of reusable patterns** that ma
 
 **Package Distribution:**
 
-- npm package: `@testdata-ai/core` (DSL parser + generator)
-- npm package: `@testdata-ai/cli` (command-line tool)
-- CLI installed globally: `npm install -g @testdata-ai/cli`
+- npm package: `@testdata-generator/core` (DSL parser + generator)
+- npm package: `@testdata-generator/cli` (command-line tool)
+- CLI installed globally: `npm install -g @testdata-generator/cli`
 - Library usable programmatically in test scripts
 
 **Installation Methods:**
 
 ```bash
 # Global CLI installation
-npm install -g @testdata-ai/cli
+npm install -g @testdata-generator/cli
 
 # Library for programmatic use
-npm install --save-dev @testdata-ai/core
+npm install --save-dev @testdata-generator/core
 
 # Quick start
-npx @testdata-ai/cli init
+npx @testdata-generator/cli init
 ```
 
 **API Surface:**
@@ -642,7 +642,7 @@ Error in users.td at line 12:
 
 ---
 
-_This PRD captures the complete vision for testdata-ai - from individual QA tester productivity to organizational test data platform._
+_This PRD captures the complete vision for testdata-generator - from individual QA tester productivity to organizational test data platform._
 
 _It establishes the foundation for downstream workflows: UX design (CLI experience), architecture (parser + generator + adapters), and epic breakdown (phased implementation)._
 

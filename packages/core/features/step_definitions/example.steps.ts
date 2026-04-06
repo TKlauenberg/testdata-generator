@@ -25,7 +25,7 @@ import {
  */
 
 // Background step
-Given('the testdata-ai core library is initialized', function () {
+Given('the testdata-generator core library is initialized', function () {
   // This is a setup step - in real tests would initialize the library
   // For this example, nothing needs to be done
 });

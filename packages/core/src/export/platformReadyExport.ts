@@ -21,7 +21,7 @@ export interface PlatformReadyExportArtifact {
 }
 
 export interface PlatformReadyExportEnvelope {
-  readonly contract: 'testdata-ai/platform-ready-export';
+  readonly contract: 'testdata-generator/platform-ready-export';
   readonly version: 1;
   readonly exportedAt: string;
   readonly artifact: PlatformReadyExportArtifact;
@@ -446,7 +446,7 @@ export async function createPlatformReadyExport(
   const patternSnapshot = await resolvePatternSnapshot(options.patternVersionStorePath, metadata);
 
   return {
-    contract: 'testdata-ai/platform-ready-export',
+    contract: 'testdata-generator/platform-ready-export',
     version: 1,
     exportedAt: options.exportedAt ?? new Date().toISOString(),
     artifact: parsedArtifact.artifact,

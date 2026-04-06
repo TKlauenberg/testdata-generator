@@ -23,7 +23,7 @@ afterEach(async () => {
 });
 
 async function createStoreDirectory(): Promise<string> {
-  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-ai-pattern-version-store-'));
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'testdata-generator-pattern-version-store-'));
   tempDirectories.add(directory);
   return directory;
 }

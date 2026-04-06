@@ -1,10 +1,10 @@
 Feature: Scanner - Lexical Analysis
-  As a developer using the testdata-ai DSL
+  As a developer using the testdata-generator DSL
   I want the scanner to tokenize my source code correctly
   So that the parser can build an accurate AST
 
   Background:
-    Given the testdata-ai core library is initialized
+    Given the testdata-generator core library is initialized
 
   @scanner @keywords
   Scenario: Scanner tokenizes DSL keywords

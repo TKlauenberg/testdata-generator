@@ -7,19 +7,19 @@ Status: done
 ## Story
 
 As a **QA tester**,
-I want **a command-line tool for testdata-ai**,
+I want **a command-line tool for testdata-generator**,
 So that **I can use the tool without writing code**.
 
 ## Acceptance Criteria
 
-**Given** I need a CLI interface for testdata-ai
+**Given** I need a CLI interface for testdata-generator
 **When** I implement the CLI in `packages/cli/src/`
 **Then** Commander.js v14.0.2 is installed and configured ✅ (ALREADY DONE)
 **And** a `bin/td.ts` file exists with shebang `#!/usr/bin/env bun` ✅ (ALREADY DONE)
 **And** the CLI is executable with `td` command after global install ⚠️ (NEEDS VERIFICATION)
 **And** `td --version` displays the current version number ✅ (ALREADY DONE)
 **And** `td --help` displays all available commands ✅ (ALREADY DONE)
-**And** the CLI package depends on `@testdata-ai/core` for functionality ✅ (ALREADY DONE)
+**And** the CLI package depends on `@testdata-generator/core` for functionality ✅ (ALREADY DONE)
 **And** the package.json includes `bin` field pointing to `td.ts` ✅ (ALREADY DONE)
 **And** TypeScript compilation produces executable JavaScript ⚠️ (NEEDS VERIFICATION)
 **And** unit tests verify CLI initialization and argument parsing ❌ (NEEDS IMPLEMENTATION)
@@ -57,7 +57,7 @@ So that **I can use the tool without writing code**.
 - Commander.js v14.0.2 installed and imported
 - Basic program setup with name, description, version
 - Package.json configured with bin field pointing to td.ts
-- Dependency on @testdata-ai/core workspace package
+- Dependency on @testdata-generator/core workspace package
 
 **What Needs Work:**
 - **Comprehensive testing**: Currently no tests for CLI initialization and argument parsing
@@ -97,7 +97,7 @@ Per [architecture/implementation-patterns-consistency-rules.md](../../planning-a
   ```typescript
   program
     .name('td')
-    .description('testdata-ai - Declarative test data generation')
+    .description('testdata-generator - Declarative test data generation')
     .version(version as string);
   ```
 
@@ -225,10 +225,10 @@ Create feature file at `packages/cli/features/cli-foundation.feature`:
 Feature: CLI Foundation
   As a QA tester
   I want a working command-line interface
-  So that I can use testdata-ai from the command line
+  So that I can use testdata-generator from the command line
 
   Background:
-    Given the testdata-ai CLI is installed
+    Given the testdata-generator CLI is installed
 
   @cli @happy-path
   Scenario: Display version information
@@ -335,7 +335,7 @@ try {
 ### Project Context Reference
 
 **Related Documentation:**
-- [Product Brief](../../planning-artifacts/product-brief-testdata-ai-2025-12-11.md) - Overall product vision
+- [Product Brief](../../planning-artifacts/product-brief-testdata-generator-2025-12-11.md) - Overall product vision
 - [PRD](../../planning-artifacts/prd.md) - Functional requirements FR14-FR17 (CLI Operations)
 - [Architecture: Starter Template Evaluation](../../planning-artifacts/architecture/starter-template-evaluation.md) - CLI framework selection rationale
 - [Architecture: Implementation Patterns](../../planning-artifacts/architecture/implementation-patterns-consistency-rules.md) - Naming conventions, testing patterns
@@ -346,7 +346,7 @@ This story is part of Epic 4: CLI Tool Interface, which will add commands for ge
 
 **Critical Dependencies:**
 - Story 1.1 (Project Foundation) - Established CLI package structure ✅ COMPLETE
-- @testdata-ai/core package - Provides version export ✅ AVAILABLE
+- @testdata-generator/core package - Provides version export ✅ AVAILABLE
 - No blocking dependencies for this story
 
 **Future Stories Building On This:**
@@ -384,7 +384,7 @@ No critical errors encountered. TypeScript type-checking warnings in IDE are cos
 - Tests now validate Epic 4 exit code convention: 0=success, 1=validation error
 
 ✅ **Global Installation Verified**
-- `bun link` successfully registers @testdata-ai/cli
+- `bun link` successfully registers @testdata-generator/cli
 - Executable works correctly with shebang `#!/usr/bin/env bun`
 - Build output tested and functional
 - Note: bin not added to PATH with `bun link` (expected behavior; production install will)

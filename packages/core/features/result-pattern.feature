@@ -4,7 +4,7 @@ Feature: Result Type Pattern with Screenplay
   So that I can write tests for scanner/parser/analyzer operations
 
   Background:
-    Given the testdata-ai core library is initialized
+    Given the testdata-generator core library is initialized
 
   @result-pattern @success-case
   Scenario: Successful operation returns Result with value

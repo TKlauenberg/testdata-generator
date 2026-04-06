@@ -34,7 +34,7 @@ This story owns the CLI wiring only. The core CSV and SQL adapters already exist
 
 - [x] Route CLI output through the correct formatting path while preserving current JSON behavior (AC: 1, 2, 3, 6, 7)
   - [x] Preserve the current CLI JSON contract: stdout and file output remain a plain JSON array of records, not the metadata-wrapped shape currently emitted by `JsonAdapter`.
-  - [x] Reuse `CsvAdapter` and `SqlAdapter` from `@testdata-ai/core` rather than duplicating CSV escaping or SQL quoting logic inside the CLI package.
+  - [x] Reuse `CsvAdapter` and `SqlAdapter` from `@testdata-generator/core` rather than duplicating CSV escaping or SQL quoting logic inside the CLI package.
   - [x] Keep stdout support for CSV and SQL. If the existing file-path-based adapter contract requires a CLI bridge for stdout, keep that bridge localized to the CLI and clean up any temporary artifacts.
   - [x] Preserve the current `--save-context` semantics by saving raw generated records to the JSON context envelope independently of the selected output format.
   - [x] Keep large-generation progress reporting on stderr and preserve the existing exit-code behavior for validation, runtime, and file-system failures.
@@ -93,8 +93,8 @@ This story owns the CLI wiring only. The core CSV and SQL adapters already exist
   - the live core adapter contract lives in `packages/core/src/adapters/types.ts`
   - the live generate command currently owns output formatting in `packages/cli/src/commands/generate.ts`
   - the live CLI BDD runner is `packages/cli/tests/run-cucumber.ts`
-- Keep CLI-specific format resolution and option parsing inside the CLI package. Do not push Commander or CLI parsing concerns into `@testdata-ai/core`.
-- Reuse `@testdata-ai/core` adapter implementations rather than introducing parallel CSV/SQL formatter utilities under `packages/cli/src/`.
+- Keep CLI-specific format resolution and option parsing inside the CLI package. Do not push Commander or CLI parsing concerns into `@testdata-generator/core`.
+- Reuse `@testdata-generator/core` adapter implementations rather than introducing parallel CSV/SQL formatter utilities under `packages/cli/src/`.
 - Avoid broad core-surface changes. If a minimal shared helper is needed to reduce duplication, keep it narrowly scoped and consistent with the existing package boundary where CLI depends on core, not the reverse.
 - Do not hand-edit generated `dist/` output.
 - Do not change programmatic API exports, adapter metadata formats, or context-manager persistence format in this story.
@@ -175,7 +175,7 @@ Primary implementation surface:
 ### Latest Technical Information
 
 - Root tooling is currently pinned to TypeScript 5.9.3, ESLint 9.39.2, and Prettier 3.7.4.
-- CLI dependencies are currently `@testdata-ai/core` via workspace, `commander` 14.0.2, and `chalk` 5.6.2.
+- CLI dependencies are currently `@testdata-generator/core` via workspace, `commander` 14.0.2, and `chalk` 5.6.2.
 - Core BDD dependencies are pinned to Cucumber 12.5.0 and SerenityJS 3.37.1, but the CLI package currently uses plain Cucumber wiring in `packages/cli/tests/run-cucumber.ts`.
 - External web lookup was not available in this workflow context, so latest-technology guidance is derived from the repo's pinned manifests and live source tree.
 

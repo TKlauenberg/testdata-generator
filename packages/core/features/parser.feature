@@ -1,10 +1,10 @@
 Feature: Parser - Recursive Descent Implementation
-  As a developer using the testdata-ai DSL
+  As a developer using the testdata-generator DSL
   I want the parser to build an AST from tokens
   So that DSL schemas can be transformed into structured data for validation
 
   Background:
-    Given the testdata-ai core library is initialized
+    Given the testdata-generator core library is initialized
 
   @parser @valid-schemas
   Scenario: Parse valid schema with single field

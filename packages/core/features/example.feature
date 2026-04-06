@@ -4,7 +4,7 @@ Feature: Example BDD Test with Screenplay Pattern
   So that I can write similar tests for actual features
 
   Background:
-    Given the testdata-ai core library is initialized
+    Given the testdata-generator core library is initialized
 
   @example @happy-path
   Scenario: Simple calculation demonstration

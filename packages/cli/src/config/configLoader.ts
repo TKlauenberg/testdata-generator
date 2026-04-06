@@ -6,14 +6,14 @@ import {
   collectWorkspaceGeneratorReferences,
   createWorkspaceGeneratorReference,
   getWorkspaceGeneratorName,
-} from '@testdata-ai/core';
+} from '@testdata-generator/core';
 import type {
   DefaultSpec,
   LiteralValue,
   WorkspaceGeneratorCompositionPart,
   WorkspaceGeneratorDefinition,
   WorkspaceGeneratorSpec,
-} from '@testdata-ai/core';
+} from '@testdata-generator/core';
 import { cloneBuiltInCliConfig, GLOBAL_CONFIG_FILE_NAME, resolveGlobalConfigPath } from './defaults';
 import type {
   CliConfigLayer,

@@ -347,7 +347,7 @@ describe('generateData()', () => {
     });
 
     test('generates records when schemas are imported from disk', async () => {
-      const workspace = await fs.mkdtemp(path.join(tmpdir(), 'testdata-ai-generate-imports-'));
+      const workspace = await fs.mkdtemp(path.join(tmpdir(), 'testdata-generator-generate-imports-'));
       const importedFile = path.join(workspace, 'common.td');
       const rootFile = path.join(workspace, 'main.td');
 

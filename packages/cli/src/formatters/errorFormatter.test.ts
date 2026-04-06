@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { formatError, formatErrors } from './errorFormatter';
-import type { Diagnostic } from '@testdata-ai/core';
+import type { Diagnostic } from '@testdata-generator/core';
 
 function stripAnsiCodes(value: string): string {
   return value.replace(new RegExp(`${String.fromCharCode(27)}\\[[0-9;]+m`, 'g'), '');

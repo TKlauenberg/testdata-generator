@@ -64,8 +64,8 @@ All critical architectural decisions are fully documented with versions and rati
 **Structure Completeness:**
 The project structure is completely and specifically defined:
 
-- Complete directory tree from root (testdata-ai/) to leaf files (scanner.ts, parser.ts, etc.)
-- All packages explicitly defined: @testdata-ai/core (library) and @testdata-ai/cli (CLI tool)
+- Complete directory tree from root (testdata-generator/) to leaf files (scanner.ts, parser.ts, etc.)
+- All packages explicitly defined: @testdata-generator/core (library) and @testdata-generator/cli (CLI tool)
 - Every module specified with file lists: scanner/, parser/, analyzer/, generator/, context/, adapters/, common/
 - All source files documented with clear responsibilities and relationships
 - Test files co-located with implementation (\*.test.ts pattern)

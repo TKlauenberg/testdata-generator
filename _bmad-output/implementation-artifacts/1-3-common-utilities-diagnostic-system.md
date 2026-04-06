@@ -444,7 +444,7 @@ interface Diagnostic {
 
 - `bun test` passes all tests
 - TypeScript compiles with no errors
-- Can import diagnostic types from `@testdata-ai/core` package
+- Can import diagnostic types from `@testdata-generator/core` package
 - Next story (Scanner) can use these diagnostics immediately
 - Error messages will be QA-friendly and actionable
 
@@ -453,9 +453,9 @@ interface Diagnostic {
 **From [architecture.md](../architecture.md#project-structure):**
 
 ```
-testdata-ai/
+testdata-generator/
 ├── packages/
-│   ├── core/                           # @testdata-ai/core
+│   ├── core/                           # @testdata-generator/core
 │   │   ├── src/
 │   │   │   ├── common/                 # ⬅️ YOU ARE HERE
 │   │   │   │   ├── result.ts           # ✅ Exists (Story 1.2)

@@ -294,13 +294,13 @@ Output: ValidatedProgram (if no errors)
 interface ValidatedProgram {
   // Original parsed AST
   ast: Program;
-  
+
   // Complete symbol table with all definitions
   symbolTable: SymbolTable;
-  
+
   // Quick lookup map for validated schemas
   schemas: Map<string, ValidatedSchema>;
-  
+
   // Metadata
   metadata: {
     analyzedAt: Date;
@@ -312,13 +312,13 @@ interface ValidatedProgram {
 interface ValidatedSchema {
   // Reference to original AST node
   node: SchemaNode;
-  
+
   // Validated and enriched fields
   fields: ValidatedField[];
-  
+
   // Dependencies on other schemas
   dependencies: Set<string>;
-  
+
   // Topological sort order (for generation)
   sortOrder: number;
 }
@@ -326,13 +326,13 @@ interface ValidatedSchema {
 interface ValidatedField {
   // Reference to original AST node
   node: FieldNode;
-  
+
   // Resolved type information
   resolvedType: string;
-  
+
   // Resolved generator information
   resolvedGenerator: GeneratorInfo;
-  
+
   // Extracted template references
   templateReferences: string[];
 }
@@ -343,7 +343,7 @@ interface ValidatedField {
 ```typescript
 function levenshteinDistance(a: string, b: string): number {
   const matrix: number[][] = [];
-  
+
   // Initialize matrix
   for (let i = 0; i <= b.length; i++) {
     matrix[i] = [i];
@@ -351,7 +351,7 @@ function levenshteinDistance(a: string, b: string): number {
   for (let j = 0; j <= a.length; j++) {
     matrix[0][j] = j;
   }
-  
+
   // Fill matrix
   for (let i = 1; i <= b.length; i++) {
     for (let j = 1; j <= a.length; j++) {
@@ -366,7 +366,7 @@ function levenshteinDistance(a: string, b: string): number {
       }
     }
   }
-  
+
   return matrix[b.length][a.length];
 }
 
@@ -395,7 +395,7 @@ function detectCircularDependencies(graph: DependencyGraph): Result<void> {
   const visited = new Set<string>();
   const visiting = new Set<string>();
   const errors: Diagnostic[] = [];
-  
+
   function visit(node: string, path: string[]): void {
     if (visiting.has(node)) {
       // Found a cycle
@@ -409,31 +409,31 @@ function detectCircularDependencies(graph: DependencyGraph): Result<void> {
       }));
       return;
     }
-    
+
     if (visited.has(node)) {
       return; // Already processed this branch
     }
-    
+
     visiting.add(node);
     path.push(node);
-    
+
     const neighbors = graph.edges.get(node) || new Set();
     for (const neighbor of neighbors) {
       visit(neighbor, path);
     }
-    
+
     path.pop();
     visiting.delete(node);
     visited.add(node);
   }
-  
+
   // Visit all nodes
   for (const node of graph.nodes) {
     if (!visited.has(node)) {
       visit(node, []);
     }
   }
-  
+
   if (errors.length > 0) {
     return { ok: false, errors };
   }
@@ -596,7 +596,7 @@ export function analyze(ast: Program): Result<ValidatedProgram> {
 // Validation function pattern
 function validateFieldTypes(schema: SchemaNode): Result<void> {
   const errors: Diagnostic[] = [];
-  
+
   for (const field of schema.fields) {
     if (!SUPPORTED_TYPES.includes(field.type)) {
       errors.push({
@@ -608,7 +608,7 @@ function validateFieldTypes(schema: SchemaNode): Result<void> {
       });
     }
   }
-  
+
   if (errors.length > 0) {
     return { ok: false, errors };
   }
@@ -733,7 +733,7 @@ describe('analyze()', () => {
       ],
       location: { file: 'test.td', line: 1, column: 1, length: 100 }
     };
-    
+
     const result = analyze(ast);
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -741,7 +741,7 @@ describe('analyze()', () => {
       expect(result.value.schemas.has('User')).toBe(true);
     }
   });
-  
+
   test('should detect unsupported type with suggestion', () => {
     const ast: Program = {
       kind: 'program',
@@ -763,7 +763,7 @@ describe('analyze()', () => {
       ],
       location: { file: 'test.td', line: 1, column: 1, length: 100 }
     };
-    
+
     const result = analyze(ast);
     expect(result.ok).toBe(false);
     if (!result.ok) {
@@ -772,7 +772,7 @@ describe('analyze()', () => {
       expect(result.errors[0].suggestions).toContain('uuid');
     }
   });
-  
+
   test('should detect circular dependency between two schemas', () => {
     const ast: Program = {
       kind: 'program',
@@ -808,7 +808,7 @@ describe('analyze()', () => {
       ],
       location: { file: 'test.td', line: 1, column: 1, length: 100 }
     };
-    
+
     const result = analyze(ast);
     expect(result.ok).toBe(false);
     if (!result.ok) {
@@ -828,7 +828,7 @@ Feature: Semantic Analysis
   So that I catch errors before attempting data generation
 
   Background:
-    Given the testdata-ai core library is initialized
+    Given the testdata-generator core library is initialized
 
   @semantic-analysis @happy-path
   Scenario: Valid schema passes semantic analysis
@@ -901,7 +901,7 @@ Feature: Semantic Analysis
 
 **🎯 ULTIMATE CONTEXT FOR DEVELOPER:**
 
-This story completes the core validation pipeline for the testdata-ai DSL. After this story:
+This story completes the core validation pipeline for the testdata-generator DSL. After this story:
 - Users will get comprehensive error messages BEFORE attempting generation
 - The system can detect and prevent common mistakes (typos, circular deps, undefined refs)
 - ValidatedProgram provides a clean, verified AST ready for generation

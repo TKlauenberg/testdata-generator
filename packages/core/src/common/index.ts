@@ -1,7 +1,7 @@
 /**
  * Common Utilities Module
  *
- * Shared utilities used across the testdata-ai project.
+ * Shared utilities used across the testdata-generator project.
  * Currently exports the Result type pattern for error handling
  * and the Diagnostic system for error reporting.
  */

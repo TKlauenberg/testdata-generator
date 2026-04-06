@@ -55,7 +55,7 @@ async function readSavedContext(relativePath: string): Promise<{
 }
 
 Given('a temporary CLI workspace', async () => {
-  state.workspaceDir = await mkdtemp(path.join(tmpdir(), 'testdata-ai-cli-bdd-'));
+  state.workspaceDir = await mkdtemp(path.join(tmpdir(), 'testdata-generator-cli-bdd-'));
 });
 
 Given('a DSL schema file {string} with contents:', async (fileName: string, contents: string) => {

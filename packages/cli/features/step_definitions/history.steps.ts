@@ -49,7 +49,7 @@ async function readHistoryPatternHashes(): Promise<string[]> {
 }
 
 Given('the history test CLI workspace is ready', async () => {
-  state.workspaceDir ??= await mkdtemp(path.join(tmpdir(), 'testdata-ai-cli-history-bdd-'));
+  state.workspaceDir ??= await mkdtemp(path.join(tmpdir(), 'testdata-generator-cli-history-bdd-'));
 
   const cliFile = Bun.file(CLI_PATH);
   if (!(await cliFile.exists())) {

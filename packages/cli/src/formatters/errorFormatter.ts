@@ -1,4 +1,4 @@
-import type { Diagnostic } from '@testdata-ai/core';
+import type { Diagnostic } from '@testdata-generator/core';
 import chalk from 'chalk';
 
 /**

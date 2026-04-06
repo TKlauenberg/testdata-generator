@@ -19,7 +19,7 @@ The current codebase already has three partial metadata seams: `JsonAdapter` wri
 3. Metadata includes source pattern file path.
 4. Metadata includes pattern version or hash for change tracking.
 5. Metadata includes generation options including count, seed, and format.
-6. Metadata includes the `testdata-ai` version used for generation.
+6. Metadata includes the `testdata-generator` version used for generation.
 7. JSON output includes metadata as a header object.
 8. CSV output includes metadata as a comment header.
 9. SQL output includes metadata as SQL comments.

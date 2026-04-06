@@ -68,7 +68,7 @@ function assertAllRecordsHaveField(records: Record<string, unknown>[], fieldName
 
 // Background step
 Given(
-  '{actor} is working with the testdata-ai system',
+  '{actor} is working with the testdata-generator system',
   (actorName: string) => {
     generatorAbility(actorName);
   },

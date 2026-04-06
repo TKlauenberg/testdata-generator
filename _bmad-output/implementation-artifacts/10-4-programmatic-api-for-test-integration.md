@@ -14,7 +14,7 @@ The repository already exposes a partial public API through `generateData()` in 
 
 ## Acceptance Criteria
 
-1. The published core package continues to support `import { generateData } from '@testdata-ai/core'` from the package root, and the built package exports the public types needed for programmatic use.
+1. The published core package continues to support `import { generateData } from '@testdata-generator/core'` from the package root, and the built package exports the public types needed for programmatic use.
 2. `generateData()` continues to accept inline DSL schema source as a string and returns `AsyncIterable<Record<string, unknown>>` that consumers can iterate with `for await...of`.
 3. Programmatic consumers can produce JSON, CSV, and SQL output using the existing core adapter surface without depending on the CLI; documentation and examples must use import paths that match the published package exports.
 4. Validation failures expose typed diagnostics through a stable public contract. Preserve the existing `ValidationError` behavior; if a Result-style helper is added, it must be additive and must not break current callers.
@@ -34,12 +34,12 @@ The repository already exposes a partial public API through `generateData()` in 
 
 - [x] Close documentation and example gaps for external consumers (AC: 3, 5, 6, 7)
   - [x] Create `docs/api.md` as the canonical programmatic API reference promised by the architecture docs.
-  - [x] Update `docs/examples/generateData-examples.md` so every import path works with the published package surface; do not rely on undocumented subpath imports such as `@testdata-ai/core/adapters` unless this story explicitly adds and documents them.
+  - [x] Update `docs/examples/generateData-examples.md` so every import path works with the published package surface; do not rely on undocumented subpath imports such as `@testdata-generator/core/adapters` unless this story explicitly adds and documents them.
   - [x] Add example integration scripts or snippets for Bun tests and at least one additional common framework style such as Playwright or Vitest/Jest-style setup.
   - [x] Update any README or docs links that currently point to missing or stale API documentation paths.
 
 - [x] Ensure programmatic formatting guidance reuses the existing core adapters (AC: 3, 6, 7, 8)
-  - [x] Reuse `JsonAdapter`, `CsvAdapter`, and `SqlAdapter` from `@testdata-ai/core`; do not recreate formatter logic in new helper files.
+  - [x] Reuse `JsonAdapter`, `CsvAdapter`, and `SqlAdapter` from `@testdata-generator/core`; do not recreate formatter logic in new helper files.
   - [x] Keep `generateData()` focused on raw record generation. If format-specific convenience is added, keep it narrowly scoped and layered on top of the existing adapters.
   - [x] Document the supported JSON, CSV, and SQL programmatic flows using the live adapter contracts and package exports.
 
@@ -168,7 +168,7 @@ Primary implementation surface:
 
 - External web lookup was not available in this workflow context, so technical version guidance is derived from the live repository manifests.
 - Root toolchain is currently pinned to TypeScript 5.9.3, ESLint 9.39.2, and Prettier 3.7.4.
-- `@testdata-ai/core` currently publishes only the root export path in `packages/core/package.json`.
+- `@testdata-generator/core` currently publishes only the root export path in `packages/core/package.json`.
 - Core BDD dependencies are currently `@cucumber/cucumber` 12.5.0 and SerenityJS 3.37.1.
 - The live public API docs example file exists at `docs/examples/generateData-examples.md`, but it currently includes at least one import path that does not match the published package exports.
 
@@ -277,12 +277,12 @@ GPT-5.4
 
 ### Findings
 
-| # | Severity | Description | File | Fixed |
-| --- | --- | --- | --- | --- |
-| H1 | HIGH | Published package metadata pointed at `dist/index.*` even though the build emits `dist/src/index.*`, breaking the package-root import contract for built consumers. | `packages/core/package.json` | ✅ Auto-fixed |
-| M1 | MEDIUM | Canonical API docs published the wrong `GenerateOptions.defaultGenerators` shape, which did not match the exported type surface. | `docs/api.md` | ✅ Auto-fixed |
-| M2 | MEDIUM | The JSONL example documented a `metadata` envelope even though the live adapter writes `_metadata` on the first line. | `docs/examples/generateData-examples.md` | ✅ Auto-fixed |
-| M3 | MEDIUM | The public-API memory-efficiency Gherkin steps were placeholders with no assertions, so the documented acceptance coverage overstated what CI actually verified. | `packages/core/features/step_definitions/generateData-public-api.steps.ts` | ✅ Auto-fixed |
+| #   | Severity | Description                                                                                                                                                         | File                                                                       | Fixed        |
+| --- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- | ------------ |
+| H1  | HIGH     | Published package metadata pointed at `dist/index.*` even though the build emits `dist/src/index.*`, breaking the package-root import contract for built consumers. | `packages/core/package.json`                                               | ✅ Auto-fixed |
+| M1  | MEDIUM   | Canonical API docs published the wrong `GenerateOptions.defaultGenerators` shape, which did not match the exported type surface.                                    | `docs/api.md`                                                              | ✅ Auto-fixed |
+| M2  | MEDIUM   | The JSONL example documented a `metadata` envelope even though the live adapter writes `_metadata` on the first line.                                               | `docs/examples/generateData-examples.md`                                   | ✅ Auto-fixed |
+| M3  | MEDIUM   | The public-API memory-efficiency Gherkin steps were placeholders with no assertions, so the documented acceptance coverage overstated what CI actually verified.    | `packages/core/features/step_definitions/generateData-public-api.steps.ts` | ✅ Auto-fixed |
 
 ### Post-fix Verification
 

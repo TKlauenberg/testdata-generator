@@ -1,6 +1,6 @@
 # generated: 2025-12-31
-# project: testdata-ai
-# project_key: testdata-ai
+# project: testdata-generator
+# project_key: testdata-generator
 # tracking_system: file-system
 # story_location: docs/sprint-artifacts
 
@@ -35,8 +35,8 @@
 
 generated: 2025-12-31
 last_updated: 2026-04-06
-project: testdata-ai
-project_key: testdata-ai
+project: testdata-generator
+project_key: testdata-generator
 tracking_system: file-system
 story_location: docs/sprint-artifacts
 

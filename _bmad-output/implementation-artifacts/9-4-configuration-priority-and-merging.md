@@ -193,7 +193,7 @@ async function runConfigShow(): Promise<void> {
 }
 
 export const configCommand = new Command('config')
-  .description('Manage testdata-ai configuration')
+  .description('Manage testdata-generator configuration')
   .addCommand(
     new Command('show')
       .description('Show effective configuration with source of each setting')
@@ -391,12 +391,12 @@ No blocking issues encountered. Implementation followed story specifications exa
 
 ### Findings
 
-| #   | Severity | Description | File | Fixed |
-| --- | -------- | ----------- | ---- | ----- |
-| H1  | HIGH | BDD scenario claimed to validate `workspace > global` precedence but only supplied one effective defaults layer | `packages/core/features/config-priority.feature` | ✅ Auto-fixed |
-| M1  | MEDIUM | `td config show` showed missing-file status but no explicit positive status for discovered config files | `packages/cli/src/commands/config.ts` | ✅ Auto-fixed |
-| M2  | MEDIUM | `td config show` dropped generator parameters, hiding the effective configured value for `generatorDefaults` | `packages/cli/src/commands/config.ts` | ✅ Auto-fixed |
-| L1  | LOW | README had duplicated configuration guidance, increasing drift risk against the canonical docs | `README.md` | ✅ Auto-fixed |
+| #   | Severity | Description                                                                                                     | File                                             | Fixed        |
+| --- | -------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ------------ |
+| H1  | HIGH     | BDD scenario claimed to validate `workspace > global` precedence but only supplied one effective defaults layer | `packages/core/features/config-priority.feature` | ✅ Auto-fixed |
+| M1  | MEDIUM   | `td config show` showed missing-file status but no explicit positive status for discovered config files         | `packages/cli/src/commands/config.ts`            | ✅ Auto-fixed |
+| M2  | MEDIUM   | `td config show` dropped generator parameters, hiding the effective configured value for `generatorDefaults`    | `packages/cli/src/commands/config.ts`            | ✅ Auto-fixed |
+| L1  | LOW      | README had duplicated configuration guidance, increasing drift risk against the canonical docs                  | `README.md`                                      | ✅ Auto-fixed |
 
 ### Post-fix Verification
 

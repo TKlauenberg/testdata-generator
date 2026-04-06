@@ -102,7 +102,7 @@ So that **all code follows established patterns and maintains high quality**.
 
 ### 🎯 ULTIMATE CONTEXT ENGINE ANALYSIS - Everything You Need to Know!
 
-This story establishes the **code quality foundation** for the entire testdata-ai project. Every subsequent story will benefit from automated linting, formatting, and CI checks. This is **essential infrastructure** that prevents technical debt and ensures consistency across the codebase.
+This story establishes the **code quality foundation** for the entire testdata-generator project. Every subsequent story will benefit from automated linting, formatting, and CI checks. This is **essential infrastructure** that prevents technical debt and ensures consistency across the codebase.
 
 ### Critical Importance
 
@@ -575,7 +575,7 @@ For optimal developer experience, configure VS Code extensions.
 **Module Structure:**
 
 ```
-testdata-ai/
+testdata-generator/
 ├── .github/
 │   └── workflows/
 │       └── ci.yml              # CI/CD pipeline

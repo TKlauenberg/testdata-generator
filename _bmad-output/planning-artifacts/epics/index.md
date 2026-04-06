@@ -1,8 +1,8 @@
-# testdata-ai - Epic Breakdown
+# testdata-generator - Epic Breakdown
 
 ## Table of Contents
 
-- [testdata-ai - Epic Breakdown](#table-of-contents)
+- [testdata-generator - Epic Breakdown](#table-of-contents)
   - [Overview](./overview.md)
   - [Requirements Inventory](./requirements-inventory.md)
     - [Functional Requirements](./requirements-inventory.md#functional-requirements)

@@ -90,7 +90,7 @@ This story also introduces the first history-facing CLI surface with `td history
 - Preserve append order in the file. `td history --last 10` can display the newest entries first, but the persisted log itself should remain chronological append-only history.
 - Keep error payloads concise and deterministic. Prefer plain messages or normalized validation summaries over captured ANSI-colored stderr or stack traces.
 - The history file must be separate from generated output files and adapter metadata comments. Do not embed history inside JSON, CSV, or SQL output artifacts.
-- If the history helpers are exported from `@testdata-ai/core`, add them through module `index.ts` files and the package root export surface. Do not make CLI deep-import core internals.
+- If the history helpers are exported from `@testdata-generator/core`, add them through module `index.ts` files and the package root export surface. Do not make CLI deep-import core internals.
 
 ### Architecture Compliance
 
@@ -251,7 +251,7 @@ GPT-5.4
 
 ### Completion Notes List
 
-- Implemented a core append-only generation history module, exported it from `@testdata-ai/core`, and kept failure metadata best-effort when full lineage or pattern hashes are unavailable.
+- Implemented a core append-only generation history module, exported it from `@testdata-generator/core`, and kept failure metadata best-effort when full lineage or pattern hashes are unavailable.
 - Integrated default-on history logging into `td generate`, added `--no-history`, added `history.logDirectory` config resolution, and introduced the `td history --last <n>` query command.
 - Added unit and CLI BDD coverage for success/failure logging, multi-run accumulation, configurable history paths, and newest-first history display.
 - Validation completed with `bun test packages/` and `bun run test:bdd` passing; `bun run lint` still exits on a pre-existing warning backlog outside this story's change set.

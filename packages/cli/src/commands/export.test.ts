@@ -9,7 +9,7 @@ import {
   GENERATION_METADATA_COMMENT_LABEL,
   persistPatternVersionSnapshot,
   saveAsContext,
-} from '@testdata-ai/core';
+} from '@testdata-generator/core';
 import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
@@ -149,7 +149,7 @@ async function writeCsvArtifact(filePath: string, metadata: ReturnType<typeof cr
 
 describe('td export', () => {
   test('exports a platform-ready bundle to stdout for generated JSON artifacts', async () => {
-    const workspaceDirectory = await createWorkspaceDirectory('testdata-ai-export-command-');
+    const workspaceDirectory = await createWorkspaceDirectory('testdata-generator-export-command-');
     const { metadata, lineageInputs } = createTestMetadata('json');
     const artifactPath = path.join(workspaceDirectory, 'artifacts', 'exportable.json');
 
@@ -174,7 +174,7 @@ describe('td export', () => {
   });
 
   test('writes platform-ready bundles to a file and preserves saved-context metadata', async () => {
-    const workspaceDirectory = await createWorkspaceDirectory('testdata-ai-export-saved-context-');
+    const workspaceDirectory = await createWorkspaceDirectory('testdata-generator-export-saved-context-');
     const { metadata, lineageInputs } = createTestMetadata('csv');
     const contextsDirectory = path.join(workspaceDirectory, 'contexts');
     const outputPath = path.join(workspaceDirectory, 'exports', 'platform-ready.json');
@@ -224,7 +224,7 @@ describe('td export', () => {
   });
 
   test('uses audit history format for legacy saved-context artifacts without embedded format metadata', async () => {
-    const workspaceDirectory = await createWorkspaceDirectory('testdata-ai-export-legacy-saved-context-');
+    const workspaceDirectory = await createWorkspaceDirectory('testdata-generator-export-legacy-saved-context-');
     const { metadata, lineageInputs } = createTestMetadata('csv');
     const artifactPath = path.join(workspaceDirectory, 'contexts', 'legacy.json');
 
@@ -264,7 +264,7 @@ describe('td export', () => {
   });
 
   test('fails clearly for unsupported artifact types and malformed metadata comments', async () => {
-    const workspaceDirectory = await createWorkspaceDirectory('testdata-ai-export-failures-');
+    const workspaceDirectory = await createWorkspaceDirectory('testdata-generator-export-failures-');
     await Bun.write(path.join(workspaceDirectory, 'artifact.txt'), 'unsupported');
     await Bun.write(
       path.join(workspaceDirectory, 'bad.csv'),
@@ -281,7 +281,7 @@ describe('td export', () => {
   });
 
   test('fails clearly for malformed saved-context reserved metadata', async () => {
-    const workspaceDirectory = await createWorkspaceDirectory('testdata-ai-export-invalid-saved-context-');
+    const workspaceDirectory = await createWorkspaceDirectory('testdata-generator-export-invalid-saved-context-');
     const artifactPath = path.join(workspaceDirectory, 'contexts', 'bad.json');
     const { metadata, lineageInputs } = createTestMetadata('json');
 
@@ -324,7 +324,7 @@ describe('td export', () => {
   });
 
   test('fails clearly when matching audit history is missing', async () => {
-    const workspaceDirectory = await createWorkspaceDirectory('testdata-ai-export-missing-history-');
+    const workspaceDirectory = await createWorkspaceDirectory('testdata-generator-export-missing-history-');
     const { metadata } = createTestMetadata('json');
     const artifactPath = path.join(workspaceDirectory, 'exportable.json');
 
@@ -337,7 +337,7 @@ describe('td export', () => {
   });
 
   test('resolves workspace-relative audit paths from nested directories', async () => {
-    const workspaceDirectory = await createWorkspaceDirectory('testdata-ai-export-workspace-root-');
+    const workspaceDirectory = await createWorkspaceDirectory('testdata-generator-export-workspace-root-');
     const nestedDirectory = path.join(workspaceDirectory, 'apps', 'qa');
     const artifactPath = path.join(nestedDirectory, 'artifacts', 'exportable.csv');
     const { metadata, lineageInputs } = createTestMetadata('csv');

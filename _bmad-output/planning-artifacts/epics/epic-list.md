@@ -2,7 +2,7 @@
 
 ## Epic 1: Project Foundation & Development Setup
 
-Development team can start building testdata-ai with proper monorepo structure, tooling, and core utilities in place.
+Development team can start building testdata-generator with proper monorepo structure, tooling, and core utilities in place.
 
 **FRs covered:** Foundation for all other FRs (enables FR1-FR31)
 **NFRs supported:** NFR9, NFR10 (maintainability, clear separation)

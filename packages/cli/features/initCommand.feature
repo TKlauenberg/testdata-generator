@@ -4,7 +4,7 @@ Feature: Init Command - Schema Template Initialization
   So that I can quickly start with example schemas
 
   Background:
-    Given the testdata-ai CLI is installed
+    Given the testdata-generator CLI is installed
     And QA Tester is in an empty directory
 
   @init @happy-path
@@ -76,7 +76,7 @@ Feature: Init Command - Schema Template Initialization
 
   @init @user-experience
   Scenario: Complete workflow from init to generation
-    Given QA Tester is learning testdata-ai DSL
+    Given QA Tester is learning testdata-generator DSL
     When QA Tester runs "td init"
     Then a file named "basic.td" should be created
     And QA Tester should see clear next steps

@@ -128,7 +128,7 @@ so that **I can use database exports in my test scenarios**.
 ### Project Structure Notes
 
 - Existing context module currently contains JSON loader only; CSV loader should be added as sibling in `packages/core/src/context/loaders/`.
-- Public API export updates are required to keep `@testdata-ai/core` surface coherent for downstream stories.
+- Public API export updates are required to keep `@testdata-generator/core` surface coherent for downstream stories.
 - Continue following existing workspace and module boundary rules from project context and architecture artifacts.
 
 ### References

@@ -1,5 +1,5 @@
 {
-  "name": "@testdata-ai/cli",
+  "name": "@testdata-generator/cli",
   "version": "0.1.0",
   "type": "module",
   "bin": {
@@ -11,7 +11,7 @@
     "test:bdd": "bun run build && bun ./tests/run-cucumber.ts"
   },
   "dependencies": {
-    "@testdata-ai/core": "workspace:*",
+    "@testdata-generator/core": "workspace:*",
     "chalk": "^5.6.2",
     "commander": "^14.0.2"
   },

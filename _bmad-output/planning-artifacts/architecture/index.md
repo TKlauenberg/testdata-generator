@@ -1,8 +1,8 @@
-# Architecture Decision Document: testdata-ai
+# Architecture Decision Document: testdata-generator
 
 ## Table of Contents
 
-- [Architecture Decision Document: testdata-ai](#table-of-contents)
+- [Architecture Decision Document: testdata-generator](#table-of-contents)
   - [Project Context Analysis](./project-context-analysis.md)
     - [Requirements Overview](./project-context-analysis.md#requirements-overview)
     - [Technical Constraints & Dependencies](./project-context-analysis.md#technical-constraints-dependencies)
@@ -65,8 +65,8 @@
       - [FR22-FR25: Data Output](./project-structure-boundaries.md#fr22-fr25-data-output)
       - [FR26-FR29: Validation](./project-structure-boundaries.md#fr26-fr29-validation)
     - [Public API Surface](./project-structure-boundaries.md#public-api-surface)
-      - [@testdata-ai/core](./project-structure-boundaries.md#testdata-aicore)
-      - [@testdata-ai/cli](./project-structure-boundaries.md#testdata-aicli)
+      - [@testdata-generator/core](./project-structure-boundaries.md#testdata-generatorcore)
+      - [@testdata-generator/cli](./project-structure-boundaries.md#testdata-generatorcli)
     - [Integration Points](./project-structure-boundaries.md#integration-points)
       - [Internal Communication](./project-structure-boundaries.md#internal-communication)
       - [External Integrations](./project-structure-boundaries.md#external-integrations)
