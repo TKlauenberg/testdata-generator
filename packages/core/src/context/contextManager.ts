@@ -1,7 +1,11 @@
 import * as path from 'node:path';
 import { mkdir } from 'node:fs/promises';
 import { isGenerationMetadata } from '../common';
-import type { GenerationMetadataLineageEntry } from '../common';
+import type {
+  GenerationMetadataFormat,
+  GenerationMetadataLineageEntry,
+  GenerationMetadataPlatformReserved,
+} from '../common';
 import { version } from '../version';
 import { loadCsvContext } from './loaders/csvLoader';
 import { loadJsonContext } from './loaders/jsonLoader';
@@ -48,11 +52,12 @@ function hasValidOptionalSavedContextMetadata(metadata: ContextData['metadata'])
         timestamp: metadata.timestamp ?? new Date(0).toISOString(),
         sourcePattern: metadata.sourcePattern,
         count: metadata.recordCount,
-        format: metadata.format,
+        format: metadata.generationFormat ?? metadata.format,
         seed: metadata.seed,
         version: metadata.version ?? version,
         patternHash: metadata.patternHash,
         lineage: metadata.lineage,
+        platformReserved: metadata.platformReserved,
       }));
 }
 
@@ -91,10 +96,12 @@ export interface SaveContextOptions {
   readonly directory?: string;
   readonly timestamp?: string;
   readonly sourcePattern?: string;
+  readonly format?: GenerationMetadataFormat;
   readonly version?: string;
   readonly seed?: number;
   readonly patternHash?: string;
   readonly lineage?: readonly GenerationMetadataLineageEntry[];
+  readonly platformReserved?: GenerationMetadataPlatformReserved;
 }
 
 export function normalizeContextTags(tags: readonly string[] = []): readonly string[] {
@@ -147,12 +154,14 @@ export async function saveAsContext(
     metadata: {
       timestamp: options.timestamp ?? new Date().toISOString(),
       sourcePattern: options.sourcePattern,
+      format: options.format,
       count: records.length,
       version: options.version ?? version,
       tags: normalizedTags,
       seed: options.seed,
       patternHash: options.patternHash,
       lineage: options.lineage,
+      platformReserved: options.platformReserved,
     },
     data: records as readonly ContextRecord[],
   };

@@ -70,9 +70,21 @@ describe('loadJsonContext', () => {
       metadata: {
         timestamp: '2026-03-08T10:00:00.000Z',
         sourcePattern: 'schemas/users.td',
+        format: 'csv',
         version: '0.1.0',
         tags: ['staging', 'smoke'],
         count: 2,
+        platformReserved: {
+          contextReferences: [
+            {
+              raw: '@context.users.random.email',
+              collection: 'users',
+              tags: [],
+              selector: { kind: 'random' },
+              fieldPath: ['email'],
+            },
+          ],
+        },
       },
       data: [
         { id: 'u-1', email: 'qa.one@example.com' },
@@ -88,9 +100,11 @@ describe('loadJsonContext', () => {
     ]);
     expect(context.metadata.recordCount).toBe(2);
     expect(context.metadata.tags).toEqual(['staging', 'smoke']);
+    expect(context.metadata.generationFormat).toBe('csv');
     expect(context.metadata.timestamp).toBe('2026-03-08T10:00:00.000Z');
     expect(context.metadata.sourcePattern).toBe('schemas/users.td');
     expect(context.metadata.version).toBe('0.1.0');
+    expect(context.metadata.platformReserved?.contextReferences).toHaveLength(1);
   });
 
   test('loads generated JSON envelopes and preserves generation metadata', async () => {
@@ -120,6 +134,7 @@ describe('loadJsonContext', () => {
       { id: 'u-2', email: 'qa.two@example.com' },
     ]);
     expect(context.metadata.tags).toEqual([]);
+    expect(context.metadata.generationFormat).toBe('json');
     expect(context.metadata.timestamp).toBe(metadata.timestamp);
     expect(context.metadata.sourcePattern).toBe(metadata.sourcePattern);
     expect(context.metadata.version).toBe(metadata.version);

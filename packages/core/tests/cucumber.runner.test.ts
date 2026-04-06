@@ -4,7 +4,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const runnerPath = path.resolve(__dirname, './run-cucumber.ts');
+const runnerFileName = import.meta.url.endsWith('.ts') ? 'run-cucumber.ts' : 'run-cucumber.js';
+const runnerPath = path.resolve(__dirname, runnerFileName);
 
 test(
   'Run Cucumber BDD tests with Screenplay pattern',

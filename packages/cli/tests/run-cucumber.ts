@@ -9,6 +9,7 @@ const options: IRunOptions = {
   sources: {
     paths: [
       path.join(featuresPath, 'generateCommand.feature'),
+      path.join(featuresPath, 'exportCommand.feature'),
       path.join(featuresPath, 'historyCommand.feature'),
       path.join(featuresPath, 'saveGeneratedContext.feature'),
     ],
@@ -21,6 +22,7 @@ const options: IRunOptions = {
     requireModules: [],
     requirePaths: [
       path.join(featuresPath, 'step_definitions/generateCommand.steps.ts'),
+      path.join(featuresPath, 'step_definitions/exportCommand.steps.ts'),
       path.join(featuresPath, 'step_definitions/history.steps.ts'),
       path.join(featuresPath, 'step_definitions/saveGeneratedContext.steps.ts'),
     ],

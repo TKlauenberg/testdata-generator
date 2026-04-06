@@ -55,6 +55,17 @@ describe('loadCsvContext', () => {
       lineageInputs: [
         { type: 'root-pattern', identifier: 'schemas/users.td', content: 'schema User { id: number }' },
       ],
+      platformReserved: {
+        contextReferences: [
+          {
+            raw: '@context.users.random.email',
+            collection: 'users',
+            tags: [],
+            selector: { kind: 'random' },
+            fieldPath: ['email'],
+          },
+        ],
+      },
     });
     const filePath = await writeCsvFixture(
       'metadata.csv',
@@ -69,8 +80,10 @@ describe('loadCsvContext', () => {
 
     expect(context.metadata.timestamp).toBe('2026-04-05T10:30:00.000Z');
     expect(context.metadata.sourcePattern).toBe('schemas/users.td');
+    expect(context.metadata.generationFormat).toBe('csv');
     expect(context.metadata.seed).toBe(42);
     expect(context.metadata.patternHash).toBeDefined();
+    expect(context.metadata.platformReserved?.contextReferences).toHaveLength(1);
     expect(context.records).toEqual([{ id: 'u-1', email: 'qa.one@example.com' }]);
   });
 

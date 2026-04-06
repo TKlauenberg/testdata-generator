@@ -134,4 +134,52 @@ describe('generation metadata', () => {
 
     expect(decodeGenerationMetadataComment(encoded)).toEqual(metadata);
   });
+
+  test('normalizes platform-reserved context references deterministically', () => {
+    const metadata = createGenerationMetadata({
+      timestamp: '2026-04-05T10:00:00.000Z',
+      sourcePattern: 'schemas/users.td',
+      count: 2,
+      format: 'json',
+      version: '0.1.0',
+      lineageInputs: [
+        { type: 'root-pattern', identifier: 'schemas/users.td', content: 'schema User { email: string }' },
+      ],
+      platformReserved: {
+        contextReferences: [
+          {
+            raw: '@context.users@staging AND @region-us.random.email',
+            collection: 'users',
+            tags: ['region-us', 'staging'],
+            selector: { kind: 'random' },
+            fieldPath: ['email'],
+          },
+          {
+            raw: '@context.users[0].email',
+            collection: 'users',
+            tags: [],
+            selector: { kind: 'index', index: 0 },
+            fieldPath: ['email'],
+          },
+        ],
+      },
+    });
+
+    expect(metadata.platformReserved?.contextReferences).toEqual([
+      {
+        raw: '@context.users[0].email',
+        collection: 'users',
+        tags: [],
+        selector: { kind: 'index', index: 0 },
+        fieldPath: ['email'],
+      },
+      {
+        raw: '@context.users@staging AND @region-us.random.email',
+        collection: 'users',
+        tags: ['region-us', 'staging'],
+        selector: { kind: 'random' },
+        fieldPath: ['email'],
+      },
+    ]);
+  });
 });

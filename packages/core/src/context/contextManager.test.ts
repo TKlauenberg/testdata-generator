@@ -4,6 +4,18 @@ import * as path from 'node:path';
 import type { GenerationMetadataLineageEntry } from '../common';
 import { isContextData, loadContext, saveAsContext } from './contextManager';
 
+const platformReserved = {
+  contextReferences: [
+    {
+      raw: '@context.users@staging.random.email',
+      collection: 'users',
+      tags: ['staging'],
+      selector: { kind: 'random' as const },
+      fieldPath: ['email'],
+    },
+  ],
+};
+
 const TEST_DIR = path.join(import.meta.dir, '../../__test-output__/context-manager');
 
 async function writeFixture(filename: string, value: string): Promise<string> {
@@ -89,20 +101,24 @@ describe('loadContext', () => {
       directory: TEST_DIR,
       timestamp: '2026-04-05T10:15:00.000Z',
       sourcePattern: 'schemas/users.td',
+      format: 'csv',
       version: '0.1.0',
       seed: 42,
       patternHash: 'pattern-123',
       lineage,
+      platformReserved,
     });
 
     const context = await loadContext(path.join(TEST_DIR, 'metadata-rich.json'));
 
+    expect(context.metadata.generationFormat).toBe('csv');
     expect(context.metadata.timestamp).toBe('2026-04-05T10:15:00.000Z');
     expect(context.metadata.sourcePattern).toBe('schemas/users.td');
     expect(context.metadata.version).toBe('0.1.0');
     expect(context.metadata.seed).toBe(42);
     expect(context.metadata.patternHash).toBe('pattern-123');
     expect(context.metadata.lineage).toEqual(lineage);
+    expect(context.metadata.platformReserved).toEqual(platformReserved);
   });
 
   test('loads CSV context through the orchestrating entry point', async () => {

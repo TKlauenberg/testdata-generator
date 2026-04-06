@@ -5,6 +5,7 @@
  * containing validated schemas with enriched metadata and a complete symbol table.
  */
 
+import type { GenerationMetadataContextReference } from '../common';
 import type { Program, SchemaNode, FieldNode, GeneratorSpec, WorkspaceGeneratorDefinition } from '../parser/ast';
 import type { SymbolTable } from './symbolTable';
 
@@ -47,6 +48,7 @@ export interface ValidatedProgram {
     readonly analyzedAt: Date;
     readonly schemaCount: number;
     readonly totalFields: number;
+    readonly contextReferences?: readonly GenerationMetadataContextReference[];
   };
 }
 

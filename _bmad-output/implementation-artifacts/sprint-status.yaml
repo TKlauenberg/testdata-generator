@@ -136,5 +136,5 @@ development_status:
   12-1-generation-metadata-tracking: done
   12-2-generation-history-logging: done
   12-3-pattern-version-tracking: done
-  12-4-platform-migration-preparation: ready-for-dev
+  12-4-platform-migration-preparation: review
   epic-12-retrospective: optional

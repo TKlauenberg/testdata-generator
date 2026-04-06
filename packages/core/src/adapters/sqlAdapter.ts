@@ -107,6 +107,7 @@ export class SqlAdapter implements IAdapter {
       version: options.metadata?.version,
       patternHash: options.metadata?.patternHash,
       lineage: options.metadata?.lineage,
+      platformReserved: options.metadata?.platformReserved,
     });
   }
 

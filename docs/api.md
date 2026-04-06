@@ -8,6 +8,7 @@ import {
   appendGenerationHistoryEntry,
   comparePatternVersions,
   createGenerationHistoryEntry,
+  createPlatformReadyExport,
   queryGenerationHistory,
   readGenerationHistory,
   createPatternVersionSnapshot,
@@ -189,6 +190,33 @@ const latestRuns = await queryGenerationHistory('.td-history.jsonl', { last: 10 
 
 History entries reuse the canonical `GenerationMetadata` contract under `entry.metadata` and add outcome fields such as `status`, `errorMessage`, `durationMs`, `recordsPerSecond`, optional `outputPath`, and optional `savedContextName`.
 
+## Platform-Ready Export API
+
+The core package exposes a deterministic platform-ready export helper for packaging existing local artifacts together with the audit data introduced in Stories 12.1 through 12.3.
+
+```typescript
+import { createPlatformReadyExport } from '@testdata-ai/core';
+
+const bundle = await createPlatformReadyExport({
+  artifactPath: 'artifacts/users.json',
+  historyPath: '.td-history.jsonl',
+  patternVersionStorePath: '.td-pattern-versions',
+  exportedAt: '2026-04-06T12:00:00.000Z',
+});
+
+console.log(bundle.contract); // 'testdata-ai/platform-ready-export'
+console.log(bundle.metadata.patternHash);
+```
+
+The export bundle includes:
+
+- The original artifact payload (`generated-json`, `generated-csv`, `generated-sql`, or `saved-context-json`)
+- Canonical generation metadata, including optional `platformReserved.contextReferences`
+- The matching generation-history entry resolved by `timestamp`, `sourcePattern`, and `patternHash`
+- The stored pattern-version snapshot keyed by `patternHash`
+
+`createPlatformReadyExport()` fails explicitly for unsupported artifact types, malformed metadata comments, missing history entries, ambiguous history matches, and missing pattern-version snapshots. It does not rerun generation or infer missing lineage from current files on disk.
+
 ## Pattern Version API
 
 The core package also exposes immutable pattern-version helpers keyed by the canonical `patternHash`. These helpers are intended for local audit tooling such as comparing historical pattern versions without rereading the current filesystem.
@@ -234,6 +262,36 @@ if (snapshot) {
 ```
 
 Pattern-version snapshots preserve the lineage components that contribute to `patternHash`, including root pattern source, imported pattern source, and workspace-generator definitions. `comparePatternVersions()` returns deterministic added, removed, and modified lineage components, plus a conservative `potentiallyBreaking` classification for removed lineage or modified root and imported patterns.
+
+### Extended Generation Metadata
+
+The canonical `GenerationMetadata` contract now also supports an optional `platformReserved` object for forward-compatible migration fields. The current reserved payload is:
+
+```typescript
+type GenerationMetadata = {
+  timestamp: string;
+  sourcePattern?: string;
+  count?: number;
+  format: 'json' | 'jsonl' | 'csv' | 'sql';
+  seed?: number;
+  version: string;
+  patternHash?: string;
+  lineage?: readonly GenerationMetadataLineageEntry[];
+  platformReserved?: {
+    contextReferences?: readonly Array<{
+      raw: string;
+      collection: string;
+      tags: readonly string[];
+      selector:
+        | { kind: 'random' }
+        | { kind: 'index'; index: number };
+      fieldPath?: readonly string[];
+    }>;
+  };
+};
+```
+
+These fields are preserved through generated JSON, CSV, SQL, saved-context JSON, history entries, and platform-ready export bundles.
 
 ### CSV
 

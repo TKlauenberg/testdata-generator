@@ -156,6 +156,25 @@ Built-in behavior:
 - Successful runs append after output writing and optional context saving complete.
 - Failed runs append concise failure entries when history is enabled.
 
+## Platform-Ready Export
+
+`td export --platform-ready` does not introduce any new configuration keys. It reuses the existing history settings so export, history, diff, and generate all resolve audit data from the same location.
+
+| Setting or Flag          | Scope                          | Description                                                                 |
+| ------------------------ | ------------------------------ | --------------------------------------------------------------------------- |
+| `history.logDirectory`   | Config file (global/workspace) | Directory containing `.td-history.jsonl` and `.td-pattern-versions`         |
+| `td export --platform-ready` | CLI runtime command        | Reads an existing metadata-bearing artifact and emits the migration bundle   |
+| `--output <file>`        | CLI runtime flag               | Writes the platform-ready bundle to a file instead of stdout                |
+
+Platform-ready export requirements:
+
+- The artifact must already exist and must be one of: generated JSON, generated CSV, generated SQL, or saved-context JSON.
+- The artifact must contain recoverable generation metadata.
+- A matching history entry must exist in the configured audit directory.
+- A stored pattern-version snapshot must exist for the artifact's `patternHash`.
+
+If any of those prerequisites are missing, export fails explicitly instead of emitting a partial bundle that looks valid.
+
 ## Section-Level Override Semantics
 
 Overrides are **shallow at the section level**, not deep-merged. If a workspace config provides a `defaults` section, the entire `defaults` section from the workspace replaces the global `defaults` section, rather than merging individual keys.

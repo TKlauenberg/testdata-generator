@@ -3,6 +3,11 @@ import {
   decodeGenerationMetadataComment,
   GENERATION_METADATA_COMMENT_LABEL,
 } from '../../common';
+import type {
+  GenerationMetadataFormat,
+  GenerationMetadataLineageEntry,
+  GenerationMetadataPlatformReserved,
+} from '../../common';
 import type { Result } from '../../common/result';
 import type { ContextData, ContextRecord, JsonValue } from '../types';
 
@@ -70,7 +75,7 @@ function extractMetadataCommentPayload(row: readonly string[]): string | undefin
   const trimmed = row[0]?.trim();
   const prefix = `# ${GENERATION_METADATA_COMMENT_LABEL}`;
 
-  if (trimmed === undefined || !trimmed.startsWith(prefix)) {
+  if (!trimmed?.startsWith(prefix)) {
     return undefined;
   }
 
@@ -270,10 +275,12 @@ export async function loadCsvContext(filePath: string): Promise<ContextData> {
     | {
         readonly timestamp: string;
         readonly sourcePattern?: string;
+        readonly format: GenerationMetadataFormat;
         readonly version: string;
         readonly seed?: number;
         readonly patternHash?: string;
-        readonly lineage?: readonly import('../../common').GenerationMetadataLineageEntry[];
+        readonly lineage?: readonly GenerationMetadataLineageEntry[];
+        readonly platformReserved?: GenerationMetadataPlatformReserved;
       }
     | undefined;
 
@@ -292,10 +299,12 @@ export async function loadCsvContext(filePath: string): Promise<ContextData> {
             generationMetadata = {
               timestamp: decoded.timestamp,
               sourcePattern: decoded.sourcePattern,
+              format: decoded.format,
               version: decoded.version,
               seed: decoded.seed,
               patternHash: decoded.patternHash,
               lineage: decoded.lineage,
+              platformReserved: decoded.platformReserved,
             };
           } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
@@ -365,12 +374,14 @@ export async function loadCsvContext(filePath: string): Promise<ContextData> {
       loadedAt: new Date().toISOString(),
       recordCount: records.length,
       tags: [],
+      generationFormat: generationMetadata?.format,
       timestamp: generationMetadata?.timestamp,
       sourcePattern: generationMetadata?.sourcePattern,
       version: generationMetadata?.version,
       seed: generationMetadata?.seed,
       patternHash: generationMetadata?.patternHash,
       lineage: generationMetadata?.lineage,
+      platformReserved: generationMetadata?.platformReserved,
     },
   };
 }

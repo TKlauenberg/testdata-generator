@@ -2,6 +2,7 @@
 import { Command } from 'commander';
 import { version } from '@testdata-ai/core';
 import { generateCommand } from '../src/commands/generate.js';
+import { exportCommand } from '../src/commands/export.js';
 import { historyCommand } from '../src/commands/history.js';
 import { diffCommand } from '../src/commands/diff.js';
 import { validateCommand } from '../src/commands/validate.js';
@@ -17,6 +18,7 @@ program
 
 // Register commands
 program.addCommand(generateCommand);
+program.addCommand(exportCommand);
 program.addCommand(historyCommand);
 program.addCommand(diffCommand);
 program.addCommand(validateCommand);

@@ -11,6 +11,7 @@
 
 import type { Result } from '../common/result';
 import type { Diagnostic } from '../common/diagnostic';
+import type { GenerationMetadataContextReference } from '../common';
 import {
   WORKSPACE_GENERATOR_REFERENCE_PREFIX,
   getWorkspaceGeneratorName,
@@ -242,6 +243,7 @@ export function analyze(
   // Step 4: Build ValidatedProgram
   const sortOrder = computeSortOrder(dependencyGraph);
   const validatedSchemas = new Map<string, ValidatedSchema>();
+  const contextReferences = collectContextReferenceMetadata(effectiveSchemas);
   let totalFields = 0;
 
   for (const schema of schemas) {
@@ -286,9 +288,49 @@ export function analyze(
         analyzedAt: new Date(),
         schemaCount: schemas.length,
         totalFields,
+        contextReferences,
       },
     },
   };
+}
+
+function collectContextReferenceMetadata(
+  effectiveSchemas: ReadonlyMap<string, EffectiveSchemaContext>,
+): readonly GenerationMetadataContextReference[] | undefined {
+  const references = new Map<string, GenerationMetadataContextReference>();
+
+  for (const effectiveSchema of effectiveSchemas.values()) {
+    for (const effectiveField of effectiveSchema.fields) {
+      const parameters = effectiveField.effective.generator?.parameters ?? [];
+      for (const parameter of parameters) {
+        const expressions = extractContextReferenceExpressionsFromValue(parameter.value);
+        for (const expression of expressions) {
+          const parseResult = parseContextReferenceExpression(expression);
+          if (!parseResult.ok) {
+            continue;
+          }
+
+          references.set(parseResult.value.raw, {
+            raw: parseResult.value.raw,
+            collection: parseResult.value.collection,
+            tags: [...parseResult.value.tags],
+            selector: parseResult.value.selector.kind === 'random'
+              ? { kind: 'random' }
+              : { kind: 'index', index: parseResult.value.selector.index },
+            fieldPath: parseResult.value.fieldPath.length > 0
+              ? [...parseResult.value.fieldPath]
+              : undefined,
+          });
+        }
+      }
+    }
+  }
+
+  if (references.size === 0) {
+    return undefined;
+  }
+
+  return [...references.values()].sort((left, right) => left.raw.localeCompare(right.raw));
 }
 
 /**

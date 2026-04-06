@@ -30,11 +30,16 @@ export {
 
 export type {
   CreateGenerationMetadataOptions,
+  GenerationMetadataContextReference,
+  GenerationMetadataContextReferenceIndexSelector,
+  GenerationMetadataContextReferenceRandomSelector,
+  GenerationMetadataContextReferenceSelector,
   GenerationMetadata,
   GenerationMetadataFormat,
   GenerationMetadataLineageEntry,
   GenerationMetadataLineageInput,
   GenerationMetadataLineageType,
+  GenerationMetadataPlatformReserved,
 } from './generationMetadata';
 export {
   createGenerationMetadata,

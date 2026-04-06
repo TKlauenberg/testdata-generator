@@ -30,3 +30,6 @@ export * from './context';
 
 // History (append-only generation audit log)
 export * from './history';
+
+// Platform-ready export helpers
+export * from './export';

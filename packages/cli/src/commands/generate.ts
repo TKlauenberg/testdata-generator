@@ -177,6 +177,11 @@ async function buildGenerationMetadata(options: BuildGenerationMetadataOptions):
       format: options.format,
       seed: options.seed,
       lineageInputs,
+      platformReserved: options.validatedProgram.metadata.contextReferences === undefined
+        ? undefined
+        : {
+          contextReferences: options.validatedProgram.metadata.contextReferences,
+        },
     }),
     lineageInputs,
   };
@@ -505,10 +510,12 @@ export const generateCommand = new Command('generate')
               directory: contextDirectory,
               timestamp: metadata.timestamp,
               sourcePattern: metadata.sourcePattern,
+              format: metadata.format,
               version: metadata.version,
               seed: metadata.seed,
               patternHash: metadata.patternHash,
               lineage: metadata.lineage,
+              platformReserved: metadata.platformReserved,
             });
           } catch (err: unknown) {
             throw new GenerateCommandFailure(`Error saving context file: ${normalizeErrorMessage(err)}`, 3);

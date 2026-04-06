@@ -39,14 +39,15 @@ function isSavedContextMetadataCandidate(value: unknown): boolean {
     return false;
   }
 
-  return 'timestamp' in value || 'sourcePattern' in value || 'version' in value || 'count' in value || 'tags' in value;
+  return 'tags' in value;
 }
 
 function isSavedContextEnvelopeCandidate(value: unknown): value is SavedContextEnvelope {
   return isObjectRecord(value)
     && 'metadata' in value
     && 'data' in value
-    && (Array.isArray(value.data) || isSavedContextMetadataCandidate(value.metadata));
+    && Array.isArray(value.data)
+    && isSavedContextMetadataCandidate(value.metadata);
 }
 
 function isGeneratedOutputEnvelopeCandidate(value: unknown): value is {
@@ -83,6 +84,16 @@ function validateSavedContextMetadata(
 
   if (candidate.sourcePattern !== undefined && typeof candidate.sourcePattern !== 'string') {
     return err(`Invalid saved context metadata in "${filePath}": sourcePattern must be a string when provided`);
+  }
+
+  if (
+    candidate.format !== undefined
+    && candidate.format !== 'json'
+    && candidate.format !== 'jsonl'
+    && candidate.format !== 'csv'
+    && candidate.format !== 'sql'
+  ) {
+    return err(`Invalid saved context metadata in "${filePath}": format must be json, jsonl, csv, or sql when provided`);
   }
 
   if (typeof candidate.version !== 'string') {
@@ -123,12 +134,14 @@ function validateSavedContextMetadata(
   return ok({
     timestamp: candidate.timestamp,
     sourcePattern: candidate.sourcePattern,
+    format: candidate.format,
     version: candidate.version,
     count: candidate.count,
     tags: normalizeContextTags(candidate.tags),
     seed: candidate.seed,
     patternHash: candidate.patternHash,
     lineage: candidate.lineage,
+    platformReserved: candidate.platformReserved,
   });
 }
 
@@ -176,15 +189,15 @@ function normalizeContextPayload(
   readonly savedMetadata?: SavedContextMetadata;
   readonly generatedMetadata?: GenerationMetadata;
 }, string> {
+  if (isSavedContextEnvelopeCandidate(parsedJson)) {
+    return normalizeSavedContextEnvelope(parsedJson, filePath);
+  }
+
   if (isGeneratedOutputEnvelopeCandidate(parsedJson)) {
     return ok({
       records: parsedJson.data,
       generatedMetadata: parsedJson.metadata,
     });
-  }
-
-  if (isSavedContextEnvelopeCandidate(parsedJson)) {
-    return normalizeSavedContextEnvelope(parsedJson, filePath);
   }
 
   if (isObjectRecord(parsedJson)) {
@@ -246,12 +259,14 @@ export async function loadJsonContext(filePath: string): Promise<ContextData> {
       loadedAt: new Date().toISOString(),
       recordCount: records.length,
       tags: savedMetadata?.tags ?? [],
+      generationFormat: savedMetadata?.format ?? generatedMetadata?.format,
       timestamp: savedMetadata?.timestamp ?? generatedMetadata?.timestamp,
       sourcePattern: savedMetadata?.sourcePattern ?? generatedMetadata?.sourcePattern,
       version: savedMetadata?.version ?? generatedMetadata?.version,
       seed: savedMetadata?.seed ?? generatedMetadata?.seed,
       patternHash: savedMetadata?.patternHash ?? generatedMetadata?.patternHash,
       lineage: savedMetadata?.lineage ?? generatedMetadata?.lineage,
+      platformReserved: savedMetadata?.platformReserved ?? generatedMetadata?.platformReserved,
     },
   };
 }
