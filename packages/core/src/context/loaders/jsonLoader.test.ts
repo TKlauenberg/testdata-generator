@@ -107,6 +107,25 @@ describe('loadJsonContext', () => {
     expect(context.metadata.platformReserved?.contextReferences).toHaveLength(1);
   });
 
+  test('rejects saved-context envelopes with malformed platformReserved metadata', async () => {
+    const filePath = await writeJsonFixture('invalid-platform-reserved.json', {
+      metadata: {
+        timestamp: '2026-03-08T10:00:00.000Z',
+        version: '0.1.0',
+        tags: [],
+        count: 1,
+        platformReserved: {
+          contextReferences: [1],
+        },
+      },
+      data: [
+        { id: 'u-1' },
+      ],
+    });
+
+    expect(loadJsonContext(filePath)).rejects.toThrow(/platformReserved|canonical generation metadata contract/i);
+  });
+
   test('loads generated JSON envelopes and preserves generation metadata', async () => {
     const metadata = createGenerationMetadata({
       timestamp: '2026-04-05T10:00:00.000Z',

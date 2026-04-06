@@ -1,6 +1,6 @@
 # Story 12.4: Platform Migration Preparation
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -54,6 +54,11 @@ The safest implementation path is to export an existing metadata-bearing local a
   - [x] Add core unit tests for extended metadata, context-reference capture, export-envelope construction, deterministic export ordering, and failure paths for missing history or missing snapshots.
   - [x] Add CLI unit tests for `td export --platform-ready` success paths, unsupported inputs, malformed metadata, workspace-relative history resolution, and missing-audit failure behavior.
   - [x] Extend an active CLI feature file or wire a new export feature into `packages/cli/tests/run-cucumber.ts`; do not add an unwired feature file.
+
+### Review Findings
+
+- [x] [Review][Patch] Legacy saved-context export overwrites the original generation format when the saved context predates the new `format` field [packages/core/src/export/platformReadyExport.ts:145]
+- [x] [Review][Patch] Malformed saved-context `platformReserved` metadata falls through to a generic runtime `TypeError` instead of a clear export validation failure [packages/core/src/export/platformReadyExport.ts:145]
 
 ## Dev Notes
 

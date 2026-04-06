@@ -68,6 +68,7 @@ interface GeneratedJsonArtifactEnvelope {
 interface ParsedPlatformReadyArtifact {
   readonly artifact: PlatformReadyExportArtifact;
   readonly metadata: GenerationMetadata;
+  readonly preferHistoryFormat: boolean;
 }
 
 function isObjectRecord(value: unknown): value is Record<string, unknown> {
@@ -114,12 +115,41 @@ function isSavedContextMetadata(value: unknown): value is SavedContextMetadata {
     && candidate.tags.every((tag) => typeof tag === 'string')
     && (candidate.seed === undefined || typeof candidate.seed === 'number')
     && (candidate.patternHash === undefined || typeof candidate.patternHash === 'string')
+    && isGenerationMetadata({
+      timestamp: candidate.timestamp,
+      sourcePattern: candidate.sourcePattern,
+      count: candidate.count,
+      format: candidate.format ?? 'json',
+      seed: candidate.seed,
+      version: candidate.version,
+      patternHash: candidate.patternHash,
+      lineage: candidate.lineage,
+      platformReserved: candidate.platformReserved,
+    })
     && (candidate.lineage === undefined
       || (Array.isArray(candidate.lineage)
         && candidate.lineage.every((entry) => isObjectRecord(entry)
           && (entry.type === 'root-pattern' || entry.type === 'imported-pattern' || entry.type === 'workspace-generator')
           && typeof entry.identifier === 'string'
           && typeof entry.hash === 'string')));
+}
+
+function isSavedContextEnvelopeCandidate(value: unknown): value is {
+  readonly metadata: unknown;
+  readonly data: readonly unknown[];
+} {
+  if (!isObjectRecord(value) || !('metadata' in value) || !('data' in value)) {
+    return false;
+  }
+
+  const candidate = value as {
+    readonly metadata?: unknown;
+    readonly data?: unknown;
+  };
+
+  return isObjectRecord(candidate.metadata)
+    && 'tags' in candidate.metadata
+    && Array.isArray(candidate.data);
 }
 
 function isSavedContextEnvelope(value: unknown): value is SavedContextEnvelope {
@@ -137,8 +167,12 @@ function isSavedContextEnvelope(value: unknown): value is SavedContextEnvelope {
     && candidate.data.every((entry) => isContextRecord(entry));
 }
 
-function createMetadataFromSavedContext(envelope: SavedContextEnvelope): GenerationMetadata {
-  return createGenerationMetadata({
+function createMetadataFromSavedContext(envelope: SavedContextEnvelope): {
+  readonly metadata: GenerationMetadata;
+  readonly preferHistoryFormat: boolean;
+} {
+  return {
+    metadata: createGenerationMetadata({
     timestamp: envelope.metadata.timestamp,
     sourcePattern: envelope.metadata.sourcePattern,
     count: envelope.metadata.count,
@@ -148,7 +182,9 @@ function createMetadataFromSavedContext(envelope: SavedContextEnvelope): Generat
     patternHash: envelope.metadata.patternHash,
     lineage: envelope.metadata.lineage,
     platformReserved: envelope.metadata.platformReserved,
-  });
+    }),
+    preferHistoryFormat: envelope.metadata.format === undefined,
+  };
 }
 
 async function readArtifactText(artifactPath: string): Promise<string> {
@@ -205,14 +241,24 @@ async function parsePlatformReadyArtifact(artifactPath: string): Promise<ParsedP
     }
 
     if (isSavedContextEnvelope(parsed)) {
+      const savedContextMetadata = createMetadataFromSavedContext(parsed);
+
       return {
         artifact: {
           type: 'saved-context-json',
           format: 'json',
           payload: parsed,
         },
-        metadata: createMetadataFromSavedContext(parsed),
+        metadata: savedContextMetadata.metadata,
+        preferHistoryFormat: savedContextMetadata.preferHistoryFormat,
       };
+    }
+
+    if (isSavedContextEnvelopeCandidate(parsed)) {
+      throw new PlatformReadyExportError(
+        'invalid-saved-context',
+        `JSON artifact '${artifactPath}' looks like a saved-context envelope but its metadata does not match the canonical generation metadata contract.`,
+      );
     }
 
     if (isGeneratedJsonArtifactEnvelope(parsed)) {
@@ -223,6 +269,7 @@ async function parsePlatformReadyArtifact(artifactPath: string): Promise<ParsedP
           payload: parsed,
         },
         metadata: parsed.metadata,
+        preferHistoryFormat: false,
       };
     }
 
@@ -251,6 +298,7 @@ async function parsePlatformReadyArtifact(artifactPath: string): Promise<ParsedP
         payload: artifactText,
       },
       metadata,
+      preferHistoryFormat: false,
     };
   }
 
@@ -268,6 +316,7 @@ async function parsePlatformReadyArtifact(artifactPath: string): Promise<ParsedP
         payload: artifactText,
       },
       metadata,
+      preferHistoryFormat: false,
     };
   }
 
@@ -295,6 +344,7 @@ function requireMetadataMatchKey(
 function createCanonicalMetadata(
   artifactMetadata: GenerationMetadata,
   historyEntry: GenerationHistoryEntry,
+  preferHistoryFormat: boolean,
 ): GenerationMetadata {
   const historyMetadata = historyEntry.metadata;
 
@@ -322,7 +372,7 @@ function createCanonicalMetadata(
     timestamp: artifactMetadata.timestamp,
     sourcePattern: artifactMetadata.sourcePattern ?? historyMetadata.sourcePattern,
     count: artifactMetadata.count ?? historyMetadata.count,
-    format: artifactMetadata.format ?? historyMetadata.format,
+    format: preferHistoryFormat ? historyMetadata.format : artifactMetadata.format ?? historyMetadata.format,
     seed: artifactMetadata.seed ?? historyMetadata.seed,
     version: artifactMetadata.version ?? historyMetadata.version,
     patternHash: artifactMetadata.patternHash ?? historyMetadata.patternHash,
@@ -392,7 +442,7 @@ export async function createPlatformReadyExport(
 ): Promise<PlatformReadyExportEnvelope> {
   const parsedArtifact = await parsePlatformReadyArtifact(options.artifactPath);
   const historyEntry = await resolveHistoryEntry(options.historyPath, parsedArtifact.metadata);
-  const metadata = createCanonicalMetadata(parsedArtifact.metadata, historyEntry);
+  const metadata = createCanonicalMetadata(parsedArtifact.metadata, historyEntry, parsedArtifact.preferHistoryFormat);
   const patternSnapshot = await resolvePatternSnapshot(options.patternVersionStorePath, metadata);
 
   return {

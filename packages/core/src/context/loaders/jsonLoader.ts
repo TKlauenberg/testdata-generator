@@ -131,6 +131,20 @@ function validateSavedContextMetadata(
     return err(`Invalid saved context metadata in "${filePath}": lineage entries must include type, identifier, and hash`);
   }
 
+  if (!isGenerationMetadata({
+    timestamp: candidate.timestamp,
+    sourcePattern: candidate.sourcePattern,
+    count: candidate.count,
+    format: candidate.format ?? 'json',
+    seed: candidate.seed,
+    version: candidate.version,
+    patternHash: candidate.patternHash,
+    lineage: candidate.lineage,
+    platformReserved: candidate.platformReserved,
+  })) {
+    return err(`Invalid saved context metadata in "${filePath}": platformReserved must match the canonical generation metadata contract when provided`);
+  }
+
   return ok({
     timestamp: candidate.timestamp,
     sourcePattern: candidate.sourcePattern,

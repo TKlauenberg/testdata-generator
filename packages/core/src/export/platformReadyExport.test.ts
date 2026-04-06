@@ -261,6 +261,41 @@ describe('createPlatformReadyExport', () => {
     ]);
   });
 
+  test('reuses the canonical history format for legacy saved-context artifacts without an embedded format', async () => {
+    const { metadata, lineageInputs } = createTestMetadata({ format: 'csv' });
+    const artifactPath = path.join(TEST_DIR, 'contexts', 'legacy-exportable.json');
+
+    await saveAsContext(
+      [
+        { id: 1, email: 'qa.one@example.com' },
+        { id: 2, email: 'qa.two@example.com' },
+      ],
+      'legacy-exportable',
+      ['staging'],
+      {
+        directory: path.join(TEST_DIR, 'contexts'),
+        timestamp: metadata.timestamp,
+        sourcePattern: metadata.sourcePattern,
+        version: metadata.version,
+        seed: metadata.seed,
+        patternHash: metadata.patternHash,
+        lineage: metadata.lineage,
+        platformReserved: metadata.platformReserved,
+      },
+    );
+    await writeAuditTrail({
+      historyPath: path.join(TEST_DIR, '.td-history.jsonl'),
+      storePath: path.join(TEST_DIR, '.td-pattern-versions'),
+      metadata,
+      lineageInputs,
+    });
+
+    const bundle = await createPlatformReadyExport(createExportOptions(artifactPath));
+
+    expect(bundle.artifact.type).toBe('saved-context-json');
+    expect(bundle.metadata.format).toBe('csv');
+  });
+
   test('fails clearly when no matching history entry exists', async () => {
     const { metadata } = createTestMetadata();
     const artifactPath = path.join(TEST_DIR, 'generated.json');
@@ -330,5 +365,44 @@ describe('createPlatformReadyExport', () => {
     const secondBundle = await createPlatformReadyExport(createExportOptions(validCsvPath));
 
     expect(JSON.stringify(firstBundle)).toBe(JSON.stringify(secondBundle));
+  });
+
+  test('fails clearly for malformed saved-context platformReserved metadata', async () => {
+    const { metadata, lineageInputs } = createTestMetadata();
+    const artifactPath = path.join(TEST_DIR, 'contexts', 'bad.json');
+
+    await mkdir(path.dirname(artifactPath), { recursive: true });
+    await Bun.write(artifactPath, `${JSON.stringify({
+      metadata: {
+        timestamp: metadata.timestamp,
+        sourcePattern: metadata.sourcePattern,
+        count: 1,
+        version: metadata.version,
+        tags: [],
+        patternHash: metadata.patternHash,
+        platformReserved: {
+          contextReferences: [1],
+        },
+      },
+      data: [{ id: 1 }],
+    }, null, 2)}\n`);
+    await writeAuditTrail({
+      historyPath: path.join(TEST_DIR, '.td-history.jsonl'),
+      storePath: path.join(TEST_DIR, '.td-pattern-versions'),
+      metadata: createGenerationMetadata({
+        timestamp: metadata.timestamp,
+        sourcePattern: metadata.sourcePattern,
+        count: 1,
+        format: 'json',
+        seed: metadata.seed,
+        version: metadata.version,
+        patternHash: metadata.patternHash,
+        lineage: metadata.lineage,
+        platformReserved: metadata.platformReserved,
+      }),
+      lineageInputs,
+    });
+
+    await expect(createPlatformReadyExport(createExportOptions(artifactPath))).rejects.toThrow(/looks like a saved-context envelope/i);
   });
 });

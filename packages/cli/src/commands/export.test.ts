@@ -223,6 +223,46 @@ describe('td export', () => {
     expect(written.metadata.format).toBe('csv');
   });
 
+  test('uses audit history format for legacy saved-context artifacts without embedded format metadata', async () => {
+    const workspaceDirectory = await createWorkspaceDirectory('testdata-ai-export-legacy-saved-context-');
+    const { metadata, lineageInputs } = createTestMetadata('csv');
+    const artifactPath = path.join(workspaceDirectory, 'contexts', 'legacy.json');
+
+    await saveAsContext(
+      [
+        { id: 1, email: 'qa.one@example.com' },
+        { id: 2, email: 'qa.two@example.com' },
+      ],
+      'legacy',
+      ['staging'],
+      {
+        directory: path.join(workspaceDirectory, 'contexts'),
+        timestamp: metadata.timestamp,
+        sourcePattern: metadata.sourcePattern,
+        version: metadata.version,
+        seed: metadata.seed,
+        patternHash: metadata.patternHash,
+        lineage: metadata.lineage,
+        platformReserved: metadata.platformReserved,
+      },
+    );
+    await writeAuditTrail({
+      historyPath: path.join(workspaceDirectory, '.td-history.jsonl'),
+      storePath: path.join(workspaceDirectory, '.td-pattern-versions'),
+      metadata,
+      lineageInputs,
+    });
+
+    const result = await runCli(['export', 'contexts/legacy.json', '--platform-ready'], workspaceDirectory);
+    const parsed = JSON.parse(result.stdout) as {
+      readonly metadata: { readonly format: string };
+    };
+
+    expect(result.exitCode).toBe(0);
+    expect(parsed.metadata.format).toBe('csv');
+    expect(await fs.readFile(artifactPath, 'utf-8')).not.toContain('"format"');
+  });
+
   test('fails clearly for unsupported artifact types and malformed metadata comments', async () => {
     const workspaceDirectory = await createWorkspaceDirectory('testdata-ai-export-failures-');
     await Bun.write(path.join(workspaceDirectory, 'artifact.txt'), 'unsupported');
@@ -238,6 +278,49 @@ describe('td export', () => {
     expect(unsupported.stderr).toContain('supports generated JSON, CSV, SQL, and saved-context JSON');
     expect(malformed.exitCode).toBe(1);
     expect(malformed.stderr).toContain('invalid generation metadata comment');
+  });
+
+  test('fails clearly for malformed saved-context reserved metadata', async () => {
+    const workspaceDirectory = await createWorkspaceDirectory('testdata-ai-export-invalid-saved-context-');
+    const artifactPath = path.join(workspaceDirectory, 'contexts', 'bad.json');
+    const { metadata, lineageInputs } = createTestMetadata('json');
+
+    await fs.mkdir(path.dirname(artifactPath), { recursive: true });
+    await Bun.write(artifactPath, `${JSON.stringify({
+      metadata: {
+        timestamp: metadata.timestamp,
+        sourcePattern: metadata.sourcePattern,
+        count: 1,
+        version: metadata.version,
+        tags: [],
+        patternHash: metadata.patternHash,
+        platformReserved: {
+          contextReferences: [1],
+        },
+      },
+      data: [{ id: 1 }],
+    }, null, 2)}\n`);
+    await writeAuditTrail({
+      historyPath: path.join(workspaceDirectory, '.td-history.jsonl'),
+      storePath: path.join(workspaceDirectory, '.td-pattern-versions'),
+      metadata: createGenerationMetadata({
+        timestamp: metadata.timestamp,
+        sourcePattern: metadata.sourcePattern,
+        count: 1,
+        format: 'json',
+        seed: metadata.seed,
+        version: metadata.version,
+        patternHash: metadata.patternHash,
+        lineage: metadata.lineage,
+        platformReserved: metadata.platformReserved,
+      }),
+      lineageInputs,
+    });
+
+    const result = await runCli(['export', 'contexts/bad.json', '--platform-ready'], workspaceDirectory);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain('looks like a saved-context envelope');
   });
 
   test('fails clearly when matching audit history is missing', async () => {
